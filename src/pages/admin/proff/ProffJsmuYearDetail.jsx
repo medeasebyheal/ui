@@ -181,6 +181,12 @@ export default function ProffJsmuYearDetail() {
               >
                 <Trash2 className="w-4 h-4" />
               </button>
+              <Link
+                to={`/admin/proff/jsmu/years/${yearId}/papers/${p._id}`}
+                className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+              >
+                Open <ChevronRight className="w-4 h-4" />
+              </Link>
             </div>
           </div>
         ))}

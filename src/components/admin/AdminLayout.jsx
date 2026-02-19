@@ -39,7 +39,6 @@ const navItems = [
     label: 'Proff',
     icon: BookOpen,
     children: [
-      { to: '/admin/proff', end: true, label: 'Dashboard' },
       { to: '/admin/proff/jsmu', end: true, label: 'JSMU' },
       { to: '/admin/proff/other', end: true, label: 'Other University' },
     ],

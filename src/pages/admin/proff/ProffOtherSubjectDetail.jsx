@@ -94,24 +94,36 @@ export default function ProffOtherSubjectDetail() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-            <FileQuestion className="w-6 h-6 text-primary" />
+        <Link
+          to={`/admin/proff/other/years/${yearId}/subjects/${subjectId}/mcqs`}
+          className="bg-white rounded-xl border border-gray-200 p-6 flex items-center justify-between gap-4 hover:border-primary/30 hover:bg-gray-50/50 transition-colors group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <FileQuestion className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">Subject-wise Mix MCQs</p>
+              <p className="text-sm text-gray-500">Add and manage MCQs for this subject.</p>
+            </div>
           </div>
-          <div>
-            <p className="font-medium text-gray-900">Subject-wise Mix MCQs</p>
-            <p className="text-sm text-gray-500">Content linking can be added later.</p>
+          <span className="text-primary font-medium text-sm group-hover:underline">Manage MCQs →</span>
+        </Link>
+        <Link
+          to={`/admin/proff/other/years/${yearId}/subjects/${subjectId}/ospe`}
+          className="bg-white rounded-xl border border-gray-200 p-6 flex items-center justify-between gap-4 hover:border-primary/30 hover:bg-gray-50/50 transition-colors group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <ClipboardList className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">Subject-wise OSPE</p>
+              <p className="text-sm text-gray-500">Stations + questions (same structure as modules).</p>
+            </div>
           </div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-            <ClipboardList className="w-6 h-6 text-primary" />
-          </div>
-          <div>
-            <p className="font-medium text-gray-900">Subject-wise OSPE</p>
-            <p className="text-sm text-gray-500">Same structure as module OSPEs (stations + questions).</p>
-          </div>
-        </div>
+          <span className="text-primary font-medium text-sm group-hover:underline">Manage OSPE →</span>
+        </Link>
       </div>
 
       <Modal open={editModalOpen} onClose={() => setEditModalOpen(false)} title="Edit subject name">

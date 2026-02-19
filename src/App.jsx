@@ -31,6 +31,13 @@ import ProffJsmuYearDetail from './pages/admin/proff/ProffJsmuYearDetail';
 import ProffOtherYears from './pages/admin/proff/ProffOtherYears';
 import ProffOtherYearDetail from './pages/admin/proff/ProffOtherYearDetail';
 import ProffOtherSubjectDetail from './pages/admin/proff/ProffOtherSubjectDetail';
+import ProffJsmuPaperDetail from './pages/admin/proff/ProffJsmuPaperDetail';
+import ProffJsmuPaperMcqForm from './pages/admin/proff/ProffJsmuPaperMcqForm';
+import ProffJsmuPaperBulkMcqPage from './pages/admin/proff/ProffJsmuPaperBulkMcqPage';
+import ProffOtherSubjectMcqs from './pages/admin/proff/ProffOtherSubjectMcqs';
+import ProffOtherSubjectMcqForm from './pages/admin/proff/ProffOtherSubjectMcqForm';
+import ProffOtherSubjectBulkMcqPage from './pages/admin/proff/ProffOtherSubjectBulkMcqPage';
+import ProffOtherSubjectOspe from './pages/admin/proff/ProffOtherSubjectOspe';
 import AdminPackages from './pages/admin/Packages';
 import AdminResources from './pages/admin/Resources';
 import ResourceLayout from './pages/admin/resources/ResourceLayout';
@@ -103,9 +110,18 @@ function App() {
             <Route index element={<ProffDashboard />} />
             <Route path="jsmu" element={<ProffJsmuYears />} />
             <Route path="jsmu/years/:yearId" element={<ProffJsmuYearDetail />} />
+            <Route path="jsmu/years/:yearId/papers/:paperId" element={<ProffJsmuPaperDetail />} />
+            <Route path="jsmu/years/:yearId/papers/:paperId/mcqs/new" element={<ProffJsmuPaperMcqForm />} />
+            <Route path="jsmu/years/:yearId/papers/:paperId/mcqs/:mcqId/edit" element={<ProffJsmuPaperMcqForm />} />
+            <Route path="jsmu/years/:yearId/papers/:paperId/mcqs/bulk" element={<ProffJsmuPaperBulkMcqPage />} />
             <Route path="other" element={<ProffOtherYears />} />
             <Route path="other/years/:yearId" element={<ProffOtherYearDetail />} />
             <Route path="other/years/:yearId/subjects/:subjectId" element={<ProffOtherSubjectDetail />} />
+            <Route path="other/years/:yearId/subjects/:subjectId/mcqs" element={<ProffOtherSubjectMcqs />} />
+            <Route path="other/years/:yearId/subjects/:subjectId/mcqs/new" element={<ProffOtherSubjectMcqForm />} />
+            <Route path="other/years/:yearId/subjects/:subjectId/mcqs/:mcqId/edit" element={<ProffOtherSubjectMcqForm />} />
+            <Route path="other/years/:yearId/subjects/:subjectId/mcqs/bulk" element={<ProffOtherSubjectBulkMcqPage />} />
+            <Route path="other/years/:yearId/subjects/:subjectId/ospe" element={<ProffOtherSubjectOspe />} />
           </Route>
             <Route path="packages" element={<AdminPackages />} />
           </Route>

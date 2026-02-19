@@ -8,10 +8,15 @@ export default {
     extend: {
       colors: {
         primary: '#069285',
+        'success-green': '#10b981',
       },
       fontFamily: {
         heading: ['Outfit', 'sans-serif'],
         body: ['Inter', 'sans-serif'],
+        quiz: ['Lexend', 'sans-serif'],
+      },
+      backgroundImage: {
+        'pastel-quiz': 'linear-gradient(135deg, #e0e7ff 0%, #fae8ff 50%, #dcfce7 100%)',
       },
       animation: {
         'spin-slow': 'spin 20s linear infinite',
