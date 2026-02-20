@@ -11,6 +11,7 @@ import ProffPage from './pages/ProffPage';
 import ContactPage from './pages/ContactPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import CheckoutPage from './pages/CheckoutPage';
 
 import StudentDashboard from './pages/student/Dashboard';
 import StudentProfile from './pages/student/Profile';
@@ -39,6 +40,7 @@ import ProffOtherSubjectMcqForm from './pages/admin/proff/ProffOtherSubjectMcqFo
 import ProffOtherSubjectBulkMcqPage from './pages/admin/proff/ProffOtherSubjectBulkMcqPage';
 import ProffOtherSubjectOspe from './pages/admin/proff/ProffOtherSubjectOspe';
 import AdminPackages from './pages/admin/Packages';
+import AdminPromoCodes from './pages/admin/PromoCodes';
 import AdminResources from './pages/admin/Resources';
 import ResourceLayout from './pages/admin/resources/ResourceLayout';
 import ProgramsList from './pages/admin/resources/ProgramsList';
@@ -70,6 +72,7 @@ function App() {
             <Route path="contact" element={<ContactPage />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
+            <Route path="checkout" element={<CheckoutPage />} />
 
             <Route path="student" element={<StudentRoute />}>
               <Route index element={<StudentDashboard />} />
@@ -124,6 +127,7 @@ function App() {
             <Route path="other/years/:yearId/subjects/:subjectId/ospe" element={<ProffOtherSubjectOspe />} />
           </Route>
             <Route path="packages" element={<AdminPackages />} />
+            <Route path="promo-codes" element={<AdminPromoCodes />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

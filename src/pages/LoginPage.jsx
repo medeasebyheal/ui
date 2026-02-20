@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 
 export default function LoginPage() {
+  const [searchParams] = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,7 +20,11 @@ export default function LoginPage() {
     try {
       const { data } = await api.post('/auth/login', { email, password });
       login(data.token, data.user);
-      navigate(data.user.role === 'admin' ? '/admin' : '/student');
+      if (returnUrl && returnUrl.startsWith('/checkout') && data.user.role === 'student') {
+        navigate(returnUrl);
+      } else {
+        navigate(data.user.role === 'admin' ? '/admin' : '/student');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     } finally {

@@ -1,65 +1,105 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/client';
-import { Lock, Check } from 'lucide-react';
+import { PlanCard, PLAN_DATA } from '../components/Plan';
+import AuthModal from '../components/AuthModal';
 
 export default function PackagesPage() {
   const { user } = useAuth();
-  const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const plans = PLAN_DATA;
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalPlanKey, setAuthModalPlanKey] = useState(null);
 
-  useEffect(() => {
-    api.get('/packages').then(({ data }) => setPackages(data)).catch(() => setPackages([])).finally(() => setLoading(false));
-  }, []);
+  const handleBuyNow = (plan) => {
+    if (plan.planKey === 'free-trial') {
+      navigate('/register');
+      return;
+    }
+    if (user) {
+      navigate(`/checkout?plan=${plan.planKey}`);
+    } else {
+      setAuthModalPlanKey(plan.planKey);
+      setAuthModalOpen(true);
+    }
+  };
 
   return (
-    <section className="py-12 sm:py-16 md:py-20 container mx-auto px-4">
-      <div className="text-center mb-10">
-        <h1 className="text-3xl sm:text-4xl font-heading font-bold text-gray-900">Packages</h1>
-        <p className="text-gray-600 font-body mt-2">Choose a package to get started. Register and complete payment for access.</p>
-      </div>
-      {loading ? (
-        <p className="text-center text-gray-500">Loading...</p>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
-          {packages.length === 0 ? (
-            <p className="col-span-full text-center text-gray-500">No packages available yet.</p>
-          ) : (
-            packages.map((pkg) => (
-              <div
-                key={pkg._id}
-                className="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:border-primary/50 hover:shadow-xl transition-all"
-              >
-                <h3 className="text-xl font-heading font-bold text-gray-900">{pkg.name}</h3>
-                <p className="text-sm text-gray-600 mt-1">{pkg.description}</p>
-                {pkg.price != null && (
-                  <p className="mt-2 text-primary font-semibold">₨{pkg.price}</p>
-                )}
-                <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
-                  {user ? (
-                    <Link
-                      to="/student/packages"
-                      className="inline-flex items-center gap-1 text-primary font-medium"
-                    >
-                      <Check className="w-4 h-4" />
-                      Apply from Dashboard
-                    </Link>
-                  ) : (
-                    <Link
-                      to="/register"
-                      className="inline-flex items-center gap-1 text-primary font-medium"
-                    >
-                      <Lock className="w-4 h-4" />
-                      Register to apply
-                    </Link>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
+    <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gradient-to-br from-white via-primary/5 to-white overflow-hidden">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header - same as home Plan */}
+        <div className="text-center mb-8 sm:mb-12 md:mb-16">
+          <div className="inline-block mb-3 sm:mb-4">
+            <span className="text-primary font-body text-xs sm:text-sm md:text-base px-4 sm:px-5 py-1.5 sm:py-2 rounded-full bg-white border-2 border-primary/20 shadow-sm">
+              Pricing Plans
+            </span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-heading font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6 px-4">
+            Choose Your <span className="text-primary">Success Plan</span>
+          </h2>
+          <p className="text-gray-600 font-body text-sm sm:text-base md:text-lg lg:text-xl max-w-3xl mx-auto leading-relaxed px-4">
+            Flexible plans designed for every medical student's journey. Start with a free trial or go premium for complete access.
+          </p>
         </div>
-      )}
+
+        {/* Desktop Grid - same as home Plan (4 columns) */}
+        <div className="hidden xl:grid xl:grid-cols-4 gap-6 xl:gap-8 pt-4">
+          {plans.map((plan, index) => (
+            <PlanCard key={index} plan={plan} onBuyNow={handleBuyNow} />
+          ))}
+        </div>
+
+        {/* Tablet Horizontal Scroll - same as home Plan */}
+        <div className="hidden md:block xl:hidden relative pt-6">
+          <div className="overflow-x-auto">
+            <div className="flex gap-6 pb-6 px-4 pt-6">
+              {plans.map((plan, index) => (
+                <div key={index} className="flex-shrink-0 w-[340px] lg:w-[380px]">
+                  <PlanCard plan={plan} onBuyNow={handleBuyNow} />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-center gap-2 mt-4">
+            {plans.map((_, index) => (
+              <div key={index} className="w-2 h-2 rounded-full bg-primary/30 transition-all" />
+            ))}
+          </div>
+          <p className="text-center text-xs text-gray-500 mt-4 font-body">
+            ← Scroll to see all plans →
+          </p>
+        </div>
+
+        {/* Mobile Carousel - same as home Plan */}
+        <div className="md:hidden relative px-2 pt-6">
+          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-6 -mx-2 px-2">
+            {plans.map((plan, index) => (
+              <div key={index} className="snap-center flex-shrink-0 w-[90vw] max-w-[380px] pt-4">
+                <PlanCard plan={plan} onBuyNow={handleBuyNow} />
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-center gap-2 mt-4">
+            {plans.map((_, index) => (
+              <div key={index} className="w-2 h-2 rounded-full bg-primary/30 transition-all" />
+            ))}
+          </div>
+          <p className="text-center text-xs text-gray-500 mt-4 font-body">
+            ← Swipe to see more plans →
+          </p>
+        </div>
+
+        {/* Bottom CTA - same as home Plan */}
+        <div className="mt-8 sm:mt-12 md:mt-16 text-center px-4">
+          <p className="text-gray-600 font-body text-xs sm:text-sm md:text-base mb-2 sm:mb-4">
+            🎓 All plans include access to our growing library of resources • Cancel anytime
+          </p>
+          <p className="text-primary font-body text-xs sm:text-sm md:text-base font-semibold">
+            ⚡ Limited seats per batch • First come, first served
+          </p>
+        </div>
+      </div>
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} planKey={authModalPlanKey} />
     </section>
   );
 }

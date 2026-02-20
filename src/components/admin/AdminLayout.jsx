@@ -8,6 +8,7 @@ import {
   FolderTree,
   BookOpen,
   Package,
+  Tag,
   Menu,
   X,
   LogOut,
@@ -44,6 +45,7 @@ const navItems = [
     ],
   },
   { to: '/admin/packages', end: false, label: 'Packages', icon: Package },
+  { to: '/admin/promo-codes', end: false, label: 'Promo Codes', icon: Tag },
 ];
 
 export default function AdminLayout() {

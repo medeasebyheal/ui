@@ -1,46 +1,53 @@
-import { Check, X } from 'lucide-react'
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Check, X } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import AuthModal from './AuthModal';
 
-function Plan() {
-  const plans = [
+export const PLAN_DATA = [
     {
+      planKey: 'free-trial',
       name: "Free Trial",
       price: "0",
+      originalPrice: null,
+      promoPrice: null,
       duration: "7 Days",
       description: "Try before you commit",
       badge: "STARTER",
       features: [
-        { name: "Basic MCQ Access", available: true },
+        { name: "High-Yield MCQ Quizzes", available: true },
         { name: "Limited OSPE Practice", available: true },
         { name: "Community Support", available: true },
-        { name: "Live Classes", available: false },
+        { name: "Live Zoom Classes", available: false },
         { name: "Recorded Lectures", available: false },
-        { name: "1-on-1 Mentorship", available: false },
-        { name: "Full Resources Access", available: false },
-        { name: "EaseGPT Access", available: false },
+        { name: "Books, Slides & Past Papers", available: false },
       ],
       highlighted: false
     },
     {
+      planKey: 'half-year',
       name: "Half Year",
-      price: "4999",
+      price: "2250",
+      originalPrice: "3000",
       duration: "6 Months",
-      description: "Perfect for semester prep",
+      description: "Part 1 or Part 2 per year",
       badge: "POPULAR",
       features: [
         { name: "Full MCQ Database", available: true },
         { name: "Complete OSPE Practice", available: true },
         { name: "Live Zoom Classes", available: true },
         { name: "Recorded Lectures", available: true },
-        { name: "Books & Past Papers", available: true },
-        { name: "Priority Support", available: true },
-        { name: "1-on-1 Mentorship", available: false },
-        { name: "EaseGPT Access", available: false },
+        { name: "Books, Slides & Past Papers", available: true },
+        { name: "MS 1–3 Part 1 & 2 modules", available: true },
+        { name: "EaseGPT", available: true },
       ],
       highlighted: true
     },
     {
+      planKey: 'full-year',
       name: "Full Year",
-      price: "8999",
+      price: "3750",
+      originalPrice: "4500",
       duration: "12 Months",
       description: "Complete year coverage",
       badge: "BEST VALUE",
@@ -49,32 +56,55 @@ function Plan() {
         { name: "Complete OSPE Practice", available: true },
         { name: "Live Zoom Classes", available: true },
         { name: "Recorded Lectures", available: true },
-        { name: "Books & Past Papers", available: true },
+        { name: "Books, Slides & Past Papers", available: true },
+        { name: "All MS 1, 2 & 3 modules", available: true },
         { name: "Priority Support", available: true },
-        { name: "Monthly Mentorship", available: true },
-        { name: "EaseGPT Beta Access", available: true },
+        { name: "EaseGPT", available: true },
       ],
       highlighted: false
     },
     {
+      planKey: 'master-proff',
       name: "Master Proff",
-      price: "14999",
-      duration: "18 Months",
-      description: "Ultimate proff guarantee",
+      price: "—",
+      originalPrice: null,
+      promoPrice: null,
+      duration: "MS 1",
+      description: "Papers 1–4",
       badge: "PREMIUM",
       features: [
+        { name: "Paper 1, 2, 3 & 4", available: true },
         { name: "Full MCQ Database", available: true },
         { name: "Complete OSPE Practice", available: true },
-        { name: "Unlimited Live Classes", available: true },
+        { name: "Unlimited Live Zoom Classes", available: true },
         { name: "All Recorded Lectures", available: true },
         { name: "Premium Resources", available: true },
         { name: "24/7 Priority Support", available: true },
-        { name: "Weekly 1-on-1 Sessions", available: true },
         { name: "EaseGPT Full Access", available: true },
       ],
       highlighted: false
     }
   ];
+
+function Plan() {
+  const plans = PLAN_DATA;
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalPlanKey, setAuthModalPlanKey] = useState(null);
+
+  const handleBuyNow = (plan) => {
+    if (plan.planKey === 'free-trial') {
+      navigate('/register');
+      return;
+    }
+    if (user) {
+      navigate(`/checkout?plan=${plan.planKey}`);
+    } else {
+      setAuthModalPlanKey(plan.planKey);
+      setAuthModalOpen(true);
+    }
+  };
 
   return (
     <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gradient-to-br from-white via-primary/5 to-white overflow-hidden">
@@ -97,19 +127,19 @@ function Plan() {
         </div>
 
         {/* Desktop Grid - 4 columns on xl+ screens */}
-        <div className="hidden xl:grid xl:grid-cols-4 gap-6 xl:gap-8 pt-8">
+        <div className="hidden xl:grid xl:grid-cols-4 gap-6 xl:gap-8 pt-4">
           {plans.map((plan, index) => (
-            <PlanCard key={index} plan={plan} />
+            <PlanCard key={index} plan={plan} onBuyNow={handleBuyNow} />
           ))}
         </div>
 
         {/* Tablet/iPad Horizontal Scroll - Visible on md to xl screens */}
-        <div className="hidden md:block xl:hidden relative pt-10">
+        <div className="hidden md:block xl:hidden relative pt-6">
           <div className="overflow-x-auto">
             <div className="flex gap-6 pb-6 px-4 pt-6">
               {plans.map((plan, index) => (
                 <div key={index} className="flex-shrink-0 w-[340px] lg:w-[380px]">
-                  <PlanCard plan={plan} />
+                  <PlanCard plan={plan} onBuyNow={handleBuyNow} />
                 </div>
               ))}
             </div>
@@ -129,11 +159,11 @@ function Plan() {
         </div>
 
         {/* Mobile Carousel - Visible only on small screens */}
-        <div className="md:hidden relative px-2 pt-8">
+        <div className="md:hidden relative px-2 pt-6">
           <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-6 -mx-2 px-2">
             {plans.map((plan, index) => (
               <div key={index} className="snap-center flex-shrink-0 w-[90vw] max-w-[380px] pt-4">
-                <PlanCard plan={plan} />
+                <PlanCard plan={plan} onBuyNow={handleBuyNow} />
               </div>
             ))}
           </div>
@@ -161,11 +191,13 @@ function Plan() {
           </p>
         </div>
       </div>
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} planKey={authModalPlanKey} />
     </section>
   )
 }
 
-function PlanCard({ plan }) {
+export function PlanCard({ plan, ctaText, ctaTo, isLink = false, onBuyNow }) {
+  const displayPrice = plan.price;
   return (
     <div className={`relative rounded-3xl p-6 sm:p-8 transition-all duration-300 h-full flex flex-col ${
       plan.highlighted 
@@ -197,19 +229,24 @@ function PlanCard({ plan }) {
 
       {/* Price */}
       <div className="mb-6">
-        <div className="flex items-baseline gap-2">
+        {plan.originalPrice && (
+          <p className={`text-sm mb-0.5 line-through ${plan.highlighted ? 'text-white/70' : 'text-gray-400'}`}>
+            ₨{plan.originalPrice}
+          </p>
+        )}
+        <div className="flex items-baseline gap-2 flex-wrap">
           <span className={`text-4xl sm:text-5xl font-heading font-bold ${
             plan.highlighted ? 'text-white' : 'text-gray-900'
           }`}>
-            {plan.price === "0" ? "Free" : `₨${plan.price}`}
+            {displayPrice === "0" ? "Free" : ["—", "Contact", "TBD"].includes(displayPrice) ? displayPrice : `₨${displayPrice}`}
           </span>
-          {plan.price !== "0" && (
+          {displayPrice !== "0" && !["—", "Contact", "TBD"].includes(displayPrice) && (
             <span className={`text-sm ${plan.highlighted ? 'text-white/80' : 'text-gray-500'}`}>
               /{plan.duration}
             </span>
           )}
         </div>
-        {plan.price === "0" && (
+        {(plan.price === "0" || displayPrice === "—") && plan.duration && (
           <p className={`text-sm mt-1 ${plan.highlighted ? 'text-white/80' : 'text-gray-500'}`}>
             {plan.duration}
           </p>
@@ -217,13 +254,38 @@ function PlanCard({ plan }) {
       </div>
 
       {/* CTA Button */}
-      <button className={`w-full py-3 rounded-lg font-heading font-semibold text-base mb-6 transition-all duration-300 transform hover:scale-105 ${
-        plan.highlighted 
-          ? 'bg-white text-primary hover:bg-gray-50 shadow-lg' 
-          : 'bg-gradient-to-r from-primary to-primary/90 text-white hover:shadow-lg'
-      }`}>
-        {plan.price === "0" ? "Start Free Trial" : "Get Started"}
-      </button>
+      {onBuyNow ? (
+        <button
+          type="button"
+          onClick={() => onBuyNow(plan)}
+          className={`w-full py-3 rounded-lg font-heading font-semibold text-base mb-6 transition-all duration-300 transform hover:scale-105 ${
+            plan.highlighted
+              ? 'bg-white text-primary hover:bg-gray-50 shadow-lg'
+              : 'bg-gradient-to-r from-primary to-primary/90 text-white hover:shadow-lg'
+          }`}
+        >
+          {plan.price === "0" ? "Start Free Trial" : "Buy Now"}
+        </button>
+      ) : isLink && ctaTo ? (
+        <Link
+          to={ctaTo}
+          className={`block w-full py-3 rounded-lg font-heading font-semibold text-base mb-6 transition-all duration-300 transform hover:scale-105 text-center ${
+            plan.highlighted
+              ? 'bg-white text-primary hover:bg-gray-50 shadow-lg'
+              : 'bg-gradient-to-r from-primary to-primary/90 text-white hover:shadow-lg'
+          }`}
+        >
+          {ctaText || (plan.price === "0" ? "Start Free Trial" : "Buy Now")}
+        </Link>
+      ) : (
+        <button className={`w-full py-3 rounded-lg font-heading font-semibold text-base mb-6 transition-all duration-300 transform hover:scale-105 ${
+          plan.highlighted 
+            ? 'bg-white text-primary hover:bg-gray-50 shadow-lg' 
+            : 'bg-gradient-to-r from-primary to-primary/90 text-white hover:shadow-lg'
+        }`}>
+          {plan.price === "0" ? "Start Free Trial" : "Buy Now"}
+        </button>
+      )}
 
       {/* Features List */}
       <div className="flex-grow">
