@@ -4,18 +4,21 @@ import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import Modal from '../../../components/admin/Modal';
 import { ModuleForm } from '../../../components/admin/ResourceForms';
-import { Layers, Pencil, Trash2 } from 'lucide-react';
+import { Layers, Pencil, Trash2, Plus } from 'lucide-react';
 
 export default function ModulesList() {
   const [modules, setModules] = useState([]);
+  const [years, setYears] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [formOpen, setFormOpen] = useState(null);
+  const [addFormOpen, setAddFormOpen] = useState(false);
   const [yearFilter, setYearFilter] = useState('');
 
   const load = () => api.get('/admin/modules').then(({ data }) => setModules(data)).catch(() => setModules([]));
+  const loadYears = () => api.get('/admin/years').then(({ data }) => setYears(data || [])).catch(() => setYears([]));
 
-  const years = useMemo(() => {
+  const yearsFromModules = useMemo(() => {
     const seen = new Map();
     modules.forEach((mod) => {
       const y = mod.year;
@@ -27,6 +30,8 @@ export default function ModulesList() {
     return Array.from(seen.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [modules]);
 
+  const yearsForFilter = years.length > 0 ? [...years].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) : yearsFromModules;
+
   const filteredModules = useMemo(() => {
     if (!yearFilter) return modules;
     return modules.filter((mod) => {
@@ -36,7 +41,7 @@ export default function ModulesList() {
   }, [modules, yearFilter]);
 
   useEffect(() => {
-    load().finally(() => setLoading(false));
+    Promise.all([load(), loadYears()]).finally(() => setLoading(false));
   }, []);
 
   const handleDelete = async (id) => {
@@ -61,21 +66,30 @@ export default function ModulesList() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-heading font-bold text-gray-900">Modules</h1>
-          <p className="text-sm text-gray-500 mt-1">All modules across years. Open a module to manage subjects and topics.</p>
+          <p className="text-sm text-gray-500 mt-1">All modules across years. Add, edit, or open a module to manage subjects and topics.</p>
         </div>
-        <label className="flex items-center gap-2 text-sm text-gray-600">
-          Sort by year
-          <select
-            value={yearFilter}
-            onChange={(e) => setYearFilter(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 bg-white focus:ring-2 focus:ring-primary focus:border-primary min-w-[10rem]"
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setAddFormOpen(true)}
+            className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl font-medium shadow-sm hover:shadow transition-shadow"
           >
-            <option value="">All years</option>
-            {years.map((y) => (
-              <option key={y._id} value={y._id}>{y.name}</option>
-            ))}
-          </select>
-        </label>
+            <Plus className="w-5 h-5" /> Add module
+          </button>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            Filter by year
+            <select
+              value={yearFilter}
+              onChange={(e) => setYearFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 bg-white focus:ring-2 focus:ring-primary focus:border-primary min-w-[10rem]"
+            >
+              <option value="">All years</option>
+              {yearsForFilter.map((y) => (
+                <option key={y._id} value={y._id}>{y.name}</option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
 
       {/* Desktop: table listing */}
@@ -149,14 +163,20 @@ export default function ModulesList() {
               key={mod._id}
               className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
             >
-              <Link to={yearId ? `/admin/resources/years/${yearId}/modules/${mod._id}` : '#'} className="block p-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Layers className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="font-heading font-semibold text-gray-900 group-hover:text-primary transition-colors">{mod.name}</h2>
-                    <p className="text-xs text-gray-500">{mod.year?.name ? `Year: ${mod.year.name}` : `Order: ${mod.order}`}</p>
+              <Link to={yearId ? `/admin/resources/years/${yearId}/modules/${mod._id}` : '#'} className="block">
+                <div className="h-24 bg-teal-50 flex items-center justify-center overflow-hidden">
+                  {mod.imageUrl ? (
+                    <img src={mod.imageUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <Layers className="w-8 h-8 text-primary/50" />
+                  )}
+                </div>
+                <div className="p-5">
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <h2 className="font-heading font-semibold text-gray-900 group-hover:text-primary transition-colors">{mod.name}</h2>
+                      <p className="text-xs text-gray-500">{mod.year?.name ? `Year: ${mod.year.name}` : `Order: ${mod.order}`}</p>
+                    </div>
                   </div>
                 </div>
               </Link>
@@ -210,10 +230,19 @@ export default function ModulesList() {
         <ModuleForm
           yearId={formOpen.year?._id || formOpen.year}
           module={formOpen}
-          onSave={load}
+          onSave={() => { load(); loadYears(); }}
           onClose={() => setFormOpen(null)}
         />
       )}
+
+      {addFormOpen && (
+        <AddModuleForm
+          years={years}
+          onSave={() => { load(); loadYears(); setAddFormOpen(false); }}
+          onClose={() => setAddFormOpen(false)}
+        />
+      )}
+
       {deleteConfirm && (
         <Modal open onClose={() => setDeleteConfirm(null)} title="Delete module">
           <p className="text-gray-600 mb-4">Delete &quot;{deleteConfirm.name}&quot;? This will remove all subjects, topics and content under it.</p>
@@ -224,5 +253,100 @@ export default function ModulesList() {
         </Modal>
       )}
     </>
+  );
+}
+
+function AddModuleForm({ years, onSave, onClose }) {
+  const [yearId, setYearId] = useState('');
+  const [name, setName] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [order, setOrder] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!yearId) {
+      setError('Please select a year.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.post(`/admin/years/${yearId}/modules`, {
+        name: name.trim(),
+        order: Number(order) || 1,
+        imageUrl: imageUrl.trim() || undefined,
+      });
+      onSave?.();
+      onClose?.();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create module');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const sortedYears = [...(years || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  return (
+    <Modal open onClose={onClose} title="Add module">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Year *</label>
+          <select
+            value={yearId}
+            onChange={(e) => setYearId(e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+          >
+            <option value="">Select year</option>
+            {sortedYears.map((y) => (
+              <option key={y._id} value={y._id}>{y.name}</option>
+            ))}
+          </select>
+          {sortedYears.length === 0 && (
+            <p className="text-xs text-gray-500 mt-1">No years yet. Add years under Resources → Years first.</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            placeholder="e.g. Foundation Module"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+          <input
+            type="url"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            placeholder="https://..."
+          />
+          <p className="text-xs text-gray-500 mt-1">Optional. Used on the public Modules page.</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
+          <input
+            type="number"
+            value={order}
+            onChange={(e) => setOrder(Number(e.target.value))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+          />
+        </div>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <div className="flex gap-2 justify-end">
+          <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
+          <button type="submit" disabled={saving || !yearId} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

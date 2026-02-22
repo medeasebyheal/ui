@@ -68,14 +68,20 @@ export default function YearModules() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {modules.map((mod) => (
           <div key={mod._id} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
-            <Link to={`/admin/resources/years/${yearId}/modules/${mod._id}`} className="block p-5">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h2 className="font-heading font-semibold text-gray-900 group-hover:text-primary transition-colors">{mod.name}</h2>
-                  <p className="text-xs text-gray-500">Order: {mod.order}</p>
+            <Link to={`/admin/resources/years/${yearId}/modules/${mod._id}`} className="block">
+              <div className="h-24 bg-teal-50 flex items-center justify-center overflow-hidden">
+                {mod.imageUrl ? (
+                  <img src={mod.imageUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <BookOpen className="w-8 h-8 text-primary/50" />
+                )}
+              </div>
+              <div className="p-5">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <h2 className="font-heading font-semibold text-gray-900 group-hover:text-primary transition-colors">{mod.name}</h2>
+                    <p className="text-xs text-gray-500">Order: {mod.order}</p>
+                  </div>
                 </div>
               </div>
             </Link>

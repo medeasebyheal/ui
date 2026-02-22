@@ -1,10 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Package, User, CreditCard, Tag, CheckCircle, Download } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
-import { PLAN_DATA } from '../components/Plan';
-import { MODULES_BY_YEAR, MASTER_PROFF_MODULES } from '../constants/modulesByYear';
 
 const PLAN_KEYS = ['half-year', 'full-year', 'master-proff'];
 
@@ -34,9 +32,12 @@ export default function CheckoutPage() {
   const [receipt, setReceipt] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
 
-  const plan = PLAN_DATA.find((p) => p.planKey === planKey);
-
   const MAX_RECEIPT_SIZE = 5 * 1024 * 1024; // 5MB
+
+  const yearsFromPackages = useMemo(() => {
+    const ys = [...new Set(packages.filter((p) => p.year != null).map((p) => p.year))];
+    return ys.sort((a, b) => a - b);
+  }, [packages]);
 
   const validate = () => {
     const errs = {};
@@ -62,6 +63,12 @@ export default function CheckoutPage() {
     api.get('/packages').then(({ data }) => setPackages(data)).catch(() => setPackages([])).finally(() => setLoading(false));
   }, [user, planKey, navigate]);
 
+  useEffect(() => {
+    if (planKey !== 'master-proff' && yearsFromPackages.length > 0 && !yearsFromPackages.includes(year)) {
+      setYear(yearsFromPackages[0]);
+    }
+  }, [yearsFromPackages, year, planKey]);
+
   const resolvePackage = () => {
     if (planKey === 'master-proff') {
       return packages.find((p) => p.type === 'master_proff');
@@ -77,19 +84,19 @@ export default function CheckoutPage() {
   };
 
   const pkg = resolvePackage();
-  const basePrice = plan && plan.price !== '0' && !['—', 'Contact', 'TBD'].includes(plan.price)
-    ? Number(plan.price)
-    : pkg?.price ?? 0;
+  const basePrice = pkg?.price ?? 0;
   const finalPrice = promoApplied ? promoApplied.finalAmount : basePrice;
   const promoDiscount = promoApplied ? promoApplied.discount : 0;
 
-  const modulesList = () => {
-    if (planKey === 'master-proff') return MASTER_PROFF_MODULES;
-    const m = MODULES_BY_YEAR[year];
-    if (!m) return [];
-    if (planKey === 'half-year') return part === 1 ? m.part1 : m.part2;
-    return [...m.part1, ...m.part2];
-  };
+  const modulesList = useMemo(() => {
+    if (!pkg) return [];
+    if (pkg.moduleIds?.length) {
+      return pkg.moduleIds.map((m) => (typeof m === 'object' && m?.name ? m.name : String(m)));
+    }
+    if (pkg.proffPapers?.length) return pkg.proffPapers;
+    if (pkg.description) return pkg.description.split(',').map((s) => s.trim()).filter(Boolean);
+    return [];
+  }, [pkg]);
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) return;
@@ -132,11 +139,17 @@ export default function CheckoutPage() {
     try {
       const form = new FormData();
       form.append('packageId', pkg._id);
-      form.append('amount', finalPrice);
+      form.append('amount', String(finalPrice));
       if (promoApplied?.code) form.append('promoCode', promoApplied.code);
       form.append('receipt', receipt);
+      form.append('institution', academic.institution?.trim() ?? '');
+      form.append('college', academic.college?.trim() ?? '');
+      form.append('rollNumber', academic.rollNumber?.trim() ?? '');
+      form.append('batch', academic.batch?.trim() ?? '');
+      form.append('year', String(year));
+      form.append('part', String(part));
       const { data } = await api.post('/payments', form);
-      setSuccess({ payment: data, plan: plan?.name });
+      setSuccess({ payment: data, plan: pkg?.name });
       setReceipt(null);
       await refreshUser();
     } catch (err) {
@@ -147,8 +160,8 @@ export default function CheckoutPage() {
   };
 
   if (!user || !planKey) return null;
-  if (loading && !plan) return <p className="text-center py-12">Loading...</p>;
-  if (!plan && !loading) return null;
+  if (loading) return <p className="text-center py-12">Loading...</p>;
+  if (!loading && !PLAN_KEYS.includes(planKey)) return null;
 
   if (success) {
     return (
@@ -184,7 +197,7 @@ export default function CheckoutPage() {
               </h2>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-gray-700 font-medium">{plan?.name}</p>
+              <p className="text-gray-700 font-medium">{pkg?.name ?? (planKey === 'master-proff' ? 'Master Proff' : planKey === 'half-year' ? 'Half Year' : 'Full Year')}</p>
               {planKey !== 'master-proff' && (
                 <>
                   <div>
@@ -194,9 +207,11 @@ export default function CheckoutPage() {
                       onChange={(e) => setYear(Number(e.target.value))}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                     >
-                      {[1, 2, 3].map((y) => (
-                        <option key={y} value={y}>MS {y}</option>
-                      ))}
+                      {yearsFromPackages.length === 0 ? (
+                        [1, 2, 3].map((y) => <option key={y} value={y}>MS {y}</option>)
+                      ) : (
+                        yearsFromPackages.map((y) => <option key={y} value={y}>MS {y}</option>)
+                      )}
                     </select>
                   </div>
                   {planKey === 'half-year' && (
@@ -217,12 +232,16 @@ export default function CheckoutPage() {
               <div>
                 <p className="text-sm font-medium text-gray-700 mb-2">Modules included</p>
                 <ul className="space-y-1 text-sm text-gray-600">
-                  {modulesList().map((m) => (
-                    <li key={m} className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                      {m}
-                    </li>
-                  ))}
+                  {modulesList.length > 0 ? (
+                    modulesList.map((m, i) => (
+                      <li key={i} className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                        {m}
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-gray-500">No modules listed. Package: {pkg?.description || '—'}</li>
+                  )}
                 </ul>
               </div>
             </div>
@@ -354,7 +373,7 @@ export default function CheckoutPage() {
             <h3 className="font-heading font-semibold text-gray-900 mb-4">Order summary</h3>
             <div className="space-y-3 border-b border-gray-100 pb-4 mb-4">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">{plan?.name}</span>
+                <span className="text-gray-600">{pkg?.name ?? 'Package'}</span>
                 {promoDiscount > 0 ? (
                   <span className="text-gray-400 line-through">₨{basePrice}</span>
                 ) : (

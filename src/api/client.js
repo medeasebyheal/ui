@@ -21,6 +21,10 @@ function notifyLoader(show) {
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  // FormData must be sent as multipart; let browser set Content-Type with boundary
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
   if (config.skipLoader !== true) {
     pendingRequests += 1;
     if (pendingRequests === 1) notifyLoader(true);

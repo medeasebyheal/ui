@@ -18,6 +18,10 @@ import StudentProfile from './pages/student/Profile';
 import StudentResources from './pages/student/Resources';
 import StudentTopic from './pages/student/Topic';
 import StudentModuleOspes from './pages/student/ModuleOspes';
+import ModuleDetailPage from './pages/student/ModuleDetailPage';
+import SubjectDetailPage from './pages/student/SubjectDetailPage';
+import TopicDetailPage from './pages/student/TopicDetailPage';
+import TopicQuizPage from './pages/student/TopicQuizPage';
 import StudentOspeAttempt from './pages/student/OspeAttempt';
 import StudentPackages from './pages/student/Packages';
 import StudentPayments from './pages/student/Payments';
@@ -73,17 +77,21 @@ function App() {
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="checkout" element={<CheckoutPage />} />
+          </Route>
 
-            <Route path="student" element={<StudentRoute />}>
-              <Route index element={<StudentDashboard />} />
-              <Route path="profile" element={<StudentProfile />} />
-              <Route path="resources" element={<StudentResources />} />
-              <Route path="topics/:topicId" element={<StudentTopic />} />
-              <Route path="modules/:moduleId/ospes" element={<StudentModuleOspes />} />
-              <Route path="ospes/:ospeId" element={<StudentOspeAttempt />} />
-              <Route path="packages" element={<StudentPackages />} />
-              <Route path="payments" element={<StudentPayments />} />
-            </Route>
+          <Route path="student" element={<StudentRoute />}>
+            <Route index element={<StudentDashboard />} />
+            <Route path="profile" element={<StudentProfile />} />
+            <Route path="resources" element={<StudentResources />} />
+            <Route path="topics/:topicId" element={<StudentTopic />} />
+            <Route path="modules/:moduleId" element={<ModuleDetailPage />} />
+            <Route path="modules/:moduleId/subjects/:subjectId" element={<SubjectDetailPage />} />
+            <Route path="modules/:moduleId/subjects/:subjectId/topics/:topicId" element={<TopicDetailPage />} />
+            <Route path="modules/:moduleId/subjects/:subjectId/topics/:topicId/quiz" element={<TopicQuizPage />} />
+            <Route path="modules/:moduleId/ospes" element={<StudentModuleOspes />} />
+            <Route path="ospes/:ospeId" element={<StudentOspeAttempt />} />
+            <Route path="packages" element={<StudentPackages />} />
+            <Route path="payments" element={<StudentPayments />} />
           </Route>
 
           <Route path="admin" element={<AdminRoute />}>

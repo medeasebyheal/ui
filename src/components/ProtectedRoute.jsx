@@ -1,5 +1,6 @@
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import StudentLayout from './student/StudentLayout';
 import AdminLayout from './admin/AdminLayout';
 
 export function StudentRoute() {
@@ -8,7 +9,7 @@ export function StudentRoute() {
   if (loading) return <div className="flex justify-center items-center min-h-[40vh]"><p>Loading...</p></div>;
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
   if (user.role !== 'student') return <Navigate to={user.role === 'admin' ? '/admin' : '/'} replace />;
-  return <Outlet />;
+  return <StudentLayout />;
 }
 
 export function AdminRoute() {

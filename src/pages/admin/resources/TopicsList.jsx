@@ -4,23 +4,26 @@ import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import Modal from '../../../components/admin/Modal';
 import { TopicForm } from '../../../components/admin/ResourceForms';
-import { FileText, Pencil, Trash2, Search } from 'lucide-react';
+import { FileText, Pencil, Trash2, Search, Plus } from 'lucide-react';
 
 const PAGE_SIZE_OPTIONS = [5, 10, 25, 50];
 
 export default function TopicsList() {
   const [topics, setTopics] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [formOpen, setFormOpen] = useState(null);
+  const [addFormOpen, setAddFormOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [subjectFilter, setSubjectFilter] = useState('');
 
   const load = () => api.get('/admin/topics').then(({ data }) => setTopics(data)).catch(() => setTopics([]));
+  const loadSubjects = () => api.get('/admin/subjects').then(({ data }) => setSubjects(data || [])).catch(() => setSubjects([]));
 
-  const subjects = useMemo(() => {
+  const subjectsFromTopics = useMemo(() => {
     const seen = new Map();
     topics.forEach((t) => {
       const sub = t.subject;
@@ -32,8 +35,10 @@ export default function TopicsList() {
     return Array.from(seen.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [topics]);
 
+  const subjectsForFilter = subjects.length > 0 ? [...subjects].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) : subjectsFromTopics;
+
   useEffect(() => {
-    load().finally(() => setLoading(false));
+    Promise.all([load(), loadSubjects()]).finally(() => setLoading(false));
   }, []);
 
   const handleDelete = async (id) => {
@@ -91,18 +96,25 @@ export default function TopicsList() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-heading font-bold text-gray-900">Topics</h1>
-          <p className="text-sm text-gray-500 mt-1">All topics across subjects. Open a topic to manage MCQs and content.</p>
+          <p className="text-sm text-gray-500 mt-1">All topics across subjects. Add, edit, or open a topic to manage MCQs and content.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setAddFormOpen(true)}
+            className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl font-medium shadow-sm hover:shadow transition-shadow"
+          >
+            <Plus className="w-5 h-5" /> Add topic
+          </button>
           <label className="flex items-center gap-2 text-sm text-gray-600">
-            Sort by subject
+            Filter by subject
             <select
               value={subjectFilter}
               onChange={(e) => { setSubjectFilter(e.target.value); setPage(1); }}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 bg-white focus:ring-2 focus:ring-primary focus:border-primary min-w-[10rem]"
             >
               <option value="">All subjects</option>
-              {subjects.map((s) => (
+              {subjectsForFilter.map((s) => (
                 <option key={s._id} value={s._id}>{s.name}</option>
               ))}
             </select>
@@ -285,8 +297,12 @@ export default function TopicsList() {
         <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
           <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 font-medium">No topics yet</p>
-          <p className="text-sm text-gray-400 mt-1">Add subjects and topics from the hierarchy.</p>
-          <Link to="/admin/resources/hierarchy" className="mt-4 inline-block text-primary font-medium hover:underline">Go to hierarchy</Link>
+          <p className="text-sm text-gray-400 mt-1">Add subjects first, then add topics here or from the hierarchy.</p>
+          <button type="button" onClick={() => setAddFormOpen(true)} className="mt-4 text-primary font-medium hover:underline">
+            Add first topic
+          </button>
+          <span className="mx-2 text-gray-400">or</span>
+          <Link to="/admin/resources/hierarchy" className="text-primary font-medium hover:underline">Go to hierarchy</Link>
         </div>
       )}
 
@@ -302,10 +318,19 @@ export default function TopicsList() {
         <TopicForm
           subjectId={formOpen.subject?._id || formOpen.subject}
           topic={formOpen}
-          onSave={load}
+          onSave={() => { load(); loadSubjects(); }}
           onClose={() => setFormOpen(null)}
         />
       )}
+
+      {addFormOpen && (
+        <AddTopicForm
+          subjects={subjects}
+          onSave={() => { load(); loadSubjects(); setAddFormOpen(false); }}
+          onClose={() => setAddFormOpen(false)}
+        />
+      )}
+
       {deleteConfirm && (
         <Modal open onClose={() => setDeleteConfirm(null)} title="Delete topic">
           <p className="text-gray-600 mb-4">Delete &quot;{deleteConfirm.name}&quot;? This will remove all MCQs under it.</p>
@@ -316,5 +341,112 @@ export default function TopicsList() {
         </Modal>
       )}
     </>
+  );
+}
+
+function AddTopicForm({ subjects, onSave, onClose }) {
+  const [subjectId, setSubjectId] = useState('');
+  const [name, setName] = useState('');
+  const [order, setOrder] = useState(1);
+  const [videoUrl, setVideoUrl] = useState('');
+  const [content, setContent] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!subjectId) {
+      setError('Please select a subject.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.post(`/admin/subjects/${subjectId}/topics`, {
+        name: name.trim(),
+        order: Number(order) || 1,
+        videoUrl: videoUrl.trim() || undefined,
+        content: content.trim() || undefined,
+      });
+      onSave?.();
+      onClose?.();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create topic');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const sortedSubjects = [...(subjects || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  return (
+    <Modal open onClose={onClose} title="Add topic">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
+          <select
+            value={subjectId}
+            onChange={(e) => setSubjectId(e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+          >
+            <option value="">Select subject</option>
+            {sortedSubjects.map((s) => (
+              <option key={s._id} value={s._id}>
+                {s.name} {s.module?.name ? `(${s.module.name})` : ''}
+              </option>
+            ))}
+          </select>
+          {sortedSubjects.length === 0 && (
+            <p className="text-xs text-gray-500 mt-1">No subjects yet. Add subjects under Resources → Subjects first.</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            placeholder="e.g. Introduction to Anatomy"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
+          <input
+            type="number"
+            value={order}
+            onChange={(e) => setOrder(Number(e.target.value))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">YouTube video URL</label>
+          <input
+            type="url"
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            placeholder="https://youtube.com/..."
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Content (optional)</label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+          />
+        </div>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <div className="flex gap-2 justify-end">
+          <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
+          <button type="submit" disabled={saving || !subjectId} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

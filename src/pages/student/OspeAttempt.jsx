@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import api from '../../api/client';
+import { recordRecentView } from '../../utils/recentViews';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
 import {
   Check,
@@ -75,6 +76,18 @@ export default function StudentOspeAttempt() {
       .then(({ data }) => {
         setOspe(data);
         setTimerSeconds((data.timeLimit || 5) * 60);
+        if (data) {
+          recordRecentView({
+            type: 'ospe',
+            id: data._id,
+            name: data.name,
+            url: `/student/ospes/${data._id}`,
+            meta: 'Practice Exam',
+            icon: 'receipt_long',
+            iconBg: 'bg-blue-50 dark:bg-blue-900/30',
+            iconColor: 'text-blue-600',
+          });
+        }
       })
       .catch(() => setOspe(null))
       .finally(() => setLoading(false));

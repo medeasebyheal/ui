@@ -4,23 +4,26 @@ import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import Modal from '../../../components/admin/Modal';
 import { SubjectForm } from '../../../components/admin/ResourceForms';
-import { BookOpen, Pencil, Trash2, Search } from 'lucide-react';
+import { BookOpen, Pencil, Trash2, Search, Plus } from 'lucide-react';
 
 const PAGE_SIZE_OPTIONS = [5, 10, 25, 50];
 
 export default function SubjectsList() {
   const [subjects, setSubjects] = useState([]);
+  const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [formOpen, setFormOpen] = useState(null);
+  const [addFormOpen, setAddFormOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [moduleFilter, setModuleFilter] = useState('');
 
   const load = () => api.get('/admin/subjects').then(({ data }) => setSubjects(data)).catch(() => setSubjects([]));
+  const loadModules = () => api.get('/admin/modules').then(({ data }) => setModules(data || [])).catch(() => setModules([]));
 
-  const modules = useMemo(() => {
+  const modulesFromSubjects = useMemo(() => {
     const seen = new Map();
     subjects.forEach((s) => {
       const mod = s.module;
@@ -32,8 +35,10 @@ export default function SubjectsList() {
     return Array.from(seen.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [subjects]);
 
+  const modulesForFilter = modules.length > 0 ? [...modules].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) : modulesFromSubjects;
+
   useEffect(() => {
-    load().finally(() => setLoading(false));
+    Promise.all([load(), loadModules()]).finally(() => setLoading(false));
   }, []);
 
   const handleDelete = async (id) => {
@@ -90,9 +95,16 @@ export default function SubjectsList() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-heading font-bold text-gray-900">Subjects</h1>
-          <p className="text-sm text-gray-500 mt-1">All subjects across modules. Open a subject to manage topics and MCQs.</p>
+          <p className="text-sm text-gray-500 mt-1">All subjects across modules. Add, edit, or open a subject to manage topics and MCQs.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setAddFormOpen(true)}
+            className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl font-medium shadow-sm hover:shadow transition-shadow"
+          >
+            <Plus className="w-5 h-5" /> Add subject
+          </button>
           <label className="flex items-center gap-2 text-sm text-gray-600">
             Sort by module
             <select
@@ -101,7 +113,7 @@ export default function SubjectsList() {
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 bg-white focus:ring-2 focus:ring-primary focus:border-primary min-w-[10rem]"
             >
               <option value="">All modules</option>
-              {modules.map((m) => (
+              {modulesForFilter.map((m) => (
                 <option key={m._id} value={m._id}>{m.name}</option>
               ))}
             </select>
@@ -284,8 +296,12 @@ export default function SubjectsList() {
         <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
           <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 font-medium">No subjects yet</p>
-          <p className="text-sm text-gray-400 mt-1">Add modules and subjects from the hierarchy.</p>
-          <Link to="/admin/resources/hierarchy" className="mt-4 inline-block text-primary font-medium hover:underline">Go to hierarchy</Link>
+          <p className="text-sm text-gray-400 mt-1">Add modules first, then add subjects here or from the hierarchy.</p>
+          <button type="button" onClick={() => setAddFormOpen(true)} className="mt-4 text-primary font-medium hover:underline">
+            Add first subject
+          </button>
+          <span className="mx-2 text-gray-400">or</span>
+          <Link to="/admin/resources/hierarchy" className="text-primary font-medium hover:underline">Go to hierarchy</Link>
         </div>
       )}
 
@@ -301,10 +317,19 @@ export default function SubjectsList() {
         <SubjectForm
           moduleId={formOpen.module?._id || formOpen.module}
           subject={formOpen}
-          onSave={load}
+          onSave={() => { load(); loadModules(); }}
           onClose={() => setFormOpen(null)}
         />
       )}
+
+      {addFormOpen && (
+        <AddSubjectForm
+          modules={modules}
+          onSave={() => { load(); loadModules(); setAddFormOpen(false); }}
+          onClose={() => setAddFormOpen(false)}
+        />
+      )}
+
       {deleteConfirm && (
         <Modal open onClose={() => setDeleteConfirm(null)} title="Delete subject">
           <p className="text-gray-600 mb-4">Delete &quot;{deleteConfirm.name}&quot;? This will remove all topics and MCQs under it.</p>
@@ -315,5 +340,89 @@ export default function SubjectsList() {
         </Modal>
       )}
     </>
+  );
+}
+
+function AddSubjectForm({ modules, onSave, onClose }) {
+  const [moduleId, setModuleId] = useState('');
+  const [name, setName] = useState('');
+  const [order, setOrder] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!moduleId) {
+      setError('Please select a module.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.post(`/admin/modules/${moduleId}/subjects`, {
+        name: name.trim(),
+        order: Number(order) || 1,
+      });
+      onSave?.();
+      onClose?.();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create subject');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const sortedModules = [...(modules || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  return (
+    <Modal open onClose={onClose} title="Add subject">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Module *</label>
+          <select
+            value={moduleId}
+            onChange={(e) => setModuleId(e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+          >
+            <option value="">Select module</option>
+            {sortedModules.map((m) => (
+              <option key={m._id} value={m._id}>
+                {m.name} {m.year?.name ? `(${m.year.name})` : ''}
+              </option>
+            ))}
+          </select>
+          {sortedModules.length === 0 && (
+            <p className="text-xs text-gray-500 mt-1">No modules yet. Add modules under Resources → Modules first.</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            placeholder="e.g. Anatomy"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
+          <input
+            type="number"
+            value={order}
+            onChange={(e) => setOrder(Number(e.target.value))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+          />
+        </div>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <div className="flex gap-2 justify-end">
+          <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
+          <button type="submit" disabled={saving || !moduleId} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

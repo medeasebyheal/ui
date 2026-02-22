@@ -105,13 +105,15 @@ export function YearForm({ year, onSave, onClose, programId: programIdProp }) {
 export function ModuleForm({ yearId, module, onSave, onClose }) {
   const [name, setName] = useState(module?.name ?? '');
   const [order, setOrder] = useState(module?.order ?? 1);
+  const [imageUrl, setImageUrl] = useState(module?.imageUrl ?? '');
   const [saving, setSaving] = useState(false);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      if (module?._id) await api.put(`/admin/modules/${module._id}`, { name, order });
-      else await api.post(`/admin/years/${yearId}/modules`, { name, order });
+      const payload = { name, order, imageUrl: imageUrl.trim() || undefined };
+      if (module?._id) await api.put(`/admin/modules/${module._id}`, payload);
+      else await api.post(`/admin/years/${yearId}/modules`, payload);
       onSave?.();
       onClose?.();
     } catch (_) {}
@@ -123,6 +125,11 @@ export function ModuleForm({ yearId, module, onSave, onClose }) {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
           <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" placeholder="e.g. Foundation Module" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+          <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="https://..." />
+          <p className="text-xs text-gray-500 mt-1">Optional. Used on the public Modules page.</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
