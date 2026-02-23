@@ -1,14 +1,56 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ChevronDown, LayoutDashboard, LogOut } from 'lucide-react';
+import api from '../api/client';
 
 function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [modulesDropdownOpen, setModulesDropdownOpen] = useState(false);
+  const [years, setYears] = useState([]);
+  const [modulesByYear, setModulesByYear] = useState({});
   const profileRef = useRef(null);
+  const modulesRef = useRef(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    api.get('/content/years').then(({ data }) => setYears(data)).catch(() => setYears([]));
+  }, []);
+
+  useEffect(() => {
+    if (!years.length) return;
+    Promise.all(
+      years.map((y) =>
+        api.get(`/content/years/${y._id}/modules`).then((r) => ({ yearId: y._id, yearName: y.name, modules: r.data }))
+      )
+    ).then((results) => {
+      const next = {};
+      results.forEach(({ yearId, yearName, modules }) => {
+        next[yearId] = (modules || []).map((m) => ({ ...m, yearId, yearName }));
+      });
+      setModulesByYear(next);
+    });
+  }, [years]);
+
+  const allModules = useMemo(() => Object.values(modulesByYear).flat(), [modulesByYear]);
+
+  const allowedModuleIds = useMemo(() => {
+    const ids = new Set();
+    if (!user?.packages?.length) return ids;
+    user.packages.forEach((up) => {
+      const pkg = up.package;
+      if (pkg?.moduleIds?.length) {
+        pkg.moduleIds.forEach((id) => {
+          const idStr =
+            typeof id === 'object' && id != null && (id._id || id.toString) ? String(id._id || id) : String(id);
+          if (idStr && idStr !== 'undefined') ids.add(idStr);
+        });
+      }
+    });
+    return ids;
+  }, [user?.packages]);
 
   const displayName = user?.name || (user?.email && user.email.split('@')[0]) || 'User';
   const initial = (displayName || 'U').charAt(0).toUpperCase();
@@ -48,12 +90,62 @@ function Navbar() {
       >
         Packages
       </Link>
-      <Link
-        to="/modules"
-        className="text-gray-700 font-body text-sm lg:text-base hover:text-gray-900 transition-colors"
+      <div
+        className="relative"
+        ref={modulesRef}
+        onMouseEnter={() => setModulesDropdownOpen(true)}
+        onMouseLeave={() => setModulesDropdownOpen(false)}
       >
-        Modules
-      </Link>
+        <button
+          type="button"
+          className="text-gray-700 font-body text-sm lg:text-base hover:text-gray-900 transition-colors flex items-center gap-1"
+        >
+          Modules
+          <ChevronDown className={`w-4 h-4 transition-transform ${modulesDropdownOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {modulesDropdownOpen && (
+          <div className="absolute left-0 top-full pt-1 py-1 min-w-[280px] max-h-[70vh] overflow-y-auto rounded-lg bg-white border border-gray-200 shadow-lg z-50">
+            <Link
+              to="/modules"
+              onClick={() => setModulesDropdownOpen(false)}
+              className="block px-4 py-2.5 text-sm font-medium text-primary hover:bg-gray-50 border-b border-gray-100"
+            >
+              View all modules →
+            </Link>
+            {allModules.length === 0 ? (
+              <p className="px-4 py-3 text-sm text-gray-500">Loading...</p>
+            ) : (
+              allModules.map((mod) => {
+                const modIdStr = mod._id != null ? String(mod._id) : '';
+                const hasAccess = user && modIdStr && allowedModuleIds.has(modIdStr);
+                const to = hasAccess ? `/student/modules/${mod._id}` : '/packages';
+                return (
+                  <Link
+                    key={mod._id}
+                    to={to}
+                    onClick={() => setModulesDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <span className="text-gray-400 flex-shrink-0">
+                      {hasAccess ? (
+                        <span className="material-symbols-outlined text-lg text-primary">lock_open</span>
+                      ) : (
+                        <span className="material-symbols-outlined text-lg">lock</span>
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <span className="font-medium block truncate">{mod.name}</span>
+                      {mod.yearName && (
+                        <span className="text-xs text-gray-500">{mod.yearName}</span>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })
+            )}
+          </div>
+        )}
+      </div>
       <Link
         to="/proff"
         className="text-gray-700 font-body text-sm lg:text-base hover:text-gray-900 transition-colors"
@@ -94,8 +186,12 @@ function Navbar() {
                 onClick={() => setProfileOpen((o) => !o)}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
               >
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
-                  {initial}
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm overflow-hidden">
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    initial
+                  )}
                 </div>
                 <span className="text-sm font-medium text-gray-700">Hi, {displayName}</span>
                 <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
@@ -156,29 +252,59 @@ function Navbar() {
 
       {isMobileMenuOpen && (
         <div className="md:hidden container mx-auto px-4 sm:px-6 lg:px-8 mt-2 pb-3 space-y-3 border-t border-gray-200 pt-3">
-          {[
-            { to: '/', label: 'Home' },
-            { to: '/about', label: 'About Us' },
-            { to: '/packages', label: 'Packages' },
-            { to: '/modules', label: 'Modules' },
-            { to: '/proff', label: 'Proff' },
-            { to: '/contact', label: 'Contact Us' },
-          ].map(({ to, label }) => (
-            <Link
-              key={to}
-              to={to}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block text-gray-700 font-body hover:text-primary transition-colors py-2 px-4 rounded-lg hover:bg-gray-50"
-            >
-              {label}
-            </Link>
-          ))}
+          <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="block text-gray-700 font-body hover:text-primary transition-colors py-2 px-4 rounded-lg hover:bg-gray-50">
+            Home
+          </Link>
+          <Link to="/about" onClick={() => setIsMobileMenuOpen(false)} className="block text-gray-700 font-body hover:text-primary transition-colors py-2 px-4 rounded-lg hover:bg-gray-50">
+            About Us
+          </Link>
+          <Link to="/packages" onClick={() => setIsMobileMenuOpen(false)} className="block text-gray-700 font-body hover:text-primary transition-colors py-2 px-4 rounded-lg hover:bg-gray-50">
+            Packages
+          </Link>
+          <Link to="/modules" onClick={() => setIsMobileMenuOpen(false)} className="block text-gray-700 font-body hover:text-primary transition-colors py-2 px-4 rounded-lg hover:bg-gray-50">
+            Modules
+          </Link>
+          {allModules.length > 0 && (
+            <div className="pl-4 space-y-1 border-l-2 border-gray-100">
+              {allModules.map((mod) => {
+                const modIdStr = mod._id != null ? String(mod._id) : '';
+                const hasAccess = user && modIdStr && allowedModuleIds.has(modIdStr);
+                const to = hasAccess ? `/student/modules/${mod._id}` : '/packages';
+                return (
+                  <Link
+                    key={mod._id}
+                    to={to}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-2 py-2 px-3 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg"
+                  >
+                    {hasAccess ? (
+                      <span className="material-symbols-outlined text-base text-primary">lock_open</span>
+                    ) : (
+                      <span className="material-symbols-outlined text-base text-gray-400">lock</span>
+                    )}
+                    <span className="truncate">{mod.name}</span>
+                    {mod.yearName && <span className="text-xs text-gray-400 flex-shrink-0">{mod.yearName}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+          <Link to="/proff" onClick={() => setIsMobileMenuOpen(false)} className="block text-gray-700 font-body hover:text-primary transition-colors py-2 px-4 rounded-lg hover:bg-gray-50">
+            Proff
+          </Link>
+          <Link to="/contact" onClick={() => setIsMobileMenuOpen(false)} className="block text-gray-700 font-body hover:text-primary transition-colors py-2 px-4 rounded-lg hover:bg-gray-50">
+            Contact Us
+          </Link>
           <div className="flex flex-col space-y-2 pt-2">
             {user ? (
               <div className="px-4 py-2 border-t border-gray-100 pt-3">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
-                    {initial}
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm overflow-hidden">
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      initial
+                    )}
                   </div>
                   <span className="text-sm font-medium text-gray-700">Hi, {displayName}</span>
                 </div>

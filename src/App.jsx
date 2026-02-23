@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Layout from './components/Layout';
+import AuthLayout from './components/AuthLayout';
 import { StudentRoute, AdminRoute } from './components/ProtectedRoute';
 
 import Home from './pages/Home';
@@ -23,7 +24,6 @@ import SubjectDetailPage from './pages/student/SubjectDetailPage';
 import TopicDetailPage from './pages/student/TopicDetailPage';
 import TopicQuizPage from './pages/student/TopicQuizPage';
 import StudentOspeAttempt from './pages/student/OspeAttempt';
-import StudentPackages from './pages/student/Packages';
 import StudentPayments from './pages/student/Payments';
 
 import AdminDashboard from './pages/admin/Dashboard';
@@ -74,9 +74,12 @@ function App() {
             <Route path="modules" element={<ModulesPage />} />
             <Route path="proff" element={<ProffPage />} />
             <Route path="contact" element={<ContactPage />} />
+            <Route path="checkout" element={<CheckoutPage />} />
+          </Route>
+
+          <Route element={<AuthLayout />}>
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
-            <Route path="checkout" element={<CheckoutPage />} />
           </Route>
 
           <Route path="student" element={<StudentRoute />}>
@@ -90,7 +93,6 @@ function App() {
             <Route path="modules/:moduleId/subjects/:subjectId/topics/:topicId/quiz" element={<TopicQuizPage />} />
             <Route path="modules/:moduleId/ospes" element={<StudentModuleOspes />} />
             <Route path="ospes/:ospeId" element={<StudentOspeAttempt />} />
-            <Route path="packages" element={<StudentPackages />} />
             <Route path="payments" element={<StudentPayments />} />
           </Route>
 

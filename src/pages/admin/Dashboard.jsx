@@ -3,39 +3,287 @@ import { Link } from 'react-router-dom';
 import api from '../../api/client';
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState(null);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/admin/dashboard').then(({ data }) => setStats(data)).catch(() => setStats(null));
+    api
+      .get('/admin/dashboard')
+      .then(({ data: res }) => setData(res))
+      .catch(() => setData(null))
+      .finally(() => setLoading(false));
   }, []);
 
+  const stats = data || {};
+  const recentUsers = data?.recentUsers || [];
+  const recentPayments = data?.recentPayments || [];
+  const programCount = stats.programCount ?? 0;
+  const yearCount = stats.yearCount ?? 0;
+  const moduleCount = stats.moduleCount ?? 0;
+  const topicCount = stats.topicCount ?? 0;
+  const contentCompleteness = moduleCount > 0 ? Math.min(100, Math.round((topicCount / (moduleCount * 5)) * 100)) : 0;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-slate-500 font-medium animate-pulse">Loading dashboard...</p>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <h1 className="text-2xl font-heading font-bold text-gray-900 mb-6">Dashboard</h1>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        {stats && (
-          <>
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-gray-500 text-sm">Students</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.userCount}</p>
-              <Link to="/admin/users" className="text-primary text-sm font-medium">View</Link>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Dashboard Overview</h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Welcome back. Here&apos;s what&apos;s happening with MedEase today.</p>
+        </div>
+        <button
+          type="button"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg shadow-sm hover:bg-teal-700 transition-all font-medium w-fit"
+        >
+          <span className="material-symbols-outlined text-sm">download</span>
+          Export Report
+        </button>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Link
+          to="/admin/users"
+          className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow"
+        >
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Students</p>
+              <h3 className="text-3xl font-bold text-slate-800 dark:text-white">{stats.userCount ?? 0}</h3>
             </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-gray-500 text-sm">Pending payments</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.pendingPayments}</p>
-              <Link to="/admin/payments" className="text-primary text-sm font-medium">View</Link>
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl">
+              <span className="material-symbols-outlined">group</span>
             </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-gray-500 text-sm">Programs / Years / Modules / Topics</p>
-              <p className="text-xl font-bold text-gray-900">{stats.programCount ?? 0} / {stats.yearCount} / {stats.moduleCount} / {stats.topicCount}</p>
-              <Link to="/admin/resources" className="text-primary text-sm font-medium">Manage</Link>
+          </div>
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-xs text-slate-400 dark:text-slate-500">Registered students</span>
+          </div>
+        </Link>
+
+        <Link
+          to="/admin/payments"
+          className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow"
+        >
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pending Payments</p>
+              <h3 className="text-3xl font-bold text-slate-800 dark:text-white">{stats.pendingPayments ?? 0}</h3>
             </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-gray-500 text-sm">MCQs</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.mcqCount}</p>
+            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl">
+              <span className="material-symbols-outlined">account_balance_wallet</span>
             </div>
-          </>
-        )}
+          </div>
+          <div className="mt-4 flex items-center gap-2">
+            {(stats.pendingPayments ?? 0) > 0 ? (
+              <span className="flex items-center text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 rounded-full gap-0.5">
+                <span className="material-symbols-outlined text-xs">priority_high</span>
+                Action Needed
+              </span>
+            ) : (
+              <span className="text-xs text-slate-400 dark:text-slate-500">All clear</span>
+            )}
+          </div>
+        </Link>
+
+        <Link
+          to="/admin/resources"
+          className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow"
+        >
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Programs / Years / Modules</p>
+              <h3 className="text-3xl font-bold text-slate-800 dark:text-white">{programCount} / {yearCount} / {moduleCount}</h3>
+            </div>
+            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-xl">
+              <span className="material-symbols-outlined">auto_stories</span>
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${contentCompleteness}%` }} />
+            </div>
+            <p className="text-[10px] mt-1 text-slate-400 dark:text-slate-500">Content completeness {contentCompleteness}%</p>
+          </div>
+        </Link>
+
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total MCQs</p>
+              <h3 className="text-3xl font-bold text-slate-800 dark:text-white">{stats.mcqCount ?? 0}</h3>
+            </div>
+            <div className="p-3 bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 rounded-xl">
+              <span className="material-symbols-outlined">quiz</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-xs text-slate-400 dark:text-slate-500">Across all topics</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Users + Recent Payments */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white">Recent Users</h3>
+            <Link to="/admin/users" className="text-primary hover:underline text-sm font-medium">
+              View All
+            </Link>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 dark:bg-slate-700/50">
+                <tr>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">User</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Verified</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                {recentUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400 text-sm">
+                      No users yet
+                    </td>
+                  </tr>
+                ) : (
+                  recentUsers.map((u) => (
+                    <tr key={u._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                      <td className="px-6 py-4 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300">
+                          {(u.name || 'U').slice(0, 2).toUpperCase()}
+                        </div>
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{u.name || '—'}</span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{u.email}</td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-2 py-1 text-xs font-bold rounded-lg flex items-center gap-1 w-fit ${
+                            u.isVerified
+                              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                              : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[14px]">{u.isVerified ? 'verified' : 'schedule'}</span>
+                          {u.isVerified ? 'Yes' : 'No'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Link to="/admin/users" className="text-slate-400 hover:text-primary transition-colors inline-flex">
+                          <span className="material-symbols-outlined">edit</span>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white">Recent Payments</h3>
+          </div>
+          <div className="p-6 space-y-6">
+            {recentPayments.length === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400">No payments yet.</p>
+            ) : (
+              recentPayments.slice(0, 5).map((p) => (
+                <div key={p._id} className="flex items-start gap-4">
+                  <div
+                    className={`p-2 rounded-lg ${
+                      p.status === 'approved'
+                        ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                        : p.status === 'rejected'
+                          ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'
+                          : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined">receipt_long</span>
+                  </div>
+                  <div className="flex-1 space-y-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{p.user?.name || '—'}</h4>
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-300 shrink-0">Rs. {p.amount}</span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{p.package?.name || '—'}</p>
+                    <div className="flex items-center justify-between pt-2">
+                      <span
+                        className={`text-[10px] font-bold uppercase ${
+                          p.status === 'approved'
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : p.status === 'rejected'
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : 'text-amber-600 dark:text-amber-400'
+                        }`}
+                      >
+                        {p.status}
+                      </span>
+                      {p.receiptUrl && (
+                        <a
+                          href={p.receiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] font-bold text-primary hover:underline"
+                        >
+                          VIEW RECEIPT
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+              <Link
+                to="/admin/payments"
+                className="block w-full py-2.5 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-600 transition-all text-center"
+              >
+                View All Transactions
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Banner */}
+      <div className="bg-gradient-to-r from-teal-500 to-primary p-8 rounded-3xl text-white flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
+        <div className="relative z-10">
+          <h3 className="text-2xl font-bold">Manage Your Course Content</h3>
+          <p className="text-teal-50 mt-1">Upload new modules, create packages, or manage existing learning resources.</p>
+          <div className="flex flex-wrap gap-4 mt-6">
+            <Link
+              to="/admin/packages"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-white text-primary rounded-xl font-bold shadow-lg hover:bg-slate-100 transition-all"
+            >
+              <span className="material-symbols-outlined">add_circle</span>
+              Add Package
+            </Link>
+            <Link
+              to="/admin/resources"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-teal-400/30 border border-teal-200 text-white rounded-xl font-bold backdrop-blur-sm hover:bg-teal-400/40 transition-all"
+            >
+              <span className="material-symbols-outlined">edit_note</span>
+              Edit Topics
+            </Link>
+          </div>
+        </div>
+        <div className="relative z-10 w-32 h-32 bg-white/10 rounded-full flex items-center justify-center border border-white/20 shrink-0">
+          <span className="material-symbols-outlined text-6xl opacity-80">school</span>
+        </div>
+        <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/5 rounded-full blur-3xl" aria-hidden="true" />
+        <div className="absolute top-0 right-1/4 w-24 h-24 bg-white/5 rounded-full blur-2xl" aria-hidden="true" />
       </div>
     </div>
   );

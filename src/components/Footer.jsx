@@ -1,4 +1,4 @@
-import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Youtube } from 'lucide-react'
+import { Mail, Phone, MapPin, Facebook, Instagram, Youtube } from 'lucide-react'
 
 function Footer() {
   return (
@@ -11,9 +11,9 @@ function Footer() {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <img 
-                src="/logo.jpg" 
+                src="/logo.png" 
                 alt="MedEase Logo" 
-                className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-cover"
+                className="h-10 w-auto sm:h-12"
               />
               <h3 className="text-2xl font-heading font-bold text-white">MedEase</h3>
             </div>
@@ -22,28 +22,27 @@ function Footer() {
             </p>
             <div className="flex gap-4 pt-2">
               <a 
-                href="#" 
+                href="https://www.facebook.com/profile.php?id=61577864026519" 
+                target="_blank" 
+                rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-primary/10 hover:bg-primary flex items-center justify-center transition-colors duration-300 group"
                 aria-label="Facebook"
               >
                 <Facebook className="w-5 h-5 text-primary group-hover:text-white transition-colors" />
               </a>
               <a 
-                href="#" 
+                href="https://www.instagram.com/medeasebyheal" 
+                target="_blank" 
+                rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-primary/10 hover:bg-primary flex items-center justify-center transition-colors duration-300 group"
                 aria-label="Instagram"
               >
                 <Instagram className="w-5 h-5 text-primary group-hover:text-white transition-colors" />
               </a>
               <a 
-                href="#" 
-                className="w-10 h-10 rounded-full bg-primary/10 hover:bg-primary flex items-center justify-center transition-colors duration-300 group"
-                aria-label="LinkedIn"
-              >
-                <Linkedin className="w-5 h-5 text-primary group-hover:text-white transition-colors" />
-              </a>
-              <a 
-                href="#" 
+                href="https://www.youtube.com/@Medeasebyheal" 
+                target="_blank" 
+                rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-primary/10 hover:bg-primary flex items-center justify-center transition-colors duration-300 group"
                 aria-label="YouTube"
               >
@@ -134,8 +133,8 @@ function Footer() {
                 <Mail className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm sm:text-base">
-                    <a href="mailto:support@medease.com" className="hover:text-primary transition-colors">
-                      support@medease.com
+                    <a href="mailto:medeasebyheal@gmail.com" className="hover:text-primary transition-colors">
+                      medeasebyheal@gmail.com
                     </a>
                   </p>
                 </div>
@@ -144,8 +143,8 @@ function Footer() {
                 <Phone className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm sm:text-base">
-                    <a href="tel:+923001234567" className="hover:text-primary transition-colors">
-                      +92 300 1234567
+                    <a href="tel:+923290123208" className="hover:text-primary transition-colors">
+                      0329 0123208
                     </a>
                   </p>
                 </div>

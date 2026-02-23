@@ -106,7 +106,7 @@ export default function StudentProfile() {
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">User Profile</h1>
-          <p className="text-slate-500">Manage your account settings and academic progress.</p>
+          <p className="text-slate-500">Manage your account settings.</p>
         </div>
         <div className="flex items-center gap-4">
           <button
@@ -312,7 +312,7 @@ export default function StudentProfile() {
               <span className="material-symbols-outlined text-primary">inventory_2</span>
               <h3 className="font-bold text-slate-800 dark:text-white">Subscribed Packages</h3>
             </div>
-            <Link to="/student/packages" className="text-primary text-sm font-bold hover:underline">
+            <Link to="/packages" className="text-primary text-sm font-bold hover:underline">
               Browse More
             </Link>
           </div>
@@ -360,7 +360,7 @@ export default function StudentProfile() {
                   inventory_2
                 </span>
                 <p className="text-slate-500 dark:text-slate-400">No packages subscribed yet.</p>
-                <Link to="/student/packages" className="inline-block mt-3 text-primary font-semibold hover:underline">
+                <Link to="/packages" className="inline-block mt-3 text-primary font-semibold hover:underline">
                   Browse packages
                 </Link>
               </div>

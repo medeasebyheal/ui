@@ -264,7 +264,7 @@ export default function ModuleDetailPage() {
         <section>
           <div className="flex items-center justify-between mb-8 border-b border-slate-200 pb-4">
             <h2 className="text-2xl font-bold flex items-center text-slate-900">
-              <span className="material-symbols-outlined mr-2 text-primary">microscope</span>
+              <span className="material-symbols-outlined mr-2 text-primary">science</span>
               OSPEs & Practical Prep
             </h2>
           </div>

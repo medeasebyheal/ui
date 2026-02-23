@@ -55,9 +55,7 @@ export default function StudentLayout() {
         <div className="flex flex-col h-full min-h-0">
           <div className="flex items-center justify-between flex-shrink-0 p-4 border-b border-slate-200">
             <Link to="/student" className="flex items-center gap-2">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <span className="material-symbols-outlined text-primary text-2xl">medical_services</span>
-              </div>
+              <img src="/logo.png" alt="MedEase" className="h-9 w-auto" />
               <span className="text-xl font-bold tracking-tight text-slate-800">MedEase</span>
             </Link>
             <button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 rounded-lg hover:bg-slate-100" aria-label="Close sidebar">

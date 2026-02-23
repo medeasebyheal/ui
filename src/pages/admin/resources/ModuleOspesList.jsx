@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import Modal from '../../../components/admin/Modal';
+import ConfirmDialog from '../../../components/admin/ConfirmDialog';
 import { Plus, Pencil, Trash2, ClipboardList, Image, FileText } from 'lucide-react';
 
 function getOspeSummary(ospe) {
@@ -158,21 +159,15 @@ export default function ModuleOspesList() {
         )}
       </div>
 
-      {deleteConfirm && (
-        <Modal open onClose={() => setDeleteConfirm(null)} title="Delete OSPE">
-          <p className="text-gray-600 mb-4">
-            Delete &quot;{deleteConfirm.name}&quot;? This will remove the OSPE, its stations, and all questions.
-          </p>
-          <div className="flex gap-2 justify-end">
-            <button type="button" onClick={() => setDeleteConfirm(null)} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-              Cancel
-            </button>
-            <button type="button" onClick={() => handleDelete(deleteConfirm._id)} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-              Delete
-            </button>
-          </div>
-        </Modal>
-      )}
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        title="Delete OSPE"
+        message={deleteConfirm ? `Delete "${deleteConfirm.name}"? This will remove the OSPE, its stations, and all questions.` : ''}
+        confirmLabel="Delete"
+        onConfirm={() => deleteConfirm && handleDelete(deleteConfirm._id)}
+        danger
+      />
     </>
   );
 }

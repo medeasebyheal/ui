@@ -34,6 +34,33 @@ export default function TopicDetailPage() {
   const [useFreeTrial, setUseFreeTrial] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [resources, setResources] = useState([]);
+  const [downloadingPdf, setDownloadingPdf] = useState(null);
+
+  const handleResourceClick = async (e, res) => {
+    if (res.type !== 'pdf') return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (downloadingPdf === res._id) return;
+    setDownloadingPdf(res._id);
+    try {
+      const response = await fetch(res.url, { mode: 'cors' });
+      if (!response.ok) throw new Error('Download failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(res.title || 'resource').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-') || 'download'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (_) {
+      window.open(res.url, '_blank', 'noopener,noreferrer');
+    } finally {
+      setDownloadingPdf(null);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -65,6 +92,13 @@ export default function TopicDetailPage() {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [topicId, useFreeTrial, refreshUser]);
+
+  useEffect(() => {
+    if (!topicId) return;
+    api.get(`/content/topics/${topicId}/resources`)
+      .then(({ data }) => setResources(data || []))
+      .catch(() => setResources([]));
+  }, [topicId]);
 
   const handleUseFreeTrial = () => {
     setUseFreeTrial(true);
@@ -122,9 +156,73 @@ export default function TopicDetailPage() {
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column - Video & Content */}
+          {/* Left Column - MCQs first, then Video & Content */}
           <div className="lg:col-span-8">
-            {/* Video Player */}
+            {/* Practice MCQs - First */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-2xl">quiz</span>
+                  Practice MCQs
+                </h3>
+                {total > 0 && (
+                  <Link
+                    to={quizPageUrl}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-teal-700 transition-colors shadow-md shadow-primary/20"
+                  >
+                    <span className="material-symbols-outlined text-lg">play_circle</span>
+                    Take Topic Quiz ({total} questions)
+                  </Link>
+                )}
+              </div>
+              {total === 0 ? (
+                <p className="text-slate-500 py-4">No MCQs for this topic yet.</p>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-600 mb-6">Reinforce your learning with these practice questions. Click below to start the full quiz.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {mcqs.slice(0, 6).map((m, idx) => (
+                      <Link
+                        key={m._id}
+                        to={quizPageUrl}
+                        className="block p-5 rounded-xl bg-slate-50 border border-slate-100 hover:border-primary/30 hover:bg-teal-50/30 transition-all cursor-pointer group"
+                      >
+                        <p className="text-sm font-medium text-slate-900 mb-3 line-clamp-2 group-hover:text-primary transition-colors">{m.question}</p>
+                        <div className="space-y-1.5">
+                          {(m.options || []).slice(0, 2).map((opt, i) => (
+                            <div
+                              key={i}
+                              className="text-xs p-2 rounded-lg bg-white border border-slate-200 truncate"
+                            >
+                              {String.fromCharCode(65 + i)}) {opt}
+                            </div>
+                          ))}
+                          {(m.options?.length || 0) > 2 && (
+                            <div className="text-xs text-slate-500">+ {(m.options?.length || 0) - 2} more options</div>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                  {total > 6 && (
+                    <p className="text-sm text-slate-500 mt-4 text-center">
+                      + {total - 6} more in the full quiz
+                    </p>
+                  )}
+                  <div className="mt-6 pt-6 border-t border-slate-200">
+                    <Link
+                      to={quizPageUrl}
+                      className="flex items-center justify-center gap-2 w-full py-4 rounded-xl border-2 border-primary text-primary font-bold hover:bg-primary hover:text-white transition-colors"
+                    >
+                      <span className="material-symbols-outlined">quiz</span>
+                      Start Full Quiz — {total} questions
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Video Player - Second */}
             <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group">
               {videoPlaying && oneShotEmbedUrl ? (
                 <iframe
@@ -176,13 +274,6 @@ export default function TopicDetailPage() {
                   <span className="material-symbols-outlined text-sm">share</span>
                   <span className="text-sm font-medium">Share</span>
                 </button>
-                <button
-                  type="button"
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-sm">bookmark_border</span>
-                  <span className="text-sm font-medium">Save</span>
-                </button>
               </div>
             </div>
 
@@ -212,118 +303,49 @@ export default function TopicDetailPage() {
                 </ul>
               )}
             </div>
-
-            {/* Student Queries - Placeholder */}
-            <div className="mt-12">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold">Student Queries (0)</h3>
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
-                  <span>Sort by:</span>
-                  <select className="bg-transparent border-none focus:ring-0 text-slate-900 cursor-pointer">
-                    <option>Top</option>
-                    <option>Newest</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex gap-4 mb-6">
-                <div className="w-10 h-10 shrink-0 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500">
-                  {user?.name?.[0] || user?.email?.[0] || 'U'}
-                </div>
-                <div className="flex-1">
-                  <textarea
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-                    placeholder="Add a query or comment..."
-                    rows={3}
-                  />
-                  <div className="mt-2 flex justify-end">
-                    <button
-                      type="button"
-                      className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-                    >
-                      Post Comment
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm text-slate-500">No queries yet. Be the first to ask!</p>
-            </div>
           </div>
 
           {/* Right Sidebar */}
           <div className="lg:col-span-4 space-y-6">
-            {/* Resources - Placeholder */}
+            {/* Resources */}
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">description</span>
                 Resources
               </h3>
-              <p className="text-sm text-slate-500">No resources for this topic yet.</p>
-            </div>
-
-            {/* Related MCQs */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary">quiz</span>
-                  Related MCQs
-                </h3>
-                {total > 0 && (
-                  <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    High Yield
-                  </span>
-                )}
-              </div>
-              <div className={`space-y-4 max-h-[400px] overflow-y-auto pr-2 ${total > 3 ? 'custom-scrollbar' : ''}`}>
-                {total === 0 ? (
-                  <p className="text-sm text-slate-500">No MCQs for this topic yet.</p>
-                ) : (
-                  mcqs.slice(0, 5).map((m) => (
-                    <Link
-                      key={m._id}
-                      to={quizPageUrl}
-                      className="block p-4 rounded-xl bg-slate-50 border border-transparent hover:border-primary/30 transition-all cursor-pointer"
-                    >
-                      <p className="text-sm font-medium mb-3 line-clamp-2">{m.question}</p>
-                      <div className="grid gap-2">
-                        {(m.options || []).slice(0, 2).map((opt, i) => (
-                          <div
-                            key={i}
-                            className="text-xs p-2 rounded-lg bg-white border border-slate-200 truncate"
-                          >
-                            {String.fromCharCode(65 + i)}) {opt}
-                          </div>
-                        ))}
-                        {(m.options?.length || 0) > 2 && (
-                          <div className="text-xs text-slate-500">+ {(m.options?.length || 0) - 2} more options</div>
-                        )}
+              {resources.length === 0 ? (
+                <p className="text-sm text-slate-500">No resources for this topic yet.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {resources.map((res) => (
+                    <li key={res._id}>
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-transparent hover:border-primary/30 hover:bg-teal-50/50 transition-all group">
+                        <span className="material-symbols-outlined text-primary text-xl flex-shrink-0">
+                          {res.type === 'pdf' ? 'picture_as_pdf' : 'link'}
+                        </span>
+                        <span className="text-sm font-medium text-slate-900 truncate flex-1">
+                          {res.title}
+                        </span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {res.type === 'pdf' && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleResourceClick(e, res)}
+                              disabled={downloadingPdf === res._id}
+                              className="p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-white transition-colors disabled:opacity-50"
+                              title="Download PDF"
+                            >
+                              <span className="material-symbols-outlined text-lg">
+                                {downloadingPdf === res._id ? 'hourglass_empty' : 'download'}
+                              </span>
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </Link>
-                  ))
-                )}
-              </div>
-              {total > 0 && (
-                <Link
-                  to={quizPageUrl}
-                  className="block w-full mt-6 py-3 rounded-xl border-2 border-primary text-primary font-bold text-sm hover:bg-primary hover:text-white transition-all text-center"
-                >
-                  Take Full Topic Quiz ({total})
-                </Link>
+                    </li>
+                  ))}
+                </ul>
               )}
-            </div>
-
-            {/* Module Progress - Placeholder */}
-            <div className="bg-primary text-white rounded-2xl p-6 shadow-lg shadow-primary/20">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-xs font-medium opacity-80 uppercase tracking-wider">Module Progress</p>
-                  <p className="text-xl font-bold">{subjectName}: 0%</p>
-                </div>
-                <span className="material-symbols-outlined text-3xl">trending_up</span>
-              </div>
-              <div className="h-2 w-full bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-white w-0 rounded-full" />
-              </div>
-              <p className="text-xs mt-3 opacity-80">Complete topics to track progress</p>
             </div>
           </div>
         </div>

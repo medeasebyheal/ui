@@ -4,6 +4,7 @@ import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import { ModuleForm } from '../../../components/admin/ResourceForms';
 import Modal from '../../../components/admin/Modal';
+import ConfirmDialog from '../../../components/admin/ConfirmDialog';
 import { Plus, Pencil, Trash2, BookOpen } from 'lucide-react';
 
 export default function YearModules() {
@@ -103,15 +104,15 @@ export default function YearModules() {
       )}
 
       {formOpen && <ModuleForm yearId={yearId} module={formOpen._id ? formOpen : null} onSave={loadModules} onClose={() => setFormOpen(null)} />}
-      {deleteConfirm && (
-        <Modal open onClose={() => setDeleteConfirm(null)} title="Delete module">
-          <p className="text-gray-600 mb-4">Delete &quot;{deleteConfirm.name}&quot;? Subjects, topics and OSPEs under it will be affected.</p>
-          <div className="flex gap-2 justify-end">
-            <button type="button" onClick={() => setDeleteConfirm(null)} className="px-4 py-2 border rounded-lg">Cancel</button>
-            <button type="button" onClick={() => handleDelete(deleteConfirm._id)} className="px-4 py-2 bg-red-600 text-white rounded-lg">Delete</button>
-          </div>
-        </Modal>
-      )}
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        title="Delete module"
+        message={deleteConfirm ? `Delete "${deleteConfirm.name}"? Subjects, topics and OSPEs under it will be affected.` : ''}
+        confirmLabel="Delete"
+        onConfirm={() => deleteConfirm && handleDelete(deleteConfirm._id)}
+        danger
+      />
     </>
   );
 }

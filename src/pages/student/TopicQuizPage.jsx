@@ -31,8 +31,10 @@ export default function TopicQuizPage() {
   const [transitioning, setTransitioning] = useState(false);
   const [answerResults, setAnswerResults] = useState({});
   const [flaggedQuestions, setFlaggedQuestions] = useState(new Set());
-  const [quizStartTime] = useState(() => Date.now());
+  const [quizStartTime, setQuizStartTime] = useState(() => Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [showResults, setShowResults] = useState(false);
+  const [submittedAtSeconds, setSubmittedAtSeconds] = useState(null);
 
   useEffect(() => {
     const interval = setInterval(() => setElapsedSeconds(Math.floor((Date.now() - quizStartTime) / 1000)), 1000);
@@ -139,7 +141,19 @@ export default function TopicQuizPage() {
   };
 
   const backToSubject = () => navigate(`/student/modules/${moduleId}/subjects/${subjectId}`);
-  const handleFinish = () => backToSubject();
+  const handleFinish = () => {
+    setSubmittedAtSeconds(elapsedSeconds);
+    setShowResults(true);
+  };
+  const handleRetake = () => {
+    setAnswerResults({});
+    setCurrentIndex(0);
+    setResult(null);
+    setSelected(null);
+    setShowResults(false);
+    setSubmittedAtSeconds(null);
+    setQuizStartTime(Date.now());
+  };
 
   if (loading) {
     return (
@@ -186,6 +200,198 @@ export default function TopicQuizPage() {
         <Link to={`/student/modules/${moduleId}/subjects/${subjectId}`} className="text-primary font-medium hover:underline">
           Back to Subject
         </Link>
+      </div>
+    );
+  }
+
+  if (showResults) {
+    const correctCount = Object.values(answerResults).filter((r) => r?.correct).length;
+    const scorePct = total ? ((correctCount / total) * 100).toFixed(1) : '0';
+    const circumference = 2 * Math.PI * 28;
+    const strokeDashoffset = circumference * (1 - (total ? correctCount / total : 0));
+    const frozenSeconds = submittedAtSeconds ?? elapsedSeconds;
+    const timeStr = `${String(Math.floor(frozenSeconds / 60)).padStart(2, '0')}:${String(frozenSeconds % 60).padStart(2, '0')}`;
+
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+        <main className="max-w-5xl mx-auto px-4 py-8 lg:py-10">
+          <nav className="flex text-sm text-slate-500 dark:text-slate-400 mb-2">
+            <ol className="flex items-center flex-wrap gap-x-2 gap-y-1">
+              <li>
+                <Link to={`/student/modules/${moduleId}/subjects/${subjectId}`} className="hover:text-primary">
+                  {moduleName}
+                </Link>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">chevron_right</span>
+                <Link to={`/student/modules/${moduleId}/subjects/${subjectId}`} className="hover:text-primary">
+                  {subjectName}
+                </Link>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">chevron_right</span>
+                <span className="font-medium text-slate-900 dark:text-slate-200">Quiz Results</span>
+              </li>
+            </ol>
+          </nav>
+          <h1 className="text-2xl font-bold mb-8 text-slate-900 dark:text-white">Quiz Results: {topic.name}</h1>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-5">
+              <div className="w-16 h-16 rounded-full border-4 border-primary/20 flex items-center justify-center relative flex-shrink-0">
+                <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 64 64">
+                  <circle
+                    className="text-primary"
+                    cx="32"
+                    cy="32"
+                    fill="transparent"
+                    r="28"
+                    stroke="currentColor"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={strokeDashoffset}
+                    strokeWidth="4"
+                  />
+                </svg>
+                <span className="text-xl font-bold text-slate-900 dark:text-white relative z-10">
+                  {correctCount}/{total}
+                </span>
+              </div>
+              <div>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">Overall Score</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{scorePct}%</p>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-5">
+              <div className="w-14 h-14 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined">timer</span>
+              </div>
+              <div>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">Time Taken</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{timeStr}</p>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-5">
+              <div className="w-14 h-14 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined">trending_up</span>
+              </div>
+              <div>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">Percentile</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">—</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6 mb-12">
+            <h2 className="text-lg font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+              <span className="material-symbols-outlined text-primary">fact_check</span>
+              Question Review
+            </h2>
+            {mcqs.map((mcq, idx) => {
+              const res = answerResults[idx];
+              const correct = res?.correct ?? false;
+              const answered = res != null;
+              const selectedIndex = res?.selectedIndex ?? -1;
+              const correctIndex = res?.correctIndex ?? mcq.correctIndex ?? 0;
+              const options = mcq.options || [];
+              const badgeClass = correct
+                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                : answered
+                  ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400';
+              const badgeLabel = correct ? 'Correct' : answered ? 'Incorrect' : 'Skipped';
+              return (
+                <div
+                  key={mcq._id || idx}
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden"
+                >
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${badgeClass}`}>
+                        {badgeLabel}
+                      </span>
+                      <span className="text-sm text-slate-500 dark:text-slate-400">
+                        Question {idx + 1} of {total}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-semibold mb-6 text-slate-900 dark:text-white">{mcq.question}</h3>
+                    <div className="space-y-3">
+                      {options.map((opt, i) => {
+                        const isCorrect = i === correctIndex;
+                        const isUserWrong = !correct && selectedIndex === i;
+                        return (
+                          <div
+                            key={i}
+                            className={`flex items-center gap-3 p-4 rounded-xl border ${
+                              isCorrect
+                                ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800/50'
+                                : isUserWrong
+                                  ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800/50'
+                                  : 'border-slate-100 dark:border-slate-700 opacity-60'
+                            }`}
+                          >
+                            {isCorrect ? (
+                              <span className="material-symbols-outlined text-green-600 dark:text-green-400">check_circle</span>
+                            ) : isUserWrong ? (
+                              <span className="material-symbols-outlined text-red-600 dark:text-red-400">cancel</span>
+                            ) : (
+                              <span className="w-6 h-6 rounded-full border-2 border-slate-300 dark:border-slate-600 flex-shrink-0" />
+                            )}
+                            <span className={`font-medium ${isCorrect || isUserWrong ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                              {opt}
+                            </span>
+                            {isUserWrong && <span className="ml-auto text-xs text-red-600 dark:text-red-400 font-bold uppercase">Your Answer</span>}
+                            {isCorrect && !correct && <span className="ml-auto text-xs text-green-600 dark:text-green-400 font-bold uppercase">Correct Answer</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <details className="group border-t border-slate-100 dark:border-slate-700">
+                    <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors list-none">
+                      <span className="text-sm font-semibold text-primary flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm">lightbulb</span>
+                        View Explanation
+                      </span>
+                      <span className="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
+                    </summary>
+                    <div className="p-6 pt-0 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                      {res?.explanation || 'No explanation available.'}
+                    </div>
+                  </details>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-8 border-t border-slate-200 dark:border-slate-700">
+            <button
+              type="button"
+              onClick={backToSubject}
+              className="w-full sm:w-auto px-8 py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 text-slate-700 dark:text-slate-200"
+            >
+              <span className="material-symbols-outlined">arrow_back</span>
+              Back to Subject
+            </button>
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleRetake}
+                className="w-full sm:w-auto px-8 py-3 rounded-xl border border-primary text-primary font-semibold hover:bg-primary/5 transition-colors flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined">refresh</span>
+                Retake Quiz
+              </button>
+              <button
+                type="button"
+                onClick={backToSubject}
+                className="w-full sm:w-auto px-8 py-3 rounded-xl bg-primary text-white font-semibold hover:bg-teal-700 transition-colors shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+              >
+                Next Topic
+                <span className="material-symbols-outlined">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -422,10 +628,6 @@ export default function TopicQuizPage() {
                 </div>
               </motion.div>
             </AnimatePresence>
-            <div className="mt-6 flex items-center gap-2 text-slate-500 text-sm italic">
-              <span className="material-symbols-outlined text-sm">info</span>
-              <span>Pro-tip: Use your keyboard&apos;s arrow keys to navigate questions and 1-4 for options.</span>
-            </div>
           </section>
         </div>
       </main>

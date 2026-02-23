@@ -160,24 +160,6 @@ export default function SubjectDetailPage() {
                 );
               })}
             </nav>
-            <div className="mt-8 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-              <h4 className="text-emerald-800 font-bold text-sm mb-1">Study Streak</h4>
-              <p className="text-xs text-emerald-600 mb-3">
-                Complete topics to build your streak!
-              </p>
-              <div className="flex gap-1 justify-between">
-                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-                  <div
-                    key={i}
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] ${
-                      i < 5 ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'
-                    }`}
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </aside>
 
@@ -233,38 +215,15 @@ export default function SubjectDetailPage() {
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-4">
+          {/* Stats Card */}
+          <div className="mb-8">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-4 max-w-xs">
               <div className="h-12 w-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
                 <span className="material-symbols-outlined">menu_book</span>
               </div>
               <div>
                 <p className="text-xs text-slate-500 font-medium">Total Topics</p>
                 <p className="text-lg font-bold text-slate-900">{filteredTopics.length}</p>
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-4">
-              <div className="h-12 w-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
-                <span className="material-symbols-outlined">task_alt</span>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 font-medium">Completed</p>
-                <p className="text-lg font-bold text-slate-900">0/{filteredTopics.length}</p>
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-4">
-              <div className="h-12 w-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
-                <span className="material-symbols-outlined">trending_up</span>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 font-medium">Overall Progress</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-slate-900">0%</span>
-                  <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="bg-amber-500 h-full w-0" />
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -276,8 +235,7 @@ export default function SubjectDetailPage() {
                 No topics match your search.
               </p>
             ) : (
-              paginatedTopics.map((topic, idx) => {
-                const globalIndex = (currentPage - 1) * TOPICS_PER_PAGE + idx;
+              paginatedTopics.map((topic) => {
                 const topicId = String(topic._id).slice(-6).toUpperCase();
                 const accessible = hasModuleAccess;
 
@@ -296,10 +254,6 @@ export default function SubjectDetailPage() {
                           <span className="text-xs font-bold px-2 py-0.5 bg-slate-100 rounded-md text-slate-500">
                             ID: {topicId}
                           </span>
-                          <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-slate-400">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                            Not Started
-                          </span>
                         </div>
                         <h3 className="text-xl font-display font-bold text-slate-900 group-hover:text-primary transition-colors">
                           {topic.name}
@@ -309,15 +263,6 @@ export default function SubjectDetailPage() {
                             `Study ${topic.name} with MCQs and One Shot lecture.`}
                           {(topic.content?.length || 0) > 120 ? '...' : ''}
                         </p>
-                        <div className="mt-4">
-                          <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
-                            <span>PROGRESS</span>
-                            <span>0%</span>
-                          </div>
-                          <div className="h-2 w-full max-w-[200px] bg-slate-100 rounded-full overflow-hidden">
-                            <div className="bg-slate-300 h-full w-0" />
-                          </div>
-                        </div>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0">
                         <Link

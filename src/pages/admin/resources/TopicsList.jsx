@@ -3,10 +3,26 @@ import { Link } from 'react-router-dom';
 import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import Modal from '../../../components/admin/Modal';
+import ConfirmDialog from '../../../components/admin/ConfirmDialog';
 import { TopicForm } from '../../../components/admin/ResourceForms';
-import { FileText, Pencil, Trash2, Search, Plus } from 'lucide-react';
 
-const PAGE_SIZE_OPTIONS = [5, 10, 25, 50];
+const PER_PAGE = 10;
+
+const SORT_OPTIONS = [
+  { value: 'recent', label: 'Most Recent' },
+  { value: 'name-asc', label: 'Name (A-Z)' },
+  { value: 'name-desc', label: 'Name (Z-A)' },
+  { value: 'subject', label: 'Subject' },
+];
+
+const SUBJECT_BADGE_STYLES = [
+  'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
+  'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',
+];
+
+function getSubjectBadgeClass(index) {
+  return SUBJECT_BADGE_STYLES[index % SUBJECT_BADGE_STYLES.length] || SUBJECT_BADGE_STYLES[0];
+}
 
 export default function TopicsList() {
   const [topics, setTopics] = useState([]);
@@ -17,37 +33,26 @@ export default function TopicsList() {
   const [addFormOpen, setAddFormOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const [subjectFilter, setSubjectFilter] = useState('');
+  const [sortBy, setSortBy] = useState('recent');
 
-  const load = () => api.get('/admin/topics').then(({ data }) => setTopics(data)).catch(() => setTopics([]));
-  const loadSubjects = () => api.get('/admin/subjects').then(({ data }) => setSubjects(data || [])).catch(() => setSubjects([]));
+  const load = () =>
+    api
+      .get('/admin/topics')
+      .then(({ data }) => setTopics(Array.isArray(data) ? data : []))
+      .catch(() => setTopics([]));
+  const loadSubjects = () =>
+    api
+      .get('/admin/subjects')
+      .then(({ data }) => setSubjects(Array.isArray(data) ? data : []))
+      .catch(() => setSubjects([]));
 
-  const subjectsFromTopics = useMemo(() => {
-    const seen = new Map();
-    topics.forEach((t) => {
-      const sub = t.subject;
-      if (sub && (sub._id || sub)) {
-        const id = sub._id || sub;
-        if (!seen.has(id)) seen.set(id, { _id: id, name: sub.name ?? id });
-      }
-    });
-    return Array.from(seen.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-  }, [topics]);
-
-  const subjectsForFilter = subjects.length > 0 ? [...subjects].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) : subjectsFromTopics;
-
-  useEffect(() => {
-    Promise.all([load(), loadSubjects()]).finally(() => setLoading(false));
-  }, []);
-
-  const handleDelete = async (id) => {
-    try {
-      await api.delete(`/admin/topics/${id}`);
-      load();
-      setDeleteConfirm(null);
-    } catch (_) {}
-  };
+  const subjectsSorted = useMemo(() => [...subjects].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)), [subjects]);
+  const subjectOrderMap = useMemo(() => {
+    const m = new Map();
+    subjectsSorted.forEach((s, i) => m.set(s._id, i));
+    return m;
+  }, [subjectsSorted]);
 
   const getTopicLink = (topic) => {
     const sub = topic.subject;
@@ -63,29 +68,44 @@ export default function TopicsList() {
       list = list.filter((t) => (t.subject?._id || t.subject) === subjectFilter);
     }
     const q = search.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(
-      (t) =>
-        (t.name && t.name.toLowerCase().includes(q)) ||
-        (t.subject?.name && t.subject.name.toLowerCase().includes(q))
-    );
-  }, [topics, search, subjectFilter]);
+    if (q) {
+      list = list.filter(
+        (t) =>
+          (t.name && t.name.toLowerCase().includes(q)) ||
+          (t.subject?.name && t.subject.name.toLowerCase().includes(q))
+      );
+    }
+    if (sortBy === 'name-asc') list = [...list].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    else if (sortBy === 'name-desc') list = [...list].sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+    else if (sortBy === 'subject') list = [...list].sort((a, b) => (a.subject?.name || '').localeCompare(b.subject?.name || ''));
+    else list = [...list].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    return list;
+  }, [topics, search, subjectFilter, sortBy]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const paginated = useMemo(
-    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-    [filtered, currentPage, pageSize]
-  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const paginated = useMemo(() => {
+    const start = (page - 1) * PER_PAGE;
+    return filtered.slice(start, start + PER_PAGE);
+  }, [filtered, page]);
+  const start = filtered.length === 0 ? 0 : (page - 1) * PER_PAGE + 1;
+  const end = Math.min(page * PER_PAGE, filtered.length);
 
   useEffect(() => {
-    setPage((p) => (p > totalPages ? 1 : p));
-  }, [totalPages, search, subjectFilter]);
+    Promise.all([load(), loadSubjects()]).finally(() => setLoading(false));
+  }, []);
+
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/admin/topics/${id}`);
+      load();
+      setDeleteConfirm(null);
+    } catch (_) {}
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-pulse text-gray-500">Loading topics...</div>
+        <div className="animate-pulse text-slate-500 dark:text-slate-400">Loading topics...</div>
       </div>
     );
   }
@@ -93,232 +113,233 @@ export default function TopicsList() {
   return (
     <>
       <ResourceBreadcrumb items={[{ label: 'Resources', path: '/admin/resources' }, { label: 'Topics', path: null }]} />
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-gray-900">Topics</h1>
-          <p className="text-sm text-gray-500 mt-1">All topics across subjects. Add, edit, or open a topic to manage MCQs and content.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="max-w-7xl w-full mx-auto">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Topics</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-sm max-w-2xl">
+              All topics across subjects. Add, edit, or open a topic to manage MCQs and interactive learning content.
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => setAddFormOpen(true)}
-            className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl font-medium shadow-sm hover:shadow transition-shadow"
+            className="flex items-center justify-center space-x-2 bg-primary hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-all shadow-md shadow-primary/20 hover:shadow-lg active:scale-95"
           >
-            <Plus className="w-5 h-5" /> Add topic
+            <span className="material-symbols-outlined text-xl">add</span>
+            <span>Add topic</span>
           </button>
-          <label className="flex items-center gap-2 text-sm text-gray-600">
-            Filter by subject
-            <select
-              value={subjectFilter}
-              onChange={(e) => { setSubjectFilter(e.target.value); setPage(1); }}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 bg-white focus:ring-2 focus:ring-primary focus:border-primary min-w-[10rem]"
-            >
-              <option value="">All subjects</option>
-              {subjectsForFilter.map((s) => (
-                <option key={s._id} value={s._id}>{s.name}</option>
-              ))}
-            </select>
-          </label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Search by topic or subject..."
-              className="w-full sm:w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
-            />
-          </div>
         </div>
-      </div>
 
-      {/* Desktop: table listing */}
-      <div className="hidden lg:block bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200 bg-gray-50/80">
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Name</th>
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Subject</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginated.map((topic) => {
-              const link = getTopicLink(topic);
-              return (
-                <tr key={topic._id} className="border-b border-gray-100 hover:bg-gray-50/50">
-                  <td className="py-3 px-4">
-                    {link ? (
-                      <Link to={link} className="font-medium text-gray-900 hover:text-primary">
-                        {topic.name}
-                      </Link>
-                    ) : (
-                      <span className="font-medium text-gray-900">{topic.name}</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-500">{topic.subject?.name ?? '—'}</td>
-                  <td className="py-3 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {(topic.subject?._id || topic.subject) && (
-                        <button
-                          type="button"
-                          onClick={() => setFormOpen(topic)}
-                          className="p-2 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg"
-                          title="Edit"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setDeleteConfirm(topic)}
-                        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      {link && (
-                        <Link to={link} className="text-sm font-medium text-primary hover:underline ml-1">
-                          Open →
-                        </Link>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile: cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:hidden">
-        {paginated.map((topic) => {
-          const link = getTopicLink(topic);
-          return (
-            <div
-              key={topic._id}
-              className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
-            >
-              <Link to={link || '#'} className="block p-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="font-heading font-semibold text-gray-900 group-hover:text-primary transition-colors">{topic.name}</h2>
-                    <p className="text-xs text-gray-500">{topic.subject?.name ? `Subject: ${topic.subject.name}` : `Order: ${topic.order}`}</p>
-                  </div>
-                </div>
-              </Link>
-              <div className="flex items-center gap-2 px-5 pb-4 border-t border-gray-100 pt-3">
-                {(topic.subject?._id || topic.subject) && (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); setFormOpen(topic); }}
-                    className="p-2 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
-                    title="Edit"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={(e) => { e.preventDefault(); setDeleteConfirm(topic); }}
-                  className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Delete"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-                {link && (
-                  <Link to={link} className="ml-auto text-sm font-medium text-primary hover:underline">
-                    Open →
-                  </Link>
-                )}
-              </div>
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+            <div className="md:col-span-4 relative group">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none">
+                search
+              </span>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by topic or subject..."
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary dark:text-slate-200 placeholder:text-slate-400"
+              />
             </div>
-          );
-        })}
-      </div>
-
-      {/* Pagination */}
-      {filtered.length > pageSize && (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-gray-500">
-              Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filtered.length)} of {filtered.length}
-              {search && ` (filtered)`}
-            </p>
-            <label className="flex items-center gap-2 text-sm text-gray-600">
-              Per page
+            <div className="md:col-span-3 flex items-center space-x-2">
+              <span className="text-xs font-medium text-slate-400 whitespace-nowrap uppercase tracking-wider">Subject:</span>
               <select
-                value={pageSize}
-                onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-                className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm font-medium text-gray-700 bg-white focus:ring-2 focus:ring-primary focus:border-primary"
+                value={subjectFilter}
+                onChange={(e) => setSubjectFilter(e.target.value)}
+                className="w-full py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary text-slate-900 dark:text-white"
               >
-                {PAGE_SIZE_OPTIONS.map((n) => (
-                  <option key={n} value={n}>{n}</option>
+                <option value="">All subjects</option>
+                {subjectsSorted.map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {s.name}
+                  </option>
                 ))}
               </select>
-            </label>
+            </div>
+            <div className="md:col-span-3 flex items-center space-x-2">
+              <span className="text-xs font-medium text-slate-400 whitespace-nowrap uppercase tracking-wider">Sort by:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary text-slate-900 dark:text-white"
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-2 flex items-center justify-end space-x-2">
+              <button type="button" className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" title="Export Data">
+                <span className="material-symbols-outlined">download</span>
+              </button>
+              <button type="button" className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" title="Filter Settings">
+                <span className="material-symbols-outlined">tune</span>
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage <= 1}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-            >
-              Previous
-            </button>
-            <span className="text-sm text-gray-600 px-2">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage >= totalPages}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-            >
-              Next
-            </button>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <div className="flex items-center cursor-default">
+                      Topic Name
+                      <span className="material-symbols-outlined text-xs ml-1">swap_vert</span>
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <div className="flex items-center cursor-default">
+                      Subject
+                      <span className="material-symbols-outlined text-xs ml-1">swap_vert</span>
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Content Status</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {paginated.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                      {topics.length === 0
+                        ? 'No topics yet. Add a topic to manage MCQs and content.'
+                        : 'No topics match your filters.'}
+                    </td>
+                  </tr>
+                ) : (
+                  paginated.map((topic) => {
+                    const link = getTopicLink(topic);
+                    const mcqCount = topic.mcqCount ?? 0;
+                    const subjectIdx = topic.subject?._id ? subjectOrderMap.get(topic.subject._id) ?? 0 : 0;
+                    const hasContent = mcqCount > 0;
+                    return (
+                      <tr key={topic._id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="w-2 h-2 rounded-full bg-primary mr-3 flex-shrink-0" />
+                            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{topic.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-3 py-1 text-[11px] font-bold rounded-full uppercase ${getSubjectBadgeClass(subjectIdx)}`}>
+                            {topic.subject?.name ?? '—'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
+                          <div className="flex items-center space-x-2">
+                            {hasContent ? (
+                              <>
+                                <span className="material-symbols-outlined text-emerald-500 dark:text-emerald-400 text-sm">check_circle</span>
+                                <span>{mcqCount} MCQ{mcqCount !== 1 ? 's' : ''}</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="material-symbols-outlined text-slate-400 text-sm">unpublished</span>
+                                <span className="italic">No content</span>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            {(topic.subject?._id || topic.subject) && (
+                              <button
+                                type="button"
+                                onClick={() => setFormOpen(topic)}
+                                className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-md transition-colors"
+                                title="Edit"
+                              >
+                                <span className="material-symbols-outlined text-lg">edit</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setDeleteConfirm(topic)}
+                              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                              title="Delete"
+                            >
+                              <span className="material-symbols-outlined text-lg">delete</span>
+                            </button>
+                            {link && (
+                              <Link
+                                to={link}
+                                className="flex items-center space-x-1 text-sm font-bold text-primary hover:underline ml-2"
+                              >
+                                <span>Open</span>
+                                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                              </Link>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              Showing <span className="text-slate-900 dark:text-white">{start}</span> to <span className="text-slate-900 dark:text-white">{end}</span> of{' '}
+              <span className="text-slate-900 dark:text-white">{filtered.length}</span> topics
+            </p>
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="px-3 py-1 text-xs font-bold border border-slate-200 dark:border-slate-700 rounded-md hover:bg-white dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-400"
+              >
+                Previous
+              </button>
+              {(() => {
+                const show = Math.min(5, totalPages);
+                const startPage = totalPages <= 5 ? 1 : Math.max(1, Math.min(page - 2, totalPages - show + 1));
+                return Array.from({ length: show }, (_, i) => startPage + i).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => setPage(pageNum)}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
+                      page === pageNum
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                ));
+              })()}
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="px-3 py-1 text-xs font-bold border border-slate-200 dark:border-slate-700 rounded-md hover:bg-white dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-400"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
-      )}
-
-      {search && filtered.length === 0 && (
-        <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
-          <p className="text-gray-500 font-medium">No topics match &quot;{search}&quot;</p>
-          <p className="text-sm text-gray-400 mt-1">Try a different search or clear the search box.</p>
-        </div>
-      )}
-
-      {topics.length === 0 && !search && (
-        <div className="text-center py-16 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-          <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 font-medium">No topics yet</p>
-          <p className="text-sm text-gray-400 mt-1">Add subjects first, then add topics here or from the hierarchy.</p>
-          <button type="button" onClick={() => setAddFormOpen(true)} className="mt-4 text-primary font-medium hover:underline">
-            Add first topic
-          </button>
-          <span className="mx-2 text-gray-400">or</span>
-          <Link to="/admin/resources/hierarchy" className="text-primary font-medium hover:underline">Go to hierarchy</Link>
-        </div>
-      )}
-
-      {filtered.length === 0 && !search && subjectFilter && (
-        <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
-          <p className="text-gray-500 font-medium">No topics in this subject</p>
-          <p className="text-sm text-gray-400 mt-1">Try another subject or clear the filter.</p>
-          <button type="button" onClick={() => { setSubjectFilter(''); setPage(1); }} className="mt-4 text-primary font-medium hover:underline">Clear subject filter</button>
-        </div>
-      )}
+      </div>
 
       {formOpen && (
         <TopicForm
           subjectId={formOpen.subject?._id || formOpen.subject}
           topic={formOpen}
-          onSave={() => { load(); loadSubjects(); }}
+          onSave={() => {
+            load();
+            loadSubjects();
+          }}
           onClose={() => setFormOpen(null)}
         />
       )}
@@ -326,20 +347,24 @@ export default function TopicsList() {
       {addFormOpen && (
         <AddTopicForm
           subjects={subjects}
-          onSave={() => { load(); loadSubjects(); setAddFormOpen(false); }}
+          onSave={() => {
+            load();
+            loadSubjects();
+            setAddFormOpen(false);
+          }}
           onClose={() => setAddFormOpen(false)}
         />
       )}
 
-      {deleteConfirm && (
-        <Modal open onClose={() => setDeleteConfirm(null)} title="Delete topic">
-          <p className="text-gray-600 mb-4">Delete &quot;{deleteConfirm.name}&quot;? This will remove all MCQs under it.</p>
-          <div className="flex gap-2 justify-end">
-            <button type="button" onClick={() => setDeleteConfirm(null)} className="px-4 py-2 border rounded-lg">Cancel</button>
-            <button type="button" onClick={() => handleDelete(deleteConfirm._id)} className="px-4 py-2 bg-red-600 text-white rounded-lg">Delete</button>
-          </div>
-        </Modal>
-      )}
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        title="Delete topic"
+        message={deleteConfirm ? `Delete "${deleteConfirm.name}"? This will remove all MCQs under it.` : ''}
+        confirmLabel="Delete"
+        onConfirm={() => deleteConfirm && handleDelete(deleteConfirm._id)}
+        danger
+      />
     </>
   );
 }
@@ -383,12 +408,12 @@ function AddTopicForm({ subjects, onSave, onClose }) {
     <Modal open onClose={onClose} title="Add topic">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Subject *</label>
           <select
             value={subjectId}
             onChange={(e) => setSubjectId(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option value="">Select subject</option>
             {sortedSubjects.map((s) => (
@@ -398,51 +423,53 @@ function AddTopicForm({ subjects, onSave, onClose }) {
             ))}
           </select>
           {sortedSubjects.length === 0 && (
-            <p className="text-xs text-gray-500 mt-1">No subjects yet. Add subjects under Resources → Subjects first.</p>
+            <p className="text-xs text-slate-500 mt-1">No subjects yet. Add subjects under Resources → Subjects first.</p>
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name *</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:text-white"
             placeholder="e.g. Introduction to Anatomy"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Order</label>
           <input
             type="number"
             value={order}
             onChange={(e) => setOrder(Number(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:text-white"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">YouTube video URL</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">YouTube video URL</label>
           <input
             type="url"
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:text-white"
             placeholder="https://youtube.com/..."
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Content (optional)</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Content (optional)</label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:text-white"
           />
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div className="flex gap-2 justify-end">
-          <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
-          <button type="submit" disabled={saving || !subjectId} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
+            Cancel
+          </button>
+          <button type="submit" disabled={saving || !subjectId} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50 hover:bg-teal-700">
             {saving ? 'Saving...' : 'Save'}
           </button>
         </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../api/client';
 import {
   LayoutDashboard,
   Users,
@@ -20,7 +21,7 @@ import {
 const navItems = [
   { to: '/admin', end: true, label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/users', end: false, label: 'Users', icon: Users },
-  { to: '/admin/payments', end: false, label: 'Payments', icon: CreditCard },
+  { to: '/admin/payments', end: false, label: 'Payments', icon: CreditCard, showPendingDot: true },
   {
     to: '/admin/resources',
     end: false,
@@ -54,11 +55,19 @@ export default function AdminLayout() {
   const [resourcesExpanded, setResourcesExpanded] = useState(false);
   const [proffExpanded, setProffExpanded] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
   const profileRef = useRef(null);
   const headerProfileRef = useRef(null);
   const location = useLocation();
   const isOnResources = location.pathname.startsWith('/admin/resources');
   const isOnProff = location.pathname.startsWith('/admin/proff');
+
+  useEffect(() => {
+    api.get('/admin/dashboard').then(({ data }) => {
+      const n = data?.pendingPayments ?? 0;
+      setPendingPaymentsCount(typeof n === 'number' ? n : 0);
+    }).catch(() => setPendingPaymentsCount(0));
+  }, [location.pathname]);
 
   useEffect(() => {
     if (isOnResources) setResourcesExpanded(true);
@@ -160,6 +169,7 @@ export default function AdminLayout() {
                 );
               }
               const Icon = item.icon;
+              const showDot = item.showPendingDot && pendingPaymentsCount > 0;
               return (
                 <NavLink
                   key={item.to}
@@ -176,6 +186,13 @@ export default function AdminLayout() {
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {item.label}
+                  {showDot && (
+                    <span
+                      className="ml-auto w-2 h-2 rounded-full bg-amber-400 shrink-0"
+                      title={`${pendingPaymentsCount} pending payment${pendingPaymentsCount !== 1 ? 's' : ''}`}
+                      aria-hidden
+                    />
+                  )}
                 </NavLink>
               );
             })}

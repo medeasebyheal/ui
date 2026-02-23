@@ -134,14 +134,18 @@ export default function McqFormPage() {
     { label: isEdit ? 'Edit MCQ' : 'Add MCQ', path: null },
   ];
 
+  const opts = options.filter(Boolean);
+  const previewCorrectIndex = correctIndex >= 0 && correctIndex <= 3 ? correctIndex : 0;
+
   return (
     <>
       <ResourceBreadcrumb items={breadcrumbItems} />
-      <div className="max-w-2xl">
-        <h1 className="text-2xl font-heading font-bold text-gray-900 mb-6">
-          {isEdit ? 'Edit MCQ' : 'Add MCQ'}
-        </h1>
+      <h1 className="text-2xl font-heading font-bold text-gray-900 mb-6">
+        {isEdit ? 'Edit MCQ' : 'Add MCQ'}
+      </h1>
 
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-6 xl:col-span-5">
         <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
@@ -252,6 +256,70 @@ export default function McqFormPage() {
             </Link>
           </div>
         </form>
+        </div>
+
+        <aside className="lg:col-span-6 xl:col-span-7">
+          <div className="sticky top-6 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+              <h2 className="font-heading font-semibold text-gray-900">MCQ Preview</h2>
+              <p className="text-xs text-gray-500 mt-0.5">How students will see this question</p>
+            </div>
+            <div className="p-6">
+              <div className="mb-4">
+                <span className="inline-block px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                  Question 1
+                </span>
+              </div>
+              <h3 className="text-lg font-display font-bold text-gray-800 mb-4 leading-snug">
+                {question.trim() || 'Question text will appear here...'}
+              </h3>
+              {type === 'image' && imageUrl && (
+                <div className="mb-6 flex justify-center">
+                  <img src={imageUrl} alt="" className="rounded-xl border border-gray-200 max-h-48 object-contain w-full" />
+                </div>
+              )}
+              <div className="space-y-3">
+                {[0, 1, 2, 3].map((i) => {
+                  const isCorrect = i === previewCorrectIndex;
+                  const label = String.fromCharCode(65 + i);
+                  const text = options[i] ?? '';
+                  return (
+                    <div
+                      key={i}
+                      className={`flex items-center gap-3 p-4 rounded-xl border-2 ${
+                        isCorrect ? 'border-emerald-300 bg-emerald-50/80' : 'border-gray-100 bg-gray-50/50'
+                      }`}
+                    >
+                      <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-gray-200 font-bold text-sm text-gray-700">
+                        {label}
+                      </span>
+                      <span className="text-gray-800">{text || `Option ${label}`}</span>
+                      {isCorrect && (
+                        <span className="ml-auto text-xs font-medium text-emerald-600 bg-emerald-100 px-2 py-1 rounded">
+                          Correct
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {explanation.trim() && (
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Explanation</p>
+                  <p className="text-sm text-gray-600 leading-relaxed">{explanation}</p>
+                </div>
+              )}
+              {videoUrl.trim() && (
+                <div className="mt-4 text-sm text-gray-500">
+                  <span className="font-medium">Video:</span>{' '}
+                  <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block">
+                    {videoUrl}
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </aside>
       </div>
     </>
   );
