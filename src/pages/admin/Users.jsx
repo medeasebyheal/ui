@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { UserPlus, Search, Eye, Pencil, BadgeCheck, Trash2 } from 'lucide-react';
 import api from '../../api/client';
 import Modal from '../../components/admin/Modal';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
@@ -34,6 +35,7 @@ export default function AdminUsers() {
   const [editUser, setEditUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [verifyError, setVerifyError] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', contact: '' });
 
   const fetchUsers = useCallback(() => {
@@ -62,11 +64,15 @@ export default function AdminUsers() {
   }, [searchInput]);
 
   const handleVerify = async (id) => {
+    setVerifyError(null);
     try {
       await api.patch(`/users/${id}/verify`);
       setUsers((prev) => prev.map((u) => (u._id === id ? { ...u, isVerified: true } : u)));
       if (viewUser?._id === id) setViewUser((u) => (u ? { ...u, isVerified: true } : null));
-    } catch (_) {}
+    } catch (err) {
+      const message = err.response?.data?.message || 'Verification failed. User must be subscribed to a package first.';
+      setVerifyError(message);
+    }
   };
 
   const handleUpdate = async (e) => {
@@ -105,6 +111,12 @@ export default function AdminUsers() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+      {verifyError && (
+        <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
+          <span>{verifyError}</span>
+          <button type="button" onClick={() => setVerifyError(null)} className="font-medium hover:underline shrink-0">Dismiss</button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -115,7 +127,7 @@ export default function AdminUsers() {
           type="button"
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-teal-700 text-white font-medium rounded-lg transition-all shadow-sm w-fit"
         >
-          <span className="material-symbols-outlined text-sm">person_add</span>
+          <UserPlus className="w-4 h-4" />
           Add New User
         </button>
       </div>
@@ -124,7 +136,7 @@ export default function AdminUsers() {
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap gap-4 items-center">
         <div className="relative flex-1 min-w-[240px]">
           <span className="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none">
-            <span className="material-symbols-outlined text-lg">search</span>
+            <Search className="w-5 h-5" />
           </span>
           <input
             type="text"
@@ -219,7 +231,7 @@ export default function AdminUsers() {
                           className="p-2 text-slate-400 hover:text-primary transition-colors rounded-lg hover:bg-primary/10"
                           title="View"
                         >
-                          <span className="material-symbols-outlined text-lg">visibility</span>
+                          <Eye className="w-5 h-5" />
                         </button>
                         <button
                           type="button"
@@ -227,7 +239,7 @@ export default function AdminUsers() {
                           className="p-2 text-slate-400 hover:text-primary transition-colors rounded-lg hover:bg-primary/10"
                           title="Edit"
                         >
-                          <span className="material-symbols-outlined text-lg">edit</span>
+                          <Pencil className="w-5 h-5" />
                         </button>
                         {!u.isVerified && (
                           <button
@@ -236,7 +248,7 @@ export default function AdminUsers() {
                             className="p-2 text-slate-400 hover:text-emerald-600 transition-colors rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/10"
                             title="Verify"
                           >
-                            <span className="material-symbols-outlined text-lg">verified</span>
+                            <BadgeCheck className="w-5 h-5" />
                           </button>
                         )}
                         <button
@@ -245,7 +257,7 @@ export default function AdminUsers() {
                           className="p-2 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10"
                           title="Delete"
                         >
-                          <span className="material-symbols-outlined text-lg">delete_outline</span>
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
                     </td>
@@ -308,7 +320,7 @@ export default function AdminUsers() {
 
       {/* View modal */}
       {viewUser && (
-        <Modal open onClose={() => setViewUser(null)} title="User Details">
+        <Modal open onClose={() => { setViewUser(null); setVerifyError(null); }} title="User Details">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-primary font-bold text-lg">
@@ -339,6 +351,11 @@ export default function AdminUsers() {
                 <dd className="font-medium text-slate-900 dark:text-slate-100">{formatDate(viewUser.createdAt)}</dd>
               </div>
             </dl>
+            {verifyError && (
+              <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
+                {verifyError}
+              </p>
+            )}
             {!viewUser.isVerified && (
               <button
                 type="button"

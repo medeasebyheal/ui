@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { HeartPulse, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 
@@ -24,7 +25,7 @@ export default function LoginPage() {
       if (returnUrl && returnUrl.startsWith('/checkout') && data.user.role === 'student') {
         navigate(returnUrl);
       } else {
-        navigate(data.user.role === 'admin' ? '/admin' : '/student');
+        navigate(data.user.role === 'admin' ? '/' : '/student');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
@@ -38,7 +39,7 @@ export default function LoginPage() {
       <div className="bg-white dark:bg-slate-900 shadow-xl shadow-primary/5 rounded-xl border border-primary/10 p-8 md:p-10">
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
-            <span className="material-symbols-outlined text-4xl">ecg_heart</span>
+            <HeartPulse className="w-10 h-10" />
           </div>
           <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">Welcome Back</h2>
           <p className="text-slate-500 dark:text-slate-400">Log in to continue your MBBS preparation</p>
@@ -56,9 +57,7 @@ export default function LoginPage() {
               Email Address
             </label>
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
-                mail
-              </span>
+              <Mail className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 id="email"
                 name="email"
@@ -82,9 +81,7 @@ export default function LoginPage() {
               </a>
             </div>
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
-                lock
-              </span>
+              <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 id="password"
                 name="password"
@@ -100,9 +97,7 @@ export default function LoginPage() {
                 onClick={() => setShowPassword((p) => !p)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
               >
-                <span className="material-symbols-outlined text-xl">
-                  {showPassword ? 'visibility_off' : 'visibility'}
-                </span>
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
@@ -113,9 +108,7 @@ export default function LoginPage() {
             className="w-full py-3.5 px-4 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg shadow-lg shadow-primary/20 transform active:scale-[0.98] transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
           >
             <span>{loading ? 'Logging in...' : 'Log In'}</span>
-            <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">
-              arrow_forward
-            </span>
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
         </form>
 

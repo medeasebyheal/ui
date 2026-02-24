@@ -1,20 +1,24 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { GraduationCap, Droplet, Wind, Heart, Brain, Dna, Accessibility, Activity, FlaskConical, Syringe, BarChart3, BookOpen, ChevronRight, ChevronDown, ChevronUp, Lock, FileText } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import { getRecentViews } from '../../utils/recentViews';
 
 const MODULE_ICONS = [
-  { icon: 'school', bg: 'bg-primary/10', text: 'text-primary' },
-  { icon: 'opacity', bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-500' },
-  { icon: 'air', bg: 'bg-indigo-50 dark:bg-indigo-900/20', text: 'text-indigo-500' },
-  { icon: 'favorite', bg: 'bg-rose-50 dark:bg-rose-900/20', text: 'text-rose-500' },
-  { icon: 'psychology', bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-500' },
-  { icon: 'biotech', bg: 'bg-violet-50 dark:bg-violet-900/20', text: 'text-violet-500' },
+  { Icon: GraduationCap, bg: 'bg-primary/10', text: 'text-primary' },
+  { Icon: Droplet, bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-500' },
+  { Icon: Wind, bg: 'bg-indigo-50 dark:bg-indigo-900/20', text: 'text-indigo-500' },
+  { Icon: Heart, bg: 'bg-rose-50 dark:bg-rose-900/20', text: 'text-rose-500' },
+  { Icon: Brain, bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-500' },
+  { Icon: Dna, bg: 'bg-violet-50 dark:bg-violet-900/20', text: 'text-violet-500' },
 ];
 
-const SUBJECT_ICONS = ['accessibility_new', 'monitor_heart', 'science', 'biotech', 'vaccines', 'analytics'];
-const RECENT_ICONS = ['psychology', 'receipt_long', 'view_in_ar'];
+const SUBJECT_ICONS = [Accessibility, Activity, FlaskConical, Dna, Syringe, BarChart3];
+
+function getSubjectIconComponent(idx) {
+  return SUBJECT_ICONS[idx % SUBJECT_ICONS.length];
+}
 
 const MBBS_STUDY_TIPS = [
   'Read one topic from theory, then solve 10–15 MCQs on the same topic the same day. Application cements memory.',
@@ -31,10 +35,6 @@ const MBBS_STUDY_TIPS = [
 
 function getModuleStyle(idx) {
   return MODULE_ICONS[idx % MODULE_ICONS.length];
-}
-
-function getSubjectIcon(idx) {
-  return SUBJECT_ICONS[idx % SUBJECT_ICONS.length];
 }
 
 export default function StudentResources() {
@@ -194,13 +194,13 @@ export default function StudentResources() {
                   <div
                     className={`w-12 h-12 ${item.iconBg || 'bg-teal-50 dark:bg-teal-900/30'} rounded-lg flex items-center justify-center ${item.iconColor || 'text-primary'}`}
                   >
-                    <span className="material-symbols-outlined">{item.icon || 'menu_book'}</span>
+                    <BookOpen className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold group-hover:text-primary transition-colors truncate">{item.name}</h3>
                     <p className="text-xs text-slate-500 truncate">{item.meta || 'Resource'}</p>
                   </div>
-                  <span className="material-symbols-outlined text-slate-300 flex-shrink-0">chevron_right</span>
+                  <ChevronRight className="w-5 h-5 text-slate-300 flex-shrink-0" />
                 </Link>
               ))}
             </div>
@@ -222,6 +222,7 @@ export default function StudentResources() {
                   const subjects = subjectsByModule[mod._id] || [];
                   const ospes = ospesByModule[mod._id] || [];
                   const style = getModuleStyle(modIdx);
+                  const ModuleIcon = style.Icon;
                   const totalTopics = subjects.reduce((acc, s) => acc + (topicsBySubject[s._id]?.length || 0), 0);
 
                   return (
@@ -238,7 +239,7 @@ export default function StudentResources() {
                       >
                         <div className="flex items-center gap-4">
                           <div className={`w-10 h-10 ${style.bg} rounded-xl flex items-center justify-center ${style.text}`}>
-                            <span className="material-symbols-outlined">{style.icon}</span>
+                            <ModuleIcon className="w-5 h-5" />
                           </div>
                           <div>
                             <h3 className="font-bold text-lg text-slate-900 dark:text-white">{mod.name}</h3>
@@ -248,16 +249,18 @@ export default function StudentResources() {
                             </div>
                           </div>
                         </div>
-                        <span className="material-symbols-outlined text-slate-400">
-                          {isExpanded ? 'expand_less' : 'expand_more'}
-                        </span>
+                        {isExpanded ? (
+                          <ChevronUp className="w-5 h-5 text-slate-400" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-slate-400" />
+                        )}
                       </div>
 
                       {isExpanded && (
                         <div className="p-6 space-y-8 bg-slate-50/50 dark:bg-slate-800/30">
                           {subjects.map((sub, subIdx) => {
-                            const topics = (topicsBySubject[sub._id] || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-                            const subIcon = getSubjectIcon(subIdx);
+                            const topics = (topicsBySubject[sub._id] || []).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                            const SubIcon = getSubjectIconComponent(subIdx);
                             const subjectUrl = `/student/modules/${mod._id}/subjects/${sub._id}`;
 
                             return (
@@ -267,12 +270,12 @@ export default function StudentResources() {
                                   className="flex items-center justify-between mb-4 group/subject cursor-pointer rounded-lg -mx-2 px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors"
                                 >
                                   <div className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-primary/80 text-lg group-hover/subject:text-primary transition-colors">{subIcon}</span>
+                                    <SubIcon className="w-5 h-5 text-primary/80 group-hover/subject:text-primary transition-colors" />
                                     <h4 className="font-semibold text-slate-700 dark:text-slate-300 group-hover/subject:text-primary transition-colors">{sub.name}</h4>
                                   </div>
                                   <span className="text-xs font-medium bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-slate-500 flex items-center gap-1">
                                     {topics.length} Topic{topics.length !== 1 ? 's' : ''}
-                                    <span className="material-symbols-outlined text-[14px] opacity-70">chevron_right</span>
+                                    <ChevronRight className="w-3.5 h-3.5 opacity-70" />
                                   </span>
                                 </Link>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pl-7 border-l-2 border-slate-100 dark:border-slate-800 ml-2">
@@ -289,9 +292,11 @@ export default function StudentResources() {
                                         {...wrapperProps}
                                         className={`p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20 hover:shadow-md transition-shadow group cursor-pointer ${!accessible ? 'opacity-70' : ''}`}
                                       >
-                                        <span className={`material-symbols-outlined text-xl mb-3 ${accessible ? 'text-primary' : 'text-slate-400'}`}>
-                                          {accessible ? 'menu_book' : 'lock'}
-                                        </span>
+                                        {accessible ? (
+                                          <BookOpen className="w-5 h-5 mb-3 text-primary" />
+                                        ) : (
+                                          <Lock className="w-5 h-5 mb-3 text-slate-400" />
+                                        )}
                                         <h5 className={`text-sm font-semibold mb-1 ${accessible ? 'group-hover:text-primary transition-colors' : ''}`}>
                                           {topic.name}
                                         </h5>
@@ -301,7 +306,7 @@ export default function StudentResources() {
                                         <span className={`inline-flex items-center text-[11px] font-bold uppercase gap-1 ${accessible ? 'text-primary' : 'text-slate-400'}`}>
                                           {accessible ? (
                                             <>
-                                              <span className="material-symbols-outlined text-[14px]">menu_book</span>
+                                              <BookOpen className="w-3.5 h-3.5 inline-block" />
                                               Open
                                             </>
                                           ) : (
@@ -325,7 +330,7 @@ export default function StudentResources() {
                                 >
                                   <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-blue-600">
-                                      <span className="material-symbols-outlined">description</span>
+                                      <FileText className="w-5 h-5" />
                                     </div>
                                     <div>
                                       <h5 className="text-sm font-semibold text-slate-900 dark:text-white">{ospe.name}</h5>

@@ -35,14 +35,13 @@ export default function OspeForm({ moduleId, ospe, onSave, onClose }) {
     e.preventDefault();
     const payload = {
       name,
-      questions: questions.map((q, order) => ({
+      questions: questions.map((q) => ({
         questionText: q.questionText,
         imageUrl: q.imageUrl || undefined,
         type: q.type,
         options: q.type === 'picture_mcq' ? (q.options || []).filter(Boolean) : undefined,
         correctIndex: q.type === 'picture_mcq' ? q.correctIndex : undefined,
         expectedAnswer: q.type === 'viva_written' ? q.expectedAnswer : undefined,
-        order,
       })),
     };
     setSaving(true);

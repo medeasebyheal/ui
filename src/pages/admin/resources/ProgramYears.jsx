@@ -81,7 +81,6 @@ export default function ProgramYears() {
                 </div>
                 <div>
                   <h2 className="font-heading font-semibold text-gray-900 group-hover:text-primary transition-colors">{year.name}</h2>
-                  <p className="text-xs text-gray-500">Order: {year.order}</p>
                 </div>
               </div>
             </Link>

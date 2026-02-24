@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { BookOpen, Droplet, Heart, Wind, Plus, Search, ChevronDown, SlidersHorizontal, Pencil, Trash2, ArrowRight, Calendar, ClipboardList } from 'lucide-react';
 import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import Modal from '../../../components/admin/Modal';
@@ -9,10 +10,10 @@ import { ModuleForm } from '../../../components/admin/ResourceForms';
 const PER_PAGE = 10;
 
 const MODULE_ROW_STYLES = [
-  { icon: 'foundation', bg: 'bg-sky-100 dark:bg-sky-500/10', iconCl: 'text-primary' },
-  { icon: 'bloodtype', bg: 'bg-red-100 dark:bg-red-500/10', iconCl: 'text-red-500' },
-  { icon: 'favorite', bg: 'bg-green-100 dark:bg-green-500/10', iconCl: 'text-green-600 dark:text-green-400' },
-  { icon: 'air', bg: 'bg-orange-100 dark:bg-orange-500/10', iconCl: 'text-orange-600 dark:text-orange-400' },
+  { Icon: BookOpen, bg: 'bg-sky-100 dark:bg-sky-500/10', iconCl: 'text-primary' },
+  { Icon: Droplet, bg: 'bg-red-100 dark:bg-red-500/10', iconCl: 'text-red-500' },
+  { Icon: Heart, bg: 'bg-green-100 dark:bg-green-500/10', iconCl: 'text-green-600 dark:text-green-400' },
+  { Icon: Wind, bg: 'bg-orange-100 dark:bg-orange-500/10', iconCl: 'text-orange-600 dark:text-orange-400' },
 ];
 
 function getModuleRowStyle(index) {
@@ -55,7 +56,7 @@ export default function ModulesList() {
       .then(({ data }) => setYears(Array.isArray(data) ? data : []))
       .catch(() => setYears([]));
 
-  const yearsSorted = useMemo(() => [...years].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)), [years]);
+  const yearsSorted = useMemo(() => [...years].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)), [years]);
 
   const filteredModules = useMemo(() => {
     let list = modules;
@@ -123,7 +124,7 @@ export default function ModulesList() {
             onClick={() => setAddFormOpen(true)}
             className="bg-primary hover:bg-sky-600 text-white px-6 py-3 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-all shadow-lg shadow-sky-500/20 active:scale-95"
           >
-            <span className="material-symbols-outlined">add</span>
+            <Plus className="w-5 h-5" />
             <span>Add module</span>
           </button>
         </div>
@@ -131,7 +132,7 @@ export default function ModulesList() {
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex-1 relative">
             <span className="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none">
-              <span className="material-symbols-outlined text-xl">search</span>
+              <Search className="w-5 h-5" />
             </span>
             <input
               type="text"
@@ -158,10 +159,10 @@ export default function ModulesList() {
                   </option>
                 ))}
               </select>
-              <span className="absolute right-3 top-3 material-symbols-outlined text-slate-400 pointer-events-none text-xl">expand_more</span>
+              <ChevronDown className="w-5 h-5 absolute right-3 top-3 text-slate-400 pointer-events-none" />
             </div>
             <button type="button" className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all" title="Filters">
-              <span className="material-symbols-outlined">tune</span>
+              <SlidersHorizontal className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -192,6 +193,7 @@ export default function ModulesList() {
                   paginated.map((mod, idx) => {
                     const yearId = mod.year?._id || mod.year;
                     const rowStyle = getModuleRowStyle((page - 1) * PER_PAGE + idx);
+                    const RowIcon = rowStyle.Icon;
                     const yearIdx = yearId ? yearOrderMap.get(yearId) ?? idx : 0;
                     const subjects = mod.subjectIds || [];
                     const showSubjects = subjects.slice(0, 2);
@@ -201,7 +203,7 @@ export default function ModulesList() {
                         <td className="px-6 py-5">
                           <div className="flex items-center">
                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-4 ${rowStyle.bg} ${rowStyle.iconCl}`}>
-                              <span className="material-symbols-outlined">{rowStyle.icon}</span>
+                              <RowIcon className="w-5 h-5" />
                             </div>
                             <span className="font-semibold text-slate-900 dark:text-slate-100">{mod.name}</span>
                           </div>
@@ -241,7 +243,7 @@ export default function ModulesList() {
                                 className="p-2 text-slate-400 hover:text-primary hover:bg-sky-50 dark:hover:bg-sky-500/10 rounded-lg transition-all"
                                 title="Edit"
                               >
-                                <span className="material-symbols-outlined text-xl">edit</span>
+                                <Pencil className="w-5 h-5" />
                               </button>
                             )}
                             <button
@@ -250,14 +252,14 @@ export default function ModulesList() {
                               className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
                               title="Delete"
                             >
-                              <span className="material-symbols-outlined text-xl">delete_outline</span>
+                              <Trash2 className="w-5 h-5" />
                             </button>
                             {yearId && (
                               <Link
                                 to={`/admin/resources/years/${yearId}/modules/${mod._id}`}
                                 className="ml-2 flex items-center text-primary font-semibold text-sm hover:underline"
                               >
-                                Open <span className="material-symbols-outlined ml-1 text-sm">east</span>
+                                Open <ArrowRight className="w-4 h-4 ml-1" />
                               </Link>
                             )}
                           </div>
@@ -299,7 +301,7 @@ export default function ModulesList() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center space-x-4">
             <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
-              <span className="material-symbols-outlined">auto_stories</span>
+              <BookOpen className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm text-slate-500 dark:text-slate-400">Total Modules</p>
@@ -308,7 +310,7 @@ export default function ModulesList() {
           </div>
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center space-x-4">
             <div className="w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
-              <span className="material-symbols-outlined">calendar_today</span>
+              <Calendar className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm text-slate-500 dark:text-slate-400">Avg. Modules/Year</p>
@@ -317,7 +319,7 @@ export default function ModulesList() {
           </div>
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center space-x-4">
             <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
-              <span className="material-symbols-outlined">pending_actions</span>
+              <ClipboardList className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm text-slate-500 dark:text-slate-400">Incomplete Drafts</p>
@@ -368,7 +370,6 @@ function AddModuleForm({ years, onSave, onClose }) {
   const [yearId, setYearId] = useState('');
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [order, setOrder] = useState(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -383,7 +384,6 @@ function AddModuleForm({ years, onSave, onClose }) {
     try {
       await api.post(`/admin/years/${yearId}/modules`, {
         name: name.trim(),
-        order: Number(order) || 1,
         imageUrl: imageUrl.trim() || undefined,
       });
       onSave?.();
@@ -395,7 +395,7 @@ function AddModuleForm({ years, onSave, onClose }) {
     }
   };
 
-  const sortedYears = [...(years || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const sortedYears = [...(years || [])].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
 
   return (
     <Modal open onClose={onClose} title="Add module">
@@ -439,15 +439,6 @@ function AddModuleForm({ years, onSave, onClose }) {
             placeholder="https://..."
           />
           <p className="text-xs text-slate-500 mt-1">Optional. Used on the public Modules page.</p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Order</label>
-          <input
-            type="number"
-            value={order}
-            onChange={(e) => setOrder(Number(e.target.value))}
-            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:text-white"
-          />
         </div>
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div className="flex gap-2 justify-end">

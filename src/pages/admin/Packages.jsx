@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { Plus, Search, Layers, Pencil, Trash2, ChevronLeft, ChevronRight, Package, CheckCircle, CreditCard, BarChart3 } from 'lucide-react';
 import api from '../../api/client';
 import Modal from '../../components/admin/Modal';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
@@ -61,7 +62,7 @@ export default function AdminPackages() {
       if (!map[yearName]) map[yearName] = [];
       map[yearName].push(m);
     });
-    Object.keys(map).forEach((k) => map[k].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+    Object.keys(map).forEach((k) => map[k].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)));
     return map;
   }, [modules]);
 
@@ -124,7 +125,7 @@ export default function AdminPackages() {
           onClick={() => setFormOpen({})}
           className="bg-primary hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 font-semibold transition-all shadow-sm active:scale-[0.98] w-fit"
         >
-          <span className="material-symbols-outlined text-lg">add</span>
+          <Plus className="w-5 h-5" />
           Add Package
         </button>
       </div>
@@ -132,7 +133,7 @@ export default function AdminPackages() {
       {/* Filters */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-wrap gap-4 items-center">
         <div className="relative flex-1 min-w-[300px]">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={searchInput}
@@ -214,7 +215,7 @@ export default function AdminPackages() {
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
                         <div className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-sm opacity-50">layers</span>
+                          <Layers className="w-4 h-4 opacity-50" />
                           {moduleCount} module{moduleCount !== 1 ? 's' : ''}
                         </div>
                       </td>
@@ -229,7 +230,7 @@ export default function AdminPackages() {
                             className="p-2 text-slate-400 hover:text-primary hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-lg transition-all"
                             title="Edit"
                           >
-                            <span className="material-symbols-outlined">edit</span>
+                            <Pencil className="w-4 h-4" />
                           </button>
                           <button
                             type="button"
@@ -237,7 +238,7 @@ export default function AdminPackages() {
                             className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
                             title="Delete"
                           >
-                            <span className="material-symbols-outlined">delete</span>
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -263,7 +264,7 @@ export default function AdminPackages() {
               disabled={page <= 1}
               className="px-3 py-1.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <span className="material-symbols-outlined text-sm">chevron_left</span> Previous
+              <ChevronLeft className="w-4 h-4" /> Previous
             </button>
             <button
               type="button"
@@ -271,7 +272,7 @@ export default function AdminPackages() {
               disabled={page >= totalPages}
               className="px-3 py-1.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Next <span className="material-symbols-outlined text-sm">chevron_right</span>
+              Next <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -283,7 +284,7 @@ export default function AdminPackages() {
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Packages</span>
             <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <span className="material-symbols-outlined text-blue-500 dark:text-blue-400">inventory_2</span>
+              <Package className="w-5 h-5 text-blue-500 dark:text-blue-400" />
             </div>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">{packages.length}</p>
@@ -293,7 +294,7 @@ export default function AdminPackages() {
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Active Subscriptions</span>
             <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-              <span className="material-symbols-outlined text-emerald-500 dark:text-emerald-400">check_circle</span>
+              <CheckCircle className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
             </div>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">—</p>
@@ -303,7 +304,7 @@ export default function AdminPackages() {
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Monthly Revenue</span>
             <div className="p-2 bg-teal-50 dark:bg-teal-900/20 rounded-lg">
-              <span className="material-symbols-outlined text-teal-500 dark:text-teal-400">payments</span>
+              <CreditCard className="w-5 h-5 text-teal-500 dark:text-teal-400" />
             </div>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">—</p>
@@ -313,7 +314,7 @@ export default function AdminPackages() {
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Avg. Package Price</span>
             <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-              <span className="material-symbols-outlined text-amber-500 dark:text-amber-400">analytics</span>
+              <BarChart3 className="w-5 h-5 text-amber-500 dark:text-amber-400" />
             </div>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">Rs {avgPrice.toLocaleString()}</p>
@@ -349,8 +350,7 @@ function PackageForm({ package: pkg, years, modulesByYear, onSave, onClose }) {
   const [type, setType] = useState(pkg?.type ?? 'year_half_part1');
   const [year, setYear] = useState(() => {
     if (pkg?.year != null) return pkg.year;
-    const first = years.find((y) => y.order != null);
-    return first?.order ?? 1;
+    return 1;
   });
   const [part, setPart] = useState(pkg?.part ?? 1);
   const [moduleIds, setModuleIds] = useState(() => {
@@ -449,9 +449,9 @@ function PackageForm({ package: pkg, years, modulesByYear, onSave, onClose }) {
                 ) : (
                   years
                     .slice()
-                    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-                    .map((y) => (
-                      <option key={y._id} value={y.order != null ? y.order : y._id}>
+                    .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0))
+                    .map((y, i) => (
+                      <option key={y._id} value={i + 1}>
                         {y.name}
                       </option>
                     ))

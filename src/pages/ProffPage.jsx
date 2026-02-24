@@ -24,14 +24,8 @@ export default function ProffPage() {
 
   const jsmu = proffStructures.find((ps) => ps.university === 'jsmu');
   const other = proffStructures.find((ps) => ps.university === 'other');
-  const jsmuYears = useMemo(() => {
-    if (!jsmu?.years?.length) return [];
-    return [...jsmu.years].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  }, [jsmu]);
-  const otherYears = useMemo(() => {
-    if (!other?.years?.length) return [];
-    return [...other.years].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  }, [other]);
+  const jsmuYears = useMemo(() => jsmu?.years ?? [], [jsmu]);
+  const otherYears = useMemo(() => other?.years ?? [], [other]);
 
   const matchesSearch = (text) => {
     if (!searchQuery.trim()) return true;
@@ -151,9 +145,7 @@ export default function ProffPage() {
                     filteredJsmuYears.map((yr, yi) => {
                       const yearIndex = jsmuYears.findIndex((y) => y._id === yr._id);
                       const accessible = isYearAccessible(yearIndex);
-                      const papers = (yr.papers || []).sort(
-                        (a, b) => (a.order ?? 0) - (b.order ?? 0)
-                      );
+                      const papers = yr.papers || [];
                       const mcqPapers = papers.filter((p) => p.type === 'mcq');
                       const ospePapers = papers.filter((p) => p.type === 'ospe');
 
@@ -315,9 +307,7 @@ export default function ProffPage() {
                       {filteredOtherYears.map((yr, yi) => {
                         const yearIndex = otherYears.findIndex((y) => y._id === yr._id);
                         const yearAccessible = isYearAccessible(yearIndex);
-                        const subjects = (yr.subjects || []).sort(
-                          (a, b) => (a.order ?? 0) - (b.order ?? 0)
-                        );
+                        const subjects = yr.subjects || [];
                         // Year 1 first subject = free preview; rest need Master Proff
                         const accessibleSubjects = yearAccessible
                           ? subjects

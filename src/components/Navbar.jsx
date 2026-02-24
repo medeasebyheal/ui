@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ChevronDown, LayoutDashboard, LogOut } from 'lucide-react';
+import { ChevronDown, LayoutDashboard, LogOut, Lock, LockOpen } from 'lucide-react';
 import api from '../api/client';
 
 function Navbar() {
@@ -128,9 +128,9 @@ function Navbar() {
                   >
                     <span className="text-gray-400 flex-shrink-0">
                       {hasAccess ? (
-                        <span className="material-symbols-outlined text-lg text-primary">lock_open</span>
+                        <LockOpen className="w-5 h-5 text-primary" />
                       ) : (
-                        <span className="material-symbols-outlined text-lg">lock</span>
+                        <Lock className="w-5 h-5" />
                       )}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -278,9 +278,9 @@ function Navbar() {
                     className="flex items-center gap-2 py-2 px-3 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg"
                   >
                     {hasAccess ? (
-                      <span className="material-symbols-outlined text-base text-primary">lock_open</span>
+                      <LockOpen className="w-4 h-4 text-primary" />
                     ) : (
-                      <span className="material-symbols-outlined text-base text-gray-400">lock</span>
+                      <Lock className="w-4 h-4 text-gray-400" />
                     )}
                     <span className="truncate">{mod.name}</span>
                     {mod.yearName && <span className="text-xs text-gray-400 flex-shrink-0">{mod.yearName}</span>}

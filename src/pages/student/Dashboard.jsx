@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { BookOpen, BarChart3, CreditCard, Calendar } from 'lucide-react';
+import { BookOpen, BarChart3, CreditCard, Calendar, PlayCircle, Info } from 'lucide-react';
 import { getRecentViews } from '../../utils/recentViews';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1551076805-e1869033e561?w=600&h=400&fit=crop';
@@ -125,7 +125,7 @@ export default function StudentDashboard() {
               <p className="text-slate-500 mb-6 max-w-2xl">{continueLearning.description}</p>
               <div className="flex flex-col sm:flex-row items-center gap-6">
                 <span className="inline-flex items-center gap-2 w-full sm:w-auto px-10 py-4 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 hover:bg-teal-700 transition-all justify-center">
-                  <span className="material-symbols-outlined">play_circle</span>
+                  <PlayCircle className="w-5 h-5" />
                   {recentView ? 'Resume Learning' : 'Open Resources'}
                 </span>
                 {recentView && (
@@ -139,7 +139,7 @@ export default function StudentDashboard() {
 
       {/* Info banner */}
       <div className="mt-8 p-4 bg-teal-50 border border-teal-100 rounded-xl flex items-center gap-3">
-        <span className="material-symbols-outlined text-primary">info</span>
+        <Info className="w-5 h-5 text-primary" />
         <p className="text-sm text-teal-800">
           {hasPackages ? (
             <>You have access to {user.packages.length} package(s). Open <Link to="/student/resources" className="font-bold underline">Resources</Link> to start learning.</>

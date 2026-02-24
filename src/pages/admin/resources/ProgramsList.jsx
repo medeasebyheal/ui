@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { GraduationCap, Activity, Pill, Plus, Search, Filter, Download, Calendar, LayoutGrid, Pencil, Trash2, ArrowRight, CheckCircle, Users, Hourglass, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import { ProgramForm } from '../../../components/admin/ResourceForms';
@@ -21,9 +22,9 @@ function getProgramSubtitle(name) {
 }
 
 const ROW_STYLES = [
-  { icon: 'school', bg: 'bg-teal-100 dark:bg-teal-900/30', iconCl: 'text-teal-600 dark:text-teal-400' },
-  { icon: 'medical_information', bg: 'bg-blue-100 dark:bg-blue-900/30', iconCl: 'text-blue-600 dark:text-blue-400' },
-  { icon: 'medication', bg: 'bg-purple-100 dark:bg-purple-900/30', iconCl: 'text-purple-600 dark:text-purple-400' },
+  { Icon: GraduationCap, bg: 'bg-teal-100 dark:bg-teal-900/30', iconCl: 'text-teal-600 dark:text-teal-400' },
+  { Icon: Activity, bg: 'bg-blue-100 dark:bg-blue-900/30', iconCl: 'text-blue-600 dark:text-blue-400' },
+  { Icon: Pill, bg: 'bg-purple-100 dark:bg-purple-900/30', iconCl: 'text-purple-600 dark:text-purple-400' },
 ];
 
 function getRowStyle(index) {
@@ -107,7 +108,7 @@ export default function ProgramsList() {
             onClick={() => setFormOpen('new')}
             className="bg-primary hover:bg-teal-700 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20 active:scale-95"
           >
-            <span className="material-symbols-outlined text-[20px]">add</span>
+            <Plus className="w-5 h-5" />
             <span>Add Program</span>
           </button>
         </div>
@@ -116,7 +117,7 @@ export default function ProgramsList() {
           <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/30">
             <div className="flex items-center gap-4 flex-1 min-w-[240px]">
               <div className="relative flex-1 max-w-md">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+                <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   value={search}
@@ -128,10 +129,10 @@ export default function ProgramsList() {
             </div>
             <div className="flex items-center gap-2">
               <button type="button" className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Filter">
-                <span className="material-symbols-outlined">filter_list</span>
+                <Filter className="w-5 h-5" />
               </button>
               <button type="button" className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Download">
-                <span className="material-symbols-outlined">file_download</span>
+                <Download className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -141,7 +142,6 @@ export default function ProgramsList() {
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50">
                   <th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Program Name</th>
-                  <th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Order Index</th>
                   <th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Created</th>
                   <th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Stats</th>
                   <th className="px-6 py-4 text-[13px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
@@ -150,7 +150,7 @@ export default function ProgramsList() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                    <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                       {programs.length === 0
                         ? 'No programs yet. Add a program (MBBS, BDS, PharmD) to start building the academic structure.'
                         : 'No programs match your filter.'}
@@ -166,7 +166,7 @@ export default function ProgramsList() {
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-3">
                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${style.bg} ${style.iconCl}`}>
-                              <span className="material-symbols-outlined">{style.icon}</span>
+                              <style.Icon className="w-5 h-5" />
                             </div>
                             <div>
                               <p className="text-sm font-semibold text-slate-900 dark:text-white">{program.name}</p>
@@ -175,21 +175,16 @@ export default function ProgramsList() {
                           </div>
                         </td>
                         <td className="px-6 py-5">
-                          <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                            {program.order ?? 0}
-                          </span>
-                        </td>
-                        <td className="px-6 py-5">
                           <span className="text-sm text-slate-600 dark:text-slate-400">{formatCreated(program.createdAt)}</span>
                         </td>
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-4 text-xs font-medium">
                             <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                              <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                              <Calendar className="w-3.5 h-3.5" />
                               {yearsCount} {yearsCount === 1 ? 'Year' : 'Years'}
                             </span>
                             <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                              <span className="material-symbols-outlined text-[14px]">view_module</span>
+                              <LayoutGrid className="w-3.5 h-3.5" />
                               {modulesCount} Modules
                             </span>
                           </div>
@@ -202,7 +197,7 @@ export default function ProgramsList() {
                               className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
                               title="Edit"
                             >
-                              <span className="material-symbols-outlined text-[18px]">edit</span>
+                              <Pencil className="w-5 h-5" />
                             </button>
                             <button
                               type="button"
@@ -210,14 +205,14 @@ export default function ProgramsList() {
                               className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
                               title="Delete"
                             >
-                              <span className="material-symbols-outlined text-[18px]">delete</span>
+                              <Trash2 className="w-5 h-5" />
                             </button>
                             <Link
                               to={`/admin/resources/programs/${program._id}`}
                               className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary hover:text-white rounded-lg transition-all border border-primary/20"
                             >
                               OPEN
-                              <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
                             </Link>
                           </div>
                         </td>
@@ -240,7 +235,7 @@ export default function ProgramsList() {
                 disabled={page <= 1}
                 className="p-1.5 rounded-md border border-slate-200 dark:border-slate-700 text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-700"
               >
-                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                <ChevronLeft className="w-5 h-5" />
               </button>
               {(() => {
                 const show = Math.min(5, totalPages);
@@ -264,7 +259,7 @@ export default function ProgramsList() {
                 disabled={page >= totalPages}
                 className="p-1.5 rounded-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700"
               >
-                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -273,7 +268,7 @@ export default function ProgramsList() {
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-4">
             <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl text-emerald-600 dark:text-emerald-400">
-              <span className="material-symbols-outlined">check_circle</span>
+              <CheckCircle className="w-6 h-6" />
             </div>
             <div>
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Active Programs</p>
@@ -282,7 +277,7 @@ export default function ProgramsList() {
           </div>
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-4">
             <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl text-blue-600 dark:text-blue-400">
-              <span className="material-symbols-outlined">groups</span>
+              <Users className="w-6 h-6" />
             </div>
             <div>
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Enrolled Students</p>
@@ -291,7 +286,7 @@ export default function ProgramsList() {
           </div>
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-4">
             <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl text-orange-600 dark:text-orange-400">
-              <span className="material-symbols-outlined">hourglass_top</span>
+              <Hourglass className="w-6 h-6" />
             </div>
             <div>
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Pending Review</p>

@@ -21,7 +21,6 @@ export default function McqFormPage() {
   const [options, setOptions] = useState(['', '', '', '']);
   const [correctIndex, setCorrectIndex] = useState(0);
   const [explanation, setExplanation] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
   const [type, setType] = useState('text');
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -49,7 +48,6 @@ export default function McqFormPage() {
           setOptions(data.options?.length ? [...data.options] : ['', '', '', '']);
           setCorrectIndex(data.correctIndex ?? 0);
           setExplanation(data.explanation || '');
-          setVideoUrl(data.videoUrl || '');
           setType(data.type || 'text');
           setImageUrl(data.imageUrl || '');
         }
@@ -93,7 +91,6 @@ export default function McqFormPage() {
         options: opts,
         correctIndex,
         explanation,
-        videoUrl: videoUrl.trim() || undefined,
         type,
         imageUrl: type === 'image' ? imageUrl : undefined,
       };
@@ -228,18 +225,6 @@ export default function McqFormPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">YouTube video link (optional)</label>
-            <input
-              type="url"
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-              placeholder="https://www.youtube.com/watch?v=..."
-            />
-            <p className="text-xs text-gray-500 mt-1">Add a video link to explain this question.</p>
-          </div>
-
           <div className="flex flex-wrap gap-3 pt-2">
             <button
               type="submit"
@@ -307,14 +292,6 @@ export default function McqFormPage() {
                 <div className="mt-6 pt-4 border-t border-gray-200">
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Explanation</p>
                   <p className="text-sm text-gray-600 leading-relaxed">{explanation}</p>
-                </div>
-              )}
-              {videoUrl.trim() && (
-                <div className="mt-4 text-sm text-gray-500">
-                  <span className="font-medium">Video:</span>{' '}
-                  <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block">
-                    {videoUrl}
-                  </a>
                 </div>
               )}
             </div>

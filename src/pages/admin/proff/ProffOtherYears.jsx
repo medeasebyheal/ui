@@ -6,8 +6,7 @@ import Modal from '../../../components/admin/Modal';
 import ConfirmDialog from '../../../components/admin/ConfirmDialog';
 
 function normalizeYears(doc) {
-  if (!doc?.years?.length) return [];
-  return doc.years.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  return doc?.years ?? [];
 }
 
 export default function ProffOtherYears() {
@@ -56,7 +55,6 @@ export default function ProffOtherYears() {
       } else {
         await api.post('/admin/proff/other/years', {
           name,
-          order: years.length,
         });
       }
       await load();

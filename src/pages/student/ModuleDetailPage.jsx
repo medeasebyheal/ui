@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { ChevronRight, BookOpen, Search, Lock, LockOpen, ArrowRight, FlaskConical, Palette, Droplet, Activity, Dna } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import { recordRecentView } from '../../utils/recentViews';
@@ -12,11 +13,11 @@ const SUBJECT_PLACEHOLDER_IMAGES = [
   'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=400&h=200&fit=crop',
 ];
 const OSPE_ICONS = [
-  { icon: 'colorize', iconClass: 'bg-indigo-50 text-indigo-600' },
-  { icon: 'bloodtype', iconClass: 'bg-rose-50 text-rose-600' },
-  { icon: 'monitoring', iconClass: 'bg-amber-50 text-amber-600' },
-  { icon: 'science', iconClass: 'bg-emerald-50 text-emerald-600' },
-  { icon: 'biotech', iconClass: 'bg-violet-50 text-violet-600' },
+  { Icon: Palette, iconClass: 'bg-indigo-50 text-indigo-600' },
+  { Icon: Droplet, iconClass: 'bg-rose-50 text-rose-600' },
+  { Icon: Activity, iconClass: 'bg-amber-50 text-amber-600' },
+  { Icon: FlaskConical, iconClass: 'bg-emerald-50 text-emerald-600' },
+  { Icon: Dna, iconClass: 'bg-violet-50 text-violet-600' },
 ];
 
 export default function ModuleDetailPage() {
@@ -80,14 +81,14 @@ export default function ModuleDetailPage() {
   }, [user?.packages, moduleId]);
 
   const filteredSubjects = useMemo(() => {
-    const sorted = [...(subjects || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const sorted = [...(subjects || [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     if (!subjectSearch.trim()) return sorted;
     const q = subjectSearch.trim().toLowerCase();
     return sorted.filter((s) => s.name?.toLowerCase().includes(q));
   }, [subjects, subjectSearch]);
 
   const sortedOspes = useMemo(
-    () => [...(ospes || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    () => [...(ospes || [])].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)),
     [ospes]
   );
 
@@ -121,7 +122,7 @@ export default function ModuleDetailPage() {
               </Link>
             </li>
             <li>
-              <span className="material-symbols-outlined text-xs">chevron_right</span>
+              <ChevronRight className="w-3 h-3 inline-block" />
             </li>
             <li>
               <span className="text-slate-900 font-medium">{module.name}</span>
@@ -164,13 +165,11 @@ export default function ModuleDetailPage() {
         <section className="mb-16">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 border-b border-slate-200 pb-4">
             <h2 className="text-2xl font-bold flex items-center text-slate-900">
-              <span className="material-symbols-outlined mr-2 text-primary">book</span>
+              <BookOpen className="w-6 h-6 mr-2 text-primary" />
               Module Subjects
             </h2>
             <div className="relative w-full sm:w-72">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
-                search
-              </span>
+              <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
                 value={subjectSearch}
@@ -220,13 +219,11 @@ export default function ModuleDetailPage() {
                         }}
                       />
                       <div className="absolute top-3 right-3 bg-white/90 p-1.5 rounded-full shadow-sm">
-                        <span
-                          className={`material-symbols-outlined text-sm ${
-                            accessible ? 'text-emerald-500' : 'text-slate-400'
-                          }`}
-                        >
-                          {accessible ? 'lock_open' : 'lock'}
-                        </span>
+                        {accessible ? (
+                          <LockOpen className="w-4 h-4 text-emerald-500" />
+                        ) : (
+                          <Lock className="w-4 h-4 text-slate-400" />
+                        )}
                       </div>
                     </div>
                     <div className="p-5">
@@ -242,9 +239,7 @@ export default function ModuleDetailPage() {
                         {accessible ? (
                           <span className="text-primary font-semibold text-sm flex items-center group/btn">
                             Explore{' '}
-                            <span className="material-symbols-outlined text-sm ml-1 group-hover/btn:translate-x-1 transition-transform">
-                              arrow_forward
-                            </span>
+                            <ArrowRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
                           </span>
                         ) : (
                           <span className="text-slate-400 font-semibold text-sm italic">
@@ -264,7 +259,7 @@ export default function ModuleDetailPage() {
         <section>
           <div className="flex items-center justify-between mb-8 border-b border-slate-200 pb-4">
             <h2 className="text-2xl font-bold flex items-center text-slate-900">
-              <span className="material-symbols-outlined mr-2 text-primary">science</span>
+              <FlaskConical className="w-6 h-6 mr-2 text-primary" />
               OSPEs & Practical Prep
             </h2>
           </div>
@@ -275,7 +270,7 @@ export default function ModuleDetailPage() {
               </p>
             ) : (
               sortedOspes.map((ospe, idx) => {
-                const { icon, iconClass } = OSPE_ICONS[idx % OSPE_ICONS.length];
+                const { Icon: OspeIcon, iconClass } = OSPE_ICONS[idx % OSPE_ICONS.length];
                 const accessible = hasModuleAccess;
 
                 return (
@@ -292,7 +287,7 @@ export default function ModuleDetailPage() {
                     <div
                       className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 mr-4 ${iconClass}`}
                     >
-                      <span className="material-symbols-outlined text-3xl">{icon}</span>
+                      <OspeIcon className="w-8 h-8" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="font-bold text-lg mb-1 text-slate-900">{ospe.name}</h3>

@@ -1,19 +1,22 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { Dna, Bone, FlaskConical, Pill, Microscope, BarChart3, Brain, Syringe, BookOpen, Search, HelpCircle, PlayCircle, ChevronLeft, ChevronRight, Lock, Video, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import { recordRecentView } from '../../utils/recentViews';
 
-const SUBJECT_ICONS = [
-  'biotech',
-  'skeleton',
-  'science',
-  'pill',
-  'microbiology',
-  'analytics',
-  'psychology',
-  'vaccines',
-];
+const SUBJECT_ICON_MAP = {
+  biotech: Dna,
+  skeleton: Bone,
+  science: FlaskConical,
+  pill: Pill,
+  microbiology: Microscope,
+  analytics: BarChart3,
+  psychology: Brain,
+  vaccines: Syringe,
+};
+
+const SUBJECT_ICON_KEYS = ['biotech', 'skeleton', 'science', 'pill', 'microbiology', 'analytics', 'psychology', 'vaccines'];
 
 function getSubjectIcon(name, index) {
   const lower = (name || '').toLowerCase();
@@ -22,7 +25,7 @@ function getSubjectIcon(name, index) {
   if (lower.includes('biochem')) return 'science';
   if (lower.includes('pharma')) return 'pill';
   if (lower.includes('path')) return 'microbiology';
-  return SUBJECT_ICONS[index % SUBJECT_ICONS.length];
+  return SUBJECT_ICON_KEYS[index % SUBJECT_ICON_KEYS.length];
 }
 
 const TOPICS_PER_PAGE = 8;
@@ -32,6 +35,7 @@ export default function SubjectDetailPage() {
   const { user } = useAuth();
   const [subject, setSubject] = useState(null);
   const [topics, setTopics] = useState([]);
+  const [oneShotLectures, setOneShotLectures] = useState([]);
   const [moduleSubjects, setModuleSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,12 +47,14 @@ export default function SubjectDetailPage() {
     Promise.all([
       api.get(`/content/subjects/${subjectId}`).then((r) => r.data),
       api.get(`/content/subjects/${subjectId}/topics`).then((r) => r.data),
+      api.get(`/content/subjects/${subjectId}/one-shot-lectures`).then((r) => r.data || []).catch(() => []),
       api.get(`/content/modules/${moduleId}/subjects`).then((r) => r.data),
     ])
-      .then(([sub, tops, subs]) => {
+      .then(([sub, tops, lectures, subs]) => {
         if (cancelled) return;
         setSubject(sub);
         setTopics(tops || []);
+        setOneShotLectures(Array.isArray(lectures) ? lectures : []);
         setModuleSubjects(subs || []);
         if (sub) {
           recordRecentView({
@@ -89,7 +95,7 @@ export default function SubjectDetailPage() {
   }, [user?.packages, moduleId]);
 
   const sortedTopics = useMemo(() => {
-    return [...(topics || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    return [...(topics || [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [topics]);
 
   const filteredTopics = useMemo(() => {
@@ -129,7 +135,7 @@ export default function SubjectDetailPage() {
     );
   }
 
-  const sortedModuleSubjects = [...moduleSubjects].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const sortedModuleSubjects = [...moduleSubjects].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   return (
     <div className="min-h-screen bg-background-light text-slate-800">
@@ -154,7 +160,10 @@ export default function SubjectDetailPage() {
                         : 'hover:bg-white text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <span className="material-symbols-outlined text-xl">{icon}</span>
+                    {(function() {
+                    const IconComp = SUBJECT_ICON_MAP[icon] || BookOpen;
+                    return <IconComp className="w-5 h-5" />;
+                  })()}
                     <span className="font-medium truncate">{s.name}</span>
                   </Link>
                 );
@@ -201,9 +210,7 @@ export default function SubjectDetailPage() {
                 </p>
               </div>
               <div className="relative w-full md:w-64">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-lg">
-                  search
-                </span>
+                <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
                   value={topicSearch}
@@ -219,13 +226,52 @@ export default function SubjectDetailPage() {
           <div className="mb-8">
             <div className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-4 max-w-xs">
               <div className="h-12 w-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                <span className="material-symbols-outlined">menu_book</span>
+                <BookOpen className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-xs text-slate-500 font-medium">Total Topics</p>
                 <p className="text-lg font-bold text-slate-900">{filteredTopics.length}</p>
               </div>
             </div>
+          </div>
+
+          {/* One Shot Lectures */}
+          <div className="mb-8">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <Video className="w-5 h-5 text-primary" />
+              One Shot Lectures
+            </h2>
+            {!hasModuleAccess ? (
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 text-center">
+                  <Lock className="w-10 h-10 text-amber-500 mx-auto mb-2" />
+                  <p className="text-slate-700 dark:text-slate-300 font-medium">Unlock with a package to access One Shot lectures for this subject.</p>
+                  <Link to="/packages" className="inline-block mt-3 text-primary font-semibold hover:underline">View packages</Link>
+                </div>
+              ) : oneShotLectures.length === 0 ? (
+                <p className="text-slate-500 text-sm">No One Shot lectures for this subject yet.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {oneShotLectures.map((lecture) => (
+                    <li key={lecture._id}>
+                      <a
+                        href={lecture.youtubeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-200 hover:border-primary/40 hover:shadow-md transition-all group"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400">
+                          <Video className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{lecture.title}</p>
+                          <p className="text-xs text-slate-500 truncate">{lecture.youtubeUrl}</p>
+                        </div>
+                        <ExternalLink className="w-4 h-4 text-slate-400 flex-shrink-0 group-hover:text-primary transition-colors" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
           </div>
 
           {/* Topic List */}
@@ -260,7 +306,7 @@ export default function SubjectDetailPage() {
                         </h3>
                         <p className="text-sm text-slate-600 mt-1 line-clamp-2">
                           {topic.content?.replace(/<[^>]*>/g, '').slice(0, 120) ||
-                            `Study ${topic.name} with MCQs and One Shot lecture.`}
+                            `Study ${topic.name} with MCQs and explanatory video.`}
                           {(topic.content?.length || 0) > 120 ? '...' : ''}
                         </p>
                       </div>
@@ -278,7 +324,7 @@ export default function SubjectDetailPage() {
                               : 'border-slate-200 text-slate-400 cursor-not-allowed'
                           }`}
                         >
-                          <span className="material-symbols-outlined text-lg text-primary">quiz</span>
+                          <HelpCircle className="w-5 h-5 text-primary" />
                           MCQs
                         </Link>
                         <Link
@@ -294,8 +340,8 @@ export default function SubjectDetailPage() {
                               : 'bg-slate-200 text-slate-500 cursor-not-allowed'
                           }`}
                         >
-                          <span className="material-symbols-outlined text-lg">play_circle</span>
-                          One Shot Lecture
+                          <PlayCircle className="w-5 h-5" />
+                          Explanatory Video
                         </Link>
                       </div>
                     </div>
@@ -314,7 +360,7 @@ export default function SubjectDetailPage() {
                 disabled={currentPage === 1}
                 className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span className="material-symbols-outlined">chevron_left</span>
+                <ChevronLeft className="w-5 h-5" />
                 Previous
               </button>
               <div className="flex items-center gap-2">
@@ -340,17 +386,17 @@ export default function SubjectDetailPage() {
                 className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
-                <span className="material-symbols-outlined">chevron_right</span>
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           )}
 
           {!hasModuleAccess && sortedTopics.length > 0 && (
             <div className="mt-8 p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center">
-              <span className="material-symbols-outlined text-4xl text-amber-500 mb-2 block">lock</span>
+              <Lock className="w-10 h-10 text-amber-500 mb-2 block mx-auto" />
               <p className="font-bold text-slate-900 mb-1">Unlock with Premium Package</p>
               <p className="text-sm text-slate-600 mb-4">
-                Purchase a package to access all topics, MCQs, and One Shot lectures.
+                Purchase a package to access all topics, MCQs, and explanatory videos.
               </p>
               <Link
                 to="/packages"

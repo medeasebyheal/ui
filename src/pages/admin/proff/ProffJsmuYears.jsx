@@ -4,8 +4,7 @@ import api from '../../../api/client';
 import { Plus, Trash2, ChevronRight, FolderTree } from 'lucide-react';
 
 function normalizeYears(jsmu) {
-  if (!jsmu?.years?.length) return [];
-  return jsmu.years.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  return jsmu?.years ?? [];
 }
 
 export default function ProffJsmuYears() {
@@ -27,7 +26,7 @@ export default function ProffJsmuYears() {
   const addYear = async () => {
     setAdding(true);
     try {
-      await api.post('/admin/proff/jsmu/years', { name: `Year ${years.length + 1}`, order: years.length });
+      await api.post('/admin/proff/jsmu/years', { name: `Year ${years.length + 1}` });
       await load();
     } catch (_) {}
     setAdding(false);

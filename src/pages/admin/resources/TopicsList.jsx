@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { Plus, Search, Download, SlidersHorizontal, ArrowUpDown, CheckCircle, CircleSlash, Pencil, Trash2, ArrowRight } from 'lucide-react';
 import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import Modal from '../../../components/admin/Modal';
@@ -47,7 +48,7 @@ export default function TopicsList() {
       .then(({ data }) => setSubjects(Array.isArray(data) ? data : []))
       .catch(() => setSubjects([]));
 
-  const subjectsSorted = useMemo(() => [...subjects].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)), [subjects]);
+  const subjectsSorted = useMemo(() => [...subjects].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)), [subjects]);
   const subjectOrderMap = useMemo(() => {
     const m = new Map();
     subjectsSorted.forEach((s, i) => m.set(s._id, i));
@@ -126,7 +127,7 @@ export default function TopicsList() {
             onClick={() => setAddFormOpen(true)}
             className="flex items-center justify-center space-x-2 bg-primary hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-all shadow-md shadow-primary/20 hover:shadow-lg active:scale-95"
           >
-            <span className="material-symbols-outlined text-xl">add</span>
+            <Plus className="w-5 h-5" />
             <span>Add topic</span>
           </button>
         </div>
@@ -134,9 +135,7 @@ export default function TopicsList() {
         <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
             <div className="md:col-span-4 relative group">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none">
-                search
-              </span>
+              <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none" />
               <input
                 type="text"
                 value={search}
@@ -176,10 +175,10 @@ export default function TopicsList() {
             </div>
             <div className="md:col-span-2 flex items-center justify-end space-x-2">
               <button type="button" className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" title="Export Data">
-                <span className="material-symbols-outlined">download</span>
+                <Download className="w-5 h-5" />
               </button>
               <button type="button" className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" title="Filter Settings">
-                <span className="material-symbols-outlined">tune</span>
+                <SlidersHorizontal className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -193,13 +192,13 @@ export default function TopicsList() {
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     <div className="flex items-center cursor-default">
                       Topic Name
-                      <span className="material-symbols-outlined text-xs ml-1">swap_vert</span>
+                      <ArrowUpDown className="w-3 h-3 ml-1" />
                     </div>
                   </th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     <div className="flex items-center cursor-default">
                       Subject
-                      <span className="material-symbols-outlined text-xs ml-1">swap_vert</span>
+                      <ArrowUpDown className="w-3 h-3 ml-1" />
                     </div>
                   </th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Content Status</th>
@@ -238,12 +237,12 @@ export default function TopicsList() {
                           <div className="flex items-center space-x-2">
                             {hasContent ? (
                               <>
-                                <span className="material-symbols-outlined text-emerald-500 dark:text-emerald-400 text-sm">check_circle</span>
+                                <CheckCircle className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
                                 <span>{mcqCount} MCQ{mcqCount !== 1 ? 's' : ''}</span>
                               </>
                             ) : (
                               <>
-                                <span className="material-symbols-outlined text-slate-400 text-sm">unpublished</span>
+                                <CircleSlash className="w-4 h-4 text-slate-400" />
                                 <span className="italic">No content</span>
                               </>
                             )}
@@ -258,7 +257,7 @@ export default function TopicsList() {
                                 className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-md transition-colors"
                                 title="Edit"
                               >
-                                <span className="material-symbols-outlined text-lg">edit</span>
+                                <Pencil className="w-5 h-5" />
                               </button>
                             )}
                             <button
@@ -267,7 +266,7 @@ export default function TopicsList() {
                               className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                               title="Delete"
                             >
-                              <span className="material-symbols-outlined text-lg">delete</span>
+                              <Trash2 className="w-5 h-5" />
                             </button>
                             {link && (
                               <Link
@@ -275,7 +274,7 @@ export default function TopicsList() {
                                 className="flex items-center space-x-1 text-sm font-bold text-primary hover:underline ml-2"
                               >
                                 <span>Open</span>
-                                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                <ArrowRight className="w-4 h-4" />
                               </Link>
                             )}
                           </div>
@@ -372,7 +371,6 @@ export default function TopicsList() {
 function AddTopicForm({ subjects, onSave, onClose }) {
   const [subjectId, setSubjectId] = useState('');
   const [name, setName] = useState('');
-  const [order, setOrder] = useState(1);
   const [videoUrl, setVideoUrl] = useState('');
   const [content, setContent] = useState('');
   const [saving, setSaving] = useState(false);
@@ -389,7 +387,6 @@ function AddTopicForm({ subjects, onSave, onClose }) {
     try {
       await api.post(`/admin/subjects/${subjectId}/topics`, {
         name: name.trim(),
-        order: Number(order) || 1,
         videoUrl: videoUrl.trim() || undefined,
         content: content.trim() || undefined,
       });
@@ -402,7 +399,7 @@ function AddTopicForm({ subjects, onSave, onClose }) {
     }
   };
 
-  const sortedSubjects = [...(subjects || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const sortedSubjects = [...(subjects || [])].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
 
   return (
     <Modal open onClose={onClose} title="Add topic">
@@ -437,16 +434,7 @@ function AddTopicForm({ subjects, onSave, onClose }) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Order</label>
-          <input
-            type="number"
-            value={order}
-            onChange={(e) => setOrder(Number(e.target.value))}
-            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:text-white"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">YouTube video URL</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Topic Explanatory video</label>
           <input
             type="url"
             value={videoUrl}

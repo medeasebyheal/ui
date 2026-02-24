@@ -18,7 +18,7 @@ const emptyQuestion = () => ({
   expectedAnswer: '',
 });
 
-const emptyStation = () => ({ imageUrl: '', questions: [emptyQuestion()], order: 0 });
+const emptyStation = () => ({ imageUrl: '', questions: [emptyQuestion()] });
 
 export default function OspeFormPage() {
   const { yearId, moduleId, ospeId } = useParams();
@@ -46,9 +46,8 @@ export default function OspeFormPage() {
         setName(ospe.name ?? '');
         if (ospe.stations?.length) {
           setStations(
-            ospe.stations.map((s, si) => ({
+            ospe.stations.map((s) => ({
               imageUrl: s.imageUrl ?? '',
-              order: si,
               questions: (s.questions || []).map((q) => ({
                 questionText: q.questionText ?? '',
                 type: q.type || 'text_mcq',
@@ -62,9 +61,8 @@ export default function OspeFormPage() {
           const legacy = ospe.questions || [];
           if (legacy.length) {
             setStations(
-              legacy.map((q, i) => ({
+              legacy.map((q) => ({
                 imageUrl: q.imageUrl ?? '',
-                order: i,
                 questions: [
                   {
                     questionText: q.questionText ?? '',
@@ -110,16 +108,14 @@ export default function OspeFormPage() {
     e.preventDefault();
     const payload = {
       name,
-      stations: stations.map((st, order) => ({
+      stations: stations.map((st) => ({
         imageUrl: st.imageUrl || undefined,
-        order,
-        questions: (st.questions || []).map((q, qOrder) => ({
+        questions: (st.questions || []).map((q) => ({
           questionText: q.questionText,
           type: q.type,
           options: ['text_mcq', 'picture_mcq', 'guess_until_correct'].includes(q.type) ? (q.options || []).filter(Boolean) : undefined,
           correctIndex: ['text_mcq', 'picture_mcq', 'guess_until_correct'].includes(q.type) ? q.correctIndex : undefined,
           expectedAnswer: q.type === 'viva_written' ? q.expectedAnswer : undefined,
-          order: qOrder,
         })),
       })),
     };

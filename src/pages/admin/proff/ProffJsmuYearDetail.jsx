@@ -6,10 +6,10 @@ import Modal from '../../../components/admin/Modal';
 import ConfirmDialog from '../../../components/admin/ConfirmDialog';
 
 const DEFAULT_PAPERS = [
-  { name: 'Paper 1 (Mix MCQs)', type: 'mcq', order: 1 },
-  { name: 'Paper 2 (Mix MCQs)', type: 'mcq', order: 2 },
-  { name: 'OSPE 1', type: 'ospe', order: 3 },
-  { name: 'OSPE 2', type: 'ospe', order: 4 },
+  { name: 'Paper 1 (Mix MCQs)', type: 'mcq' },
+  { name: 'Paper 2 (Mix MCQs)', type: 'mcq' },
+  { name: 'OSPE 1', type: 'ospe' },
+  { name: 'OSPE 2', type: 'ospe' },
 ];
 
 export default function ProffJsmuYearDetail() {
@@ -23,7 +23,7 @@ export default function ProffJsmuYearDetail() {
 
   const [paperModalOpen, setPaperModalOpen] = useState(false);
   const [paperEditing, setPaperEditing] = useState(null);
-  const [paperForm, setPaperForm] = useState({ name: '', type: 'mcq', order: 0 });
+  const [paperForm, setPaperForm] = useState({ name: '', type: 'mcq' });
 
   const [deletePaperTarget, setDeletePaperTarget] = useState(null);
 
@@ -64,11 +64,7 @@ export default function ProffJsmuYearDetail() {
 
   const openAddPaper = () => {
     setPaperEditing(null);
-    setPaperForm({
-      name: '',
-      type: 'mcq',
-      order: (year?.papers?.length ?? 0),
-    });
+    setPaperForm({ name: '', type: 'mcq' });
     setPaperModalOpen(true);
   };
 
@@ -77,7 +73,6 @@ export default function ProffJsmuYearDetail() {
     setPaperForm({
       name: p.name || '',
       type: p.type || 'mcq',
-      order: p.order ?? 0,
     });
     setPaperModalOpen(true);
   };
@@ -85,7 +80,7 @@ export default function ProffJsmuYearDetail() {
   const submitPaper = async () => {
     const papers = [...(year?.papers || [])];
     if (paperEditing) {
-      const idx = papers.findIndex((x) => (x._id && x._id === paperEditing._id) || (x.name === paperEditing.name && x.order === paperEditing.order));
+      const idx = papers.findIndex((x) => x === paperEditing);
       if (idx >= 0) papers[idx] = { ...papers[idx], ...paperForm };
     } else {
       papers.push(paperForm);
@@ -106,9 +101,7 @@ export default function ProffJsmuYearDetail() {
 
   const confirmDeletePaper = async () => {
     if (!deletePaperTarget || !year?.papers) return;
-    const papers = year.papers.filter(
-      (p) => p._id !== deletePaperTarget._id && !(p.name === deletePaperTarget.name && p.order === deletePaperTarget.order)
-    );
+    const papers = year.papers.filter((p) => p !== deletePaperTarget);
     if (papers.length === 0) return;
     await saveYear({ name: year.name, papers });
     setDeletePaperTarget(null);
@@ -237,16 +230,6 @@ export default function ProffJsmuYearDetail() {
               <option value="mcq">Mix MCQs</option>
               <option value="ospe">OSPE</option>
             </select>
-          </label>
-          <label className="block">
-            <span className="text-sm font-medium text-gray-700">Order</span>
-            <input
-              type="number"
-              min={0}
-              value={paperForm.order}
-              onChange={(e) => setPaperForm((f) => ({ ...f, order: parseInt(e.target.value, 10) || 0 }))}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900"
-            />
           </label>
           <div className="flex justify-end gap-2">
             <button type="button" onClick={() => setPaperModalOpen(false)} className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">

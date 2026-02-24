@@ -17,7 +17,7 @@ const emptyQuestion = () => ({
   correctIndex: 0,
   expectedAnswer: '',
 });
-const emptyStation = () => ({ imageUrl: '', questions: [emptyQuestion()], order: 0 });
+const emptyStation = () => ({ imageUrl: '', questions: [emptyQuestion()] });
 
 export default function ProffJsmuPaperDetail() {
   const { yearId, paperId } = useParams();
@@ -52,9 +52,8 @@ export default function ProffJsmuPaperDetail() {
       .then(({ data }) => {
         setOspeName(data.name ?? '');
         if (data.stations?.length) {
-          setOspeStations(data.stations.map((s, si) => ({
+          setOspeStations(data.stations.map((s) => ({
             imageUrl: s.imageUrl ?? '',
-            order: si,
             questions: (s.questions || []).map((q) => ({
               questionText: q.questionText ?? '',
               type: q.type || 'text_mcq',
@@ -196,16 +195,14 @@ export default function ProffJsmuPaperDetail() {
     try {
       await api.put(`${basePath}/ospe`, {
         name: ospeName,
-        stations: ospeStations.map((st, order) => ({
+        stations: ospeStations.map((st) => ({
           imageUrl: st.imageUrl || undefined,
-          order,
-          questions: (st.questions || []).map((q, qOrder) => ({
+          questions: (st.questions || []).map((q) => ({
             questionText: q.questionText,
             type: q.type,
             options: ['text_mcq', 'picture_mcq', 'guess_until_correct'].includes(q.type) ? (q.options || []).filter(Boolean) : undefined,
             correctIndex: ['text_mcq', 'picture_mcq', 'guess_until_correct'].includes(q.type) ? q.correctIndex : undefined,
             expectedAnswer: q.type === 'viva_written' ? q.expectedAnswer : undefined,
-            order: qOrder,
           })),
         })),
       });

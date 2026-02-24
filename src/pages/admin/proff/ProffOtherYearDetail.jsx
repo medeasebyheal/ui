@@ -67,7 +67,7 @@ export default function ProffOtherYearDetail() {
       const idx = subjects.findIndex((s) => s._id === subjectEditing._id);
       if (idx >= 0) subjects[idx] = { ...subjects[idx], name };
     } else {
-      subjects.push({ name, order: subjects.length });
+      subjects.push({ name });
     }
     await saveYear({ name: year.name, subjects });
     setSubjectModalOpen(false);

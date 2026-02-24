@@ -6,20 +6,6 @@ import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { Check, ChevronDown, ChevronRight, ArrowRight, BookOpen, Info } from 'lucide-react';
 
-function getYouTubeEmbedUrl(url) {
-  if (!url || typeof url !== 'string') return null;
-  const trimmed = url.trim();
-  let id = null;
-  const watchMatch = trimmed.match(/(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/);
-  const shortMatch = trimmed.match(/(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  const embedMatch = trimmed.match(/(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
-  if (watchMatch) id = watchMatch[1];
-  else if (shortMatch) id = shortMatch[1];
-  else if (embedMatch) id = embedMatch[1];
-  if (!id) return null;
-  return `https://www.youtube.com/embed/${id}?modestbranding=1&rel=0&showinfo=0`;
-}
-
 export default function StudentTopic() {
   const { topicId } = useParams();
   const navigate = useNavigate();
@@ -27,6 +13,7 @@ export default function StudentTopic() {
   const [topic, setTopic] = useState(null);
   const [mcqs, setMcqs] = useState([]);
   const [hasAccess, setHasAccess] = useState(false);
+  const [canUseFreeTrialForThisTopic, setCanUseFreeTrialForThisTopic] = useState(false);
   const [useFreeTrial, setUseFreeTrial] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState(null);
@@ -45,6 +32,7 @@ export default function StudentTopic() {
         setTopic(data.topic);
         setMcqs(data.mcqs || []);
         setHasAccess(data.hasAccess);
+        setCanUseFreeTrialForThisTopic(!!data.canUseFreeTrialForThisTopic);
         if (data.usedFreeTrial) refreshUser();
       })
       .catch((err) => {
@@ -138,13 +126,16 @@ export default function StudentTopic() {
     return (
       <div className="py-12 container max-w-md mx-auto px-4 text-center">
         <p className="text-gray-600 mb-4">You do not have access to this topic.</p>
-        {!user?.freeTrialUsed && (
+        {canUseFreeTrialForThisTopic && (
           <button
             onClick={handleUseFreeTrial}
             className="bg-primary text-white px-4 py-2 rounded-lg font-medium"
           >
             Use free trial for this topic
           </button>
+        )}
+        {!canUseFreeTrialForThisTopic && !user?.freeTrialUsed && (
+          <p className="text-sm text-slate-500 mb-4">Free trial is available only for the first topic of the first subject of the first module.</p>
         )}
         <button onClick={() => navigate('/student')} className="block mt-4 text-primary">Back to Dashboard</button>
       </div>
@@ -155,7 +146,6 @@ export default function StudentTopic() {
   const total = mcqs.length;
   const progressPercent = total > 0 ? ((currentIndex + 1) / total) * 100 : 0;
   const isLast = currentIndex === total - 1;
-  const embedUrl = result?.videoUrl ? getYouTubeEmbedUrl(result.videoUrl) : null;
 
   return (
     <div className="font-quiz min-h-screen bg-pastel-quiz/40">
@@ -329,17 +319,6 @@ export default function StudentTopic() {
                                 </p>
                               </div>
                             </div>
-                            {embedUrl && (
-                              <div className="rounded-xl overflow-hidden aspect-video bg-slate-900 shadow-lg">
-                                <iframe
-                                  title="Explanation video"
-                                  src={embedUrl}
-                                  className="w-full h-full"
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
-                                  allowFullScreen={false}
-                                />
-                              </div>
-                            )}
                           </div>
                         </motion.div>
                       )}

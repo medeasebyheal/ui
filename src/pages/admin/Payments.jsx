@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { Wallet, Clock, Search, Download, Receipt, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../api/client';
 import Modal from '../../components/admin/Modal';
 
@@ -110,7 +111,7 @@ export default function AdminPayments() {
         <div className="grid grid-cols-2 sm:flex sm:gap-4 gap-4">
           <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 min-w-[180px]">
             <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined">payments</span>
+              <Wallet className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Revenue</p>
@@ -119,7 +120,7 @@ export default function AdminPayments() {
           </div>
           <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-4 min-w-[180px]">
             <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined">pending_actions</span>
+              <Clock className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Pending</p>
@@ -132,7 +133,7 @@ export default function AdminPayments() {
       {/* Search + Filter */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative w-full md:w-96">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             type="text"
             value={searchInput}
@@ -156,7 +157,7 @@ export default function AdminPayments() {
             type="button"
             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition"
           >
-            <span className="material-symbols-outlined text-sm">file_download</span>
+            <Download className="w-4 h-4" />
             Export
           </button>
         </div>
@@ -227,7 +228,7 @@ export default function AdminPayments() {
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-all text-sm font-medium"
                     >
-                      <span className="material-symbols-outlined text-sm">receipt</span>
+                      <Receipt className="w-4 h-4" />
                       View Receipt
                     </a>
                   )}
@@ -238,7 +239,7 @@ export default function AdminPayments() {
                       className="p-2 text-slate-400 hover:text-red-500 transition rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
                       aria-label="More actions"
                     >
-                      <span className="material-symbols-outlined">more_vert</span>
+                      <MoreVertical className="w-5 h-5" />
                     </button>
                     {menuOpen === p._id && (
                       <>
@@ -292,7 +293,7 @@ export default function AdminPayments() {
             disabled={page <= 1}
             className="w-10 h-10 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 transition"
           >
-            <span className="material-symbols-outlined">chevron_left</span>
+            <ChevronLeft className="w-5 h-5" />
           </button>
           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
             let p;
@@ -320,7 +321,7 @@ export default function AdminPayments() {
             disabled={page >= totalPages}
             className="w-10 h-10 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 transition"
           >
-            <span className="material-symbols-outlined">chevron_right</span>
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>

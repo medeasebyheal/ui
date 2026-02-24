@@ -81,7 +81,6 @@ export default function YearModules() {
                 <div className="flex items-center gap-3">
                   <div>
                     <h2 className="font-heading font-semibold text-gray-900 group-hover:text-primary transition-colors">{mod.name}</h2>
-                    <p className="text-xs text-gray-500">Order: {mod.order}</p>
                   </div>
                 </div>
               </div>

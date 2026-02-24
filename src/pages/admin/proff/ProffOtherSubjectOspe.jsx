@@ -10,7 +10,7 @@ const QUESTION_TYPES = [
   { value: 'viva_written', label: 'Viva (written answer)' },
 ];
 const emptyQuestion = () => ({ questionText: '', type: 'text_mcq', options: ['', '', '', ''], correctIndex: 0, expectedAnswer: '' });
-const emptyStation = () => ({ imageUrl: '', questions: [emptyQuestion()], order: 0 });
+const emptyStation = () => ({ imageUrl: '', questions: [emptyQuestion()] });
 
 export default function ProffOtherSubjectOspe() {
   const { yearId, subjectId } = useParams();
@@ -38,9 +38,8 @@ export default function ProffOtherSubjectOspe() {
           const ospe = ospeRes.data;
           setName(ospe.name ?? '');
           if (ospe.stations?.length) {
-            setStations(ospe.stations.map((s, si) => ({
+            setStations(ospe.stations.map((s) => ({
               imageUrl: s.imageUrl ?? '',
-              order: si,
               questions: (s.questions || []).map((q) => ({
                 questionText: q.questionText ?? '',
                 type: q.type || 'text_mcq',
@@ -85,16 +84,14 @@ export default function ProffOtherSubjectOspe() {
     try {
       await api.put(`${basePath}/ospe`, {
         name,
-        stations: stations.map((st, order) => ({
+        stations: stations.map((st) => ({
           imageUrl: st.imageUrl || undefined,
-          order,
-          questions: (st.questions || []).map((q, qOrder) => ({
+          questions: (st.questions || []).map((q) => ({
             questionText: q.questionText,
             type: q.type,
             options: ['text_mcq', 'picture_mcq', 'guess_until_correct'].includes(q.type) ? (q.options || []).filter(Boolean) : undefined,
             correctIndex: ['text_mcq', 'picture_mcq', 'guess_until_correct'].includes(q.type) ? q.correctIndex : undefined,
             expectedAnswer: q.type === 'viva_written' ? q.expectedAnswer : undefined,
-            order: qOrder,
           })),
         })),
       });

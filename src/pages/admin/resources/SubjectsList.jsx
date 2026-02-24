@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { FlaskConical, Brain, BookOpen, Pill, Plus, Search, LayoutGrid, List, Pencil, Trash2, ArrowRight, BookMarked, HelpCircle } from 'lucide-react';
 import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import Modal from '../../../components/admin/Modal';
@@ -9,10 +10,10 @@ import { SubjectForm } from '../../../components/admin/ResourceForms';
 const PER_PAGE = 10;
 
 const SUBJECT_ROW_STYLES = [
-  { icon: 'biotech', bg: 'bg-orange-100 dark:bg-orange-900/30', iconCl: 'text-orange-600 dark:text-orange-400' },
-  { icon: 'psychology', bg: 'bg-indigo-100 dark:bg-indigo-900/30', iconCl: 'text-indigo-600 dark:text-indigo-400' },
-  { icon: 'science', bg: 'bg-emerald-100 dark:bg-emerald-900/30', iconCl: 'text-emerald-600 dark:text-emerald-400' },
-  { icon: 'medication', bg: 'bg-teal-100 dark:bg-teal-900/30', iconCl: 'text-teal-600 dark:text-teal-400' },
+  { Icon: FlaskConical, bg: 'bg-orange-100 dark:bg-orange-900/30', iconCl: 'text-orange-600 dark:text-orange-400' },
+  { Icon: Brain, bg: 'bg-indigo-100 dark:bg-indigo-900/30', iconCl: 'text-indigo-600 dark:text-indigo-400' },
+  { Icon: BookOpen, bg: 'bg-emerald-100 dark:bg-emerald-900/30', iconCl: 'text-emerald-600 dark:text-emerald-400' },
+  { Icon: Pill, bg: 'bg-teal-100 dark:bg-teal-900/30', iconCl: 'text-teal-600 dark:text-teal-400' },
 ];
 
 function getSubjectRowStyle(index) {
@@ -43,7 +44,7 @@ export default function SubjectsList() {
       .then(({ data }) => setModules(Array.isArray(data) ? data : []))
       .catch(() => setModules([]));
 
-  const modulesSorted = useMemo(() => [...modules].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)), [modules]);
+  const modulesSorted = useMemo(() => [...modules].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)), [modules]);
 
   const getSubjectLink = (sub) => {
     const mod = sub.module;
@@ -122,7 +123,7 @@ export default function SubjectsList() {
             onClick={() => setAddFormOpen(true)}
             className="flex items-center justify-center gap-2 bg-primary hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg font-semibold transition-all shadow-sm shadow-primary/20 active:scale-95"
           >
-            <span className="material-symbols-outlined text-[20px]">add</span>
+            <Plus className="w-5 h-5" />
             <span>Add subject</span>
           </button>
         </div>
@@ -130,9 +131,7 @@ export default function SubjectsList() {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 mb-6 shadow-sm flex flex-col lg:flex-row lg:items-center gap-4">
           <div className="flex items-center gap-4 flex-1">
             <div className="flex-1 relative group">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none">
-                search
-              </span>
+              <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors pointer-events-none" />
               <input
                 type="text"
                 value={search}
@@ -164,7 +163,7 @@ export default function SubjectsList() {
               className={`p-2 rounded-lg transition-colors ${!listView ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
               title="Grid view"
             >
-              <span className="material-symbols-outlined">grid_view</span>
+              <LayoutGrid className="w-5 h-5" />
             </button>
             <button
               type="button"
@@ -172,7 +171,7 @@ export default function SubjectsList() {
               className={`p-2 rounded-lg transition-colors ${listView ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
               title="List view"
             >
-              <span className="material-symbols-outlined">format_list_bulleted</span>
+              <List className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -203,12 +202,13 @@ export default function SubjectsList() {
                       const link = getSubjectLink(sub);
                       const rowStyle = getSubjectRowStyle((page - 1) * PER_PAGE + idx);
                       const topicCount = sub.topicIds?.length ?? 0;
+                      const RowIcon = rowStyle.Icon;
                       return (
                         <tr key={sub._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
                           <td className="px-6 py-5">
                             <div className="flex items-center gap-3">
                               <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${rowStyle.bg} ${rowStyle.iconCl}`}>
-                                <span className="material-symbols-outlined text-xl">{rowStyle.icon}</span>
+                                <RowIcon className="w-5 h-5" />
                               </div>
                               <span className="font-semibold text-slate-900 dark:text-white">{sub.name}</span>
                             </div>
@@ -228,7 +228,7 @@ export default function SubjectsList() {
                                   className="p-2 text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
                                   title="Edit"
                                 >
-                                  <span className="material-symbols-outlined text-[20px]">edit</span>
+                                  <Pencil className="w-5 h-5" />
                                 </button>
                               )}
                               <button
@@ -237,14 +237,14 @@ export default function SubjectsList() {
                                 className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
                                 title="Delete"
                               >
-                                <span className="material-symbols-outlined text-[20px]">delete</span>
+                                <Trash2 className="w-5 h-5" />
                               </button>
                               {link && (
                                 <Link
                                   to={link}
                                   className="ml-2 inline-flex items-center gap-1 text-primary hover:underline font-semibold text-sm"
                                 >
-                                  Open <span className="material-symbols-outlined text-[18px]">arrow_right_alt</span>
+                                  Open <ArrowRight className="w-4 h-4" />
                                 </Link>
                               )}
                             </div>
@@ -296,7 +296,7 @@ export default function SubjectsList() {
                       className="bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-700 p-4 flex items-center gap-4"
                     >
                       <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${rowStyle.bg} ${rowStyle.iconCl}`}>
-                        <span className="material-symbols-outlined">menu_book</span>
+                        <BookOpen className="w-5 h-5" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-slate-900 dark:text-white truncate">{sub.name}</p>
@@ -308,15 +308,15 @@ export default function SubjectsList() {
                       <div className="flex items-center gap-1 shrink-0">
                         {(sub.module?._id || sub.module) && (
                           <button type="button" onClick={() => setFormOpen(sub)} className="p-1.5 text-slate-400 hover:text-primary rounded-lg" title="Edit">
-                            <span className="material-symbols-outlined text-lg">edit</span>
+                            <Pencil className="w-5 h-5" />
                           </button>
                         )}
                         <button type="button" onClick={() => setDeleteConfirm(sub)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg" title="Delete">
-                          <span className="material-symbols-outlined text-lg">delete</span>
+                          <Trash2 className="w-5 h-5" />
                         </button>
                         {link && (
                           <Link to={link} className="p-1.5 text-primary hover:underline font-semibold text-sm flex items-center gap-0.5">
-                            Open <span className="material-symbols-outlined text-base">arrow_right_alt</span>
+                            Open <ArrowRight className="w-4 h-4" />
                           </Link>
                         )}
                       </div>
@@ -331,7 +331,7 @@ export default function SubjectsList() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
           <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-              <span className="material-symbols-outlined">menu_book</span>
+              <BookOpen className="w-5 h-5" />
             </div>
             <div>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Subjects</p>
@@ -340,7 +340,7 @@ export default function SubjectsList() {
           </div>
           <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-              <span className="material-symbols-outlined">topic</span>
+              <BookMarked className="w-5 h-5" />
             </div>
             <div>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Topics</p>
@@ -351,7 +351,7 @@ export default function SubjectsList() {
           </div>
           <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 flex items-center justify-center">
-              <span className="material-symbols-outlined">quiz</span>
+              <HelpCircle className="w-5 h-5" />
             </div>
             <div>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Question Bank</p>
@@ -403,7 +403,6 @@ export default function SubjectsList() {
 function AddSubjectForm({ modules, onSave, onClose }) {
   const [moduleId, setModuleId] = useState('');
   const [name, setName] = useState('');
-  const [order, setOrder] = useState(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -418,7 +417,6 @@ function AddSubjectForm({ modules, onSave, onClose }) {
     try {
       await api.post(`/admin/modules/${moduleId}/subjects`, {
         name: name.trim(),
-        order: Number(order) || 1,
       });
       onSave?.();
       onClose?.();
@@ -429,7 +427,7 @@ function AddSubjectForm({ modules, onSave, onClose }) {
     }
   };
 
-  const sortedModules = [...(modules || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const sortedModules = [...(modules || [])].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
 
   return (
     <Modal open onClose={onClose} title="Add subject">
@@ -461,15 +459,6 @@ function AddSubjectForm({ modules, onSave, onClose }) {
             required
             className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:text-white"
             placeholder="e.g. Anatomy"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Order</label>
-          <input
-            type="number"
-            value={order}
-            onChange={(e) => setOrder(Number(e.target.value))}
-            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:text-white"
           />
         </div>
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}

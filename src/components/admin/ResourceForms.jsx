@@ -4,14 +4,13 @@ import Modal from './Modal';
 
 export function ProgramForm({ program, onSave, onClose }) {
   const [name, setName] = useState(program?.name ?? '');
-  const [order, setOrder] = useState(program?.order ?? 1);
   const [saving, setSaving] = useState(false);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      if (program?._id) await api.put(`/admin/programs/${program._id}`, { name, order });
-      else await api.post('/admin/programs', { name, order });
+      if (program?._id) await api.put(`/admin/programs/${program._id}`, { name });
+      else await api.post('/admin/programs', { name });
       onSave?.();
       onClose?.();
     } catch (_) {}
@@ -24,10 +23,6 @@ export function ProgramForm({ program, onSave, onClose }) {
           <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
           <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" placeholder="e.g. MBBS, BDS, PharmD" />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
-          <input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value))} className="w-full px-3 py-2 border rounded-lg" />
-        </div>
         <div className="flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
           <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">Save</button>
@@ -39,7 +34,6 @@ export function ProgramForm({ program, onSave, onClose }) {
 
 export function YearForm({ year, onSave, onClose, programId: programIdProp }) {
   const [name, setName] = useState(year?.name ?? '');
-  const [order, setOrder] = useState(year?.order ?? 1);
   const [programId, setProgramId] = useState(
     () => year?.program?._id ?? year?.program ?? programIdProp ?? ''
   );
@@ -58,7 +52,7 @@ export function YearForm({ year, onSave, onClose, programId: programIdProp }) {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = { name, order, program: programId || null };
+      const payload = { name, program: programId || null };
       if (year?._id) await api.put(`/admin/years/${year._id}`, payload);
       else await api.post('/admin/years', payload);
       onSave?.();
@@ -89,10 +83,6 @@ export function YearForm({ year, onSave, onClose, programId: programIdProp }) {
           <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
           <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" placeholder="e.g. First Year" />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
-          <input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value))} className="w-full px-3 py-2 border rounded-lg" />
-        </div>
         <div className="flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
           <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">Save</button>
@@ -104,14 +94,13 @@ export function YearForm({ year, onSave, onClose, programId: programIdProp }) {
 
 export function ModuleForm({ yearId, module, onSave, onClose }) {
   const [name, setName] = useState(module?.name ?? '');
-  const [order, setOrder] = useState(module?.order ?? 1);
   const [imageUrl, setImageUrl] = useState(module?.imageUrl ?? '');
   const [saving, setSaving] = useState(false);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = { name, order, imageUrl: imageUrl.trim() || undefined };
+      const payload = { name, imageUrl: imageUrl.trim() || undefined };
       if (module?._id) await api.put(`/admin/modules/${module._id}`, payload);
       else await api.post(`/admin/years/${yearId}/modules`, payload);
       onSave?.();
@@ -131,10 +120,6 @@ export function ModuleForm({ yearId, module, onSave, onClose }) {
           <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="https://..." />
           <p className="text-xs text-gray-500 mt-1">Optional. Used on the public Modules page.</p>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
-          <input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value))} className="w-full px-3 py-2 border rounded-lg" />
-        </div>
         <div className="flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
           <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">Save</button>
@@ -146,14 +131,13 @@ export function ModuleForm({ yearId, module, onSave, onClose }) {
 
 export function SubjectForm({ moduleId, subject, onSave, onClose }) {
   const [name, setName] = useState(subject?.name ?? '');
-  const [order, setOrder] = useState(subject?.order ?? 1);
   const [saving, setSaving] = useState(false);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      if (subject?._id) await api.put(`/admin/subjects/${subject._id}`, { name, order });
-      else await api.post(`/admin/modules/${moduleId}/subjects`, { name, order });
+      if (subject?._id) await api.put(`/admin/subjects/${subject._id}`, { name });
+      else await api.post(`/admin/modules/${moduleId}/subjects`, { name });
       onSave?.();
       onClose?.();
     } catch (_) {}
@@ -166,10 +150,6 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
           <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
           <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
-          <input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value))} className="w-full px-3 py-2 border rounded-lg" />
-        </div>
         <div className="flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
           <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">Save</button>
@@ -181,7 +161,6 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
 
 export function TopicForm({ subjectId, topic, onSave, onClose }) {
   const [name, setName] = useState(topic?.name ?? '');
-  const [order, setOrder] = useState(topic?.order ?? 1);
   const [videoUrl, setVideoUrl] = useState(topic?.videoUrl ?? '');
   const [content, setContent] = useState(topic?.content ?? '');
   const [saving, setSaving] = useState(false);
@@ -189,8 +168,8 @@ export function TopicForm({ subjectId, topic, onSave, onClose }) {
     e.preventDefault();
     setSaving(true);
     try {
-      if (topic?._id) await api.put(`/admin/topics/${topic._id}`, { name, order, videoUrl, content });
-      else await api.post(`/admin/subjects/${subjectId}/topics`, { name, order, videoUrl, content });
+      if (topic?._id) await api.put(`/admin/topics/${topic._id}`, { name, videoUrl, content });
+      else await api.post(`/admin/subjects/${subjectId}/topics`, { name, videoUrl, content });
       onSave?.();
       onClose?.();
     } catch (_) {}
@@ -204,11 +183,7 @@ export function TopicForm({ subjectId, topic, onSave, onClose }) {
           <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
-          <input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value))} className="w-full px-3 py-2 border rounded-lg" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">YouTube video URL</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Topic Explanatory video</label>
           <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="https://youtube.com/..." />
         </div>
         <div>

@@ -13,7 +13,6 @@ export default function McqForm({ topicId, mcq, onSave, onClose }) {
   const [options, setOptions] = useState(mcq?.options?.length ? mcq.options : ['', '', '', '']);
   const [correctIndex, setCorrectIndex] = useState(mcq?.correctIndex ?? 0);
   const [explanation, setExplanation] = useState(mcq?.explanation ?? '');
-  const [videoUrl, setVideoUrl] = useState(mcq?.videoUrl ?? '');
   const [type, setType] = useState(mcq?.type ?? 'text');
   const [imageUrl, setImageUrl] = useState(mcq?.imageUrl ?? '');
   const [uploading, setUploading] = useState(false);
@@ -39,7 +38,7 @@ export default function McqForm({ topicId, mcq, onSave, onClose }) {
     if (correctIndex < 0 || correctIndex >= opts.length) return alert('Select correct option');
     setSaving(true);
     try {
-      const payload = { question, options: opts, correctIndex, explanation, videoUrl, type, imageUrl: type === 'image' ? imageUrl : undefined, order: mcq?.order ?? 0 };
+      const payload = { question, options: opts, correctIndex, explanation, type, imageUrl: type === 'image' ? imageUrl : undefined };
       if (mcq?._id) await api.put(`/admin/topics/${topicId}/mcqs/${mcq._id}`, payload);
       else await api.post(`/admin/topics/${topicId}/mcqs`, payload);
       onSave?.();
@@ -82,10 +81,6 @@ export default function McqForm({ topicId, mcq, onSave, onClose }) {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Explanation</label>
           <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={2} className="w-full px-3 py-2 border rounded-lg" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">YouTube video URL (optional)</label>
-          <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="https://youtube.com/..." />
         </div>
         <div className="flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>

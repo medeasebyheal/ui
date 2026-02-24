@@ -4,15 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { Check, ChevronDown, ChevronRight, Info } from 'lucide-react';
-
-function getYouTubeEmbedUrl(url) {
-  if (!url || typeof url !== 'string') return null;
-  const trimmed = url.trim();
-  const match = trimmed.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
-  const id = match?.[1];
-  return id ? `https://www.youtube.com/embed/${id}?modestbranding=1&rel=0` : null;
-}
+import { Check, ChevronDown, ChevronRight, ChevronLeft, Info, Timer, TrendingUp, ClipboardCheck, CheckCircle, XCircle, Lightbulb, ArrowLeft, RefreshCw, ArrowRight, Send, Flag } from 'lucide-react';
 
 export default function TopicQuizPage() {
   const { moduleId, subjectId, topicId } = useParams();
@@ -21,6 +13,7 @@ export default function TopicQuizPage() {
   const [topic, setTopic] = useState(null);
   const [mcqs, setMcqs] = useState([]);
   const [hasAccess, setHasAccess] = useState(false);
+  const [canUseFreeTrialForThisTopic, setCanUseFreeTrialForThisTopic] = useState(false);
   const [useFreeTrial, setUseFreeTrial] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState(null);
@@ -50,11 +43,13 @@ export default function TopicQuizPage() {
         setTopic(data.topic);
         setMcqs(data.mcqs || []);
         setHasAccess(data.hasAccess);
+        setCanUseFreeTrialForThisTopic(!!data.canUseFreeTrialForThisTopic);
         if (data.usedFreeTrial) refreshUser();
       })
       .catch(() => {
         if (cancelled) return;
         setHasAccess(false);
+        setCanUseFreeTrialForThisTopic(false);
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -174,10 +169,13 @@ export default function TopicQuizPage() {
     return (
       <div className="py-12 max-w-md mx-auto px-4 text-center">
         <p className="text-gray-600 mb-4">You do not have access to this topic.</p>
-        {!user?.freeTrialUsed && (
+        {canUseFreeTrialForThisTopic && (
           <button onClick={handleUseFreeTrial} className="bg-primary text-white px-4 py-2 rounded-lg font-medium">
             Use free trial for this topic
           </button>
+        )}
+        {!canUseFreeTrialForThisTopic && !user?.freeTrialUsed && (
+          <p className="text-sm text-slate-500 mb-4">Free trial is available only for the first topic of the first subject of the first module.</p>
         )}
         <Link to={`/student/modules/${moduleId}/subjects/${subjectId}`} className="block mt-4 text-primary">
           Back to Subject
@@ -188,7 +186,6 @@ export default function TopicQuizPage() {
 
   const total = mcqs.length;
   const mcq = mcqs[currentIndex];
-  const embedUrl = result?.videoUrl ? getYouTubeEmbedUrl(result.videoUrl) : null;
   const isLast = currentIndex === total - 1;
   const moduleName = topic.subject?.module?.name || 'Module';
   const subjectName = topic.subject?.name || 'Subject';
@@ -223,13 +220,13 @@ export default function TopicQuizPage() {
                 </Link>
               </li>
               <li className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">chevron_right</span>
+                <ChevronRight className="w-4 h-4" />
                 <Link to={`/student/modules/${moduleId}/subjects/${subjectId}`} className="hover:text-primary">
                   {subjectName}
                 </Link>
               </li>
               <li className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">chevron_right</span>
+                <ChevronRight className="w-4 h-4" />
                 <span className="font-medium text-slate-900 dark:text-slate-200">Quiz Results</span>
               </li>
             </ol>
@@ -263,7 +260,7 @@ export default function TopicQuizPage() {
             </div>
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-5">
               <div className="w-14 h-14 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined">timer</span>
+                <Timer className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Time Taken</p>
@@ -272,7 +269,7 @@ export default function TopicQuizPage() {
             </div>
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-5">
               <div className="w-14 h-14 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined">trending_up</span>
+                <TrendingUp className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Percentile</p>
@@ -283,7 +280,7 @@ export default function TopicQuizPage() {
 
           <div className="space-y-6 mb-12">
             <h2 className="text-lg font-bold flex items-center gap-2 text-slate-900 dark:text-white">
-              <span className="material-symbols-outlined text-primary">fact_check</span>
+              <ClipboardCheck className="w-5 h-5 text-primary" />
               Question Review
             </h2>
             {mcqs.map((mcq, idx) => {
@@ -330,9 +327,9 @@ export default function TopicQuizPage() {
                             }`}
                           >
                             {isCorrect ? (
-                              <span className="material-symbols-outlined text-green-600 dark:text-green-400">check_circle</span>
+                              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                             ) : isUserWrong ? (
-                              <span className="material-symbols-outlined text-red-600 dark:text-red-400">cancel</span>
+                              <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
                             ) : (
                               <span className="w-6 h-6 rounded-full border-2 border-slate-300 dark:border-slate-600 flex-shrink-0" />
                             )}
@@ -349,10 +346,10 @@ export default function TopicQuizPage() {
                   <details className="group border-t border-slate-100 dark:border-slate-700">
                     <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors list-none">
                       <span className="text-sm font-semibold text-primary flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm">lightbulb</span>
+                        <Lightbulb className="w-4 h-4" />
                         View Explanation
                       </span>
-                      <span className="material-symbols-outlined group-open:rotate-180 transition-transform text-slate-400">expand_more</span>
+                      <ChevronDown className="w-4 h-4 group-open:rotate-180 transition-transform text-slate-400" />
                     </summary>
                     <div className="p-6 pt-0 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
                       {res?.explanation || 'No explanation available.'}
@@ -369,7 +366,7 @@ export default function TopicQuizPage() {
               onClick={backToSubject}
               className="w-full sm:w-auto px-8 py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 text-slate-700 dark:text-slate-200"
             >
-              <span className="material-symbols-outlined">arrow_back</span>
+              <ArrowLeft className="w-5 h-5" />
               Back to Subject
             </button>
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
@@ -378,7 +375,7 @@ export default function TopicQuizPage() {
                 onClick={handleRetake}
                 className="w-full sm:w-auto px-8 py-3 rounded-xl border border-primary text-primary font-semibold hover:bg-primary/5 transition-colors flex items-center justify-center gap-2"
               >
-                <span className="material-symbols-outlined">refresh</span>
+                <RefreshCw className="w-5 h-5" />
                 Retake Quiz
               </button>
               <button
@@ -387,7 +384,7 @@ export default function TopicQuizPage() {
                 className="w-full sm:w-auto px-8 py-3 rounded-xl bg-primary text-white font-semibold hover:bg-teal-700 transition-colors shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
               >
                 Next Topic
-                <span className="material-symbols-outlined">arrow_forward</span>
+                <ArrowRight className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -411,7 +408,7 @@ export default function TopicQuizPage() {
             <h1 className="text-2xl font-display font-extrabold text-slate-900">{topic.name} Quiz</h1>
           </div>
           <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-200">
-            <span className="material-symbols-outlined text-primary">timer</span>
+            <Timer className="w-5 h-5 text-primary" />
             <span className="font-mono text-xl font-bold tracking-wider">
               {String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:{String(elapsedSeconds % 60).padStart(2, '0')}
             </span>
@@ -468,7 +465,7 @@ export default function TopicQuizPage() {
                 className="w-full mt-10 py-4 px-6 bg-primary hover:bg-teal-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-teal-500/20 flex items-center justify-center gap-2"
               >
                 <span>Submit Quiz</span>
-                <span className="material-symbols-outlined">send</span>
+                <Send className="w-5 h-5" />
               </button>
             </div>
           </aside>
@@ -493,7 +490,7 @@ export default function TopicQuizPage() {
                       onClick={toggleFlag}
                       className="flex items-center gap-1 font-semibold text-amber-500 hover:text-amber-600 transition-colors"
                     >
-                      <span className="material-symbols-outlined">flag</span>
+                      <Flag className="w-5 h-5" />
                       <span>Flag Question</span>
                     </button>
                   </div>
@@ -576,17 +573,6 @@ export default function TopicQuizPage() {
                                 <Info className="w-5 h-5 text-success-green flex-shrink-0 mt-0.5" />
                                 <p className="text-slate-600">{result.explanation || 'No explanation available.'}</p>
                               </div>
-                              {embedUrl && (
-                                <div className="rounded-xl overflow-hidden aspect-video bg-slate-900">
-                                  <iframe
-                                    title="Explanation video"
-                                    src={embedUrl}
-                                    className="w-full h-full"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
-                                    allowFullScreen
-                                  />
-                                </div>
-                              )}
                             </div>
                           </motion.div>
                         )}
@@ -601,7 +587,7 @@ export default function TopicQuizPage() {
                     disabled={currentIndex === 0 || transitioning}
                     className="w-full sm:w-auto px-8 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span className="material-symbols-outlined">arrow_back_ios</span>
+                    <ChevronLeft className="w-5 h-5" />
                     <span>Previous Question</span>
                   </button>
                   {isLast ? (
@@ -612,7 +598,7 @@ export default function TopicQuizPage() {
                       className="w-full sm:w-auto px-10 py-3 bg-primary text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span>Submit Quiz</span>
-                      <span className="material-symbols-outlined">send</span>
+                      <Send className="w-5 h-5" />
                     </button>
                   ) : (
                     <button
@@ -622,7 +608,7 @@ export default function TopicQuizPage() {
                       className="w-full sm:w-auto px-10 py-3 bg-primary text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span>Next Question</span>
-                      <span className="material-symbols-outlined">arrow_forward_ios</span>
+                      <ChevronRight className="w-5 h-5" />
                     </button>
                   )}
                 </div>

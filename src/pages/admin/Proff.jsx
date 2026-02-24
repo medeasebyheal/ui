@@ -3,10 +3,10 @@ import api from '../../api/client';
 import { Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 
 const JSMU_PAPERS = [
-  { name: 'Paper 1 (Mix MCQs)', type: 'mcq', order: 1 },
-  { name: 'Paper 2 (Mix MCQs)', type: 'mcq', order: 2 },
-  { name: 'OSPE 1', type: 'ospe', order: 3 },
-  { name: 'OSPE 2', type: 'ospe', order: 4 },
+  { name: 'Paper 1 (Mix MCQs)', type: 'mcq' },
+  { name: 'Paper 2 (Mix MCQs)', type: 'mcq' },
+  { name: 'OSPE 1', type: 'ospe' },
+  { name: 'OSPE 2', type: 'ospe' },
 ];
 
 export default function AdminProff() {
@@ -27,7 +27,7 @@ export default function AdminProff() {
   const other = structures.find((s) => s.university === 'other');
 
   const saveJsmu = async () => {
-    const papers = JSMU_PAPERS.map((p, i) => ({ ...p, order: i + 1 }));
+    const papers = [...JSMU_PAPERS];
     await api.put('/admin/proff', { university: 'jsmu', papers });
     const { data } = await api.get('/admin/proff');
     setStructures(data);
@@ -40,11 +40,11 @@ export default function AdminProff() {
     setOtherYears(data.find((s) => s.university === 'other')?.years || []);
   };
 
-  const addYear = () => setOtherYears((y) => [...y, { name: '', order: y.length, subjects: [] }]);
+  const addYear = () => setOtherYears((y) => [...y, { name: '', subjects: [] }]);
   const setYear = (yi, field, value) => setOtherYears((y) => { const n = [...y]; n[yi] = { ...n[yi], [field]: value }; return n; });
   const removeYear = (yi) => { setOtherYears((y) => y.filter((_, i) => i !== yi)); setExpandedYear(null); };
 
-  const addSubject = (yi) => setOtherYears((y) => { const n = [...y]; const subs = [...(n[yi].subjects || []), { name: '', order: (n[yi].subjects || []).length }]; n[yi] = { ...n[yi], subjects: subs }; return n; });
+  const addSubject = (yi) => setOtherYears((y) => { const n = [...y]; const subs = [...(n[yi].subjects || []), { name: '' }]; n[yi] = { ...n[yi], subjects: subs }; return n; });
   const setSubject = (yi, si, field, value) => setOtherYears((y) => { const n = [...y]; const subs = [...(n[yi].subjects || [])]; subs[si] = { ...subs[si], [field]: value }; n[yi] = { ...n[yi], subjects: subs }; return n; });
   const removeSubject = (yi, si) => setOtherYears((y) => { const n = [...y]; n[yi] = { ...n[yi], subjects: (n[yi].subjects || []).filter((_, i) => i !== si) }; return n; });
 

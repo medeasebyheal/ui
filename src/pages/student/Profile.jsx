@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { Bell, Loader2, Camera, CheckCircle, Clock, BadgeCheck, User, Mail, Phone, ShieldCheck, GraduationCap, Building2, Calendar, Tag, Users, Package, Stethoscope, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 
@@ -114,7 +115,7 @@ export default function StudentProfile() {
             className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-600 dark:text-slate-400 relative transition-colors"
             aria-label="Notifications"
           >
-            <span className="material-symbols-outlined text-xl">notifications</span>
+            <Bell className="w-5 h-5" />
             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-800" />
           </button>
           <div className="flex items-center gap-2">
@@ -152,7 +153,7 @@ export default function StudentProfile() {
                 className="absolute -bottom-2 -right-2 bg-white dark:bg-slate-700 p-2 rounded-lg shadow-md border border-slate-100 dark:border-slate-600 hover:text-primary transition-colors disabled:opacity-50"
                 aria-label="Change photo"
               >
-                <span className="material-symbols-outlined">{uploadingAvatar ? 'hourglass_empty' : 'camera_alt'}</span>
+                {uploadingAvatar ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
               </button>
             </div>
             {avatarError && (
@@ -171,7 +172,7 @@ export default function StudentProfile() {
                     : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                 }`}
               >
-                <span className="material-symbols-outlined text-sm">{user?.isVerified ? 'check_circle' : 'schedule'}</span>
+                {user?.isVerified ? <CheckCircle className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
                 {user?.isVerified ? 'Verified' : 'Pending verification'}
               </span>
             </div>
@@ -193,13 +194,13 @@ export default function StudentProfile() {
           {/* Personal Information Card */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/30 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">badge</span>
+              <BadgeCheck className="w-5 h-5 text-primary" />
               <h3 className="font-bold text-slate-800 dark:text-white">Personal Information</h3>
             </div>
             <div className="p-6 space-y-5">
               <div className="flex items-start gap-4">
                 <div className="bg-slate-100 dark:bg-slate-700 p-2 rounded-lg flex-shrink-0">
-                  <span className="material-symbols-outlined text-slate-500">person</span>
+                  <User className="w-5 h-5 text-slate-500" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Username</p>
@@ -208,7 +209,7 @@ export default function StudentProfile() {
               </div>
               <div className="flex items-start gap-4">
                 <div className="bg-slate-100 dark:bg-slate-700 p-2 rounded-lg flex-shrink-0">
-                  <span className="material-symbols-outlined text-slate-500">mail</span>
+                  <Mail className="w-5 h-5 text-slate-500" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Email Address</p>
@@ -218,7 +219,7 @@ export default function StudentProfile() {
               {user?.contact && (
                 <div className="flex items-start gap-4">
                   <div className="bg-slate-100 dark:bg-slate-700 p-2 rounded-lg flex-shrink-0">
-                    <span className="material-symbols-outlined text-slate-500">phone</span>
+                    <Phone className="w-5 h-5 text-slate-500" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Contact</p>
@@ -228,7 +229,7 @@ export default function StudentProfile() {
               )}
               <div className="flex items-start gap-4">
                 <div className="bg-slate-100 dark:bg-slate-700 p-2 rounded-lg flex-shrink-0">
-                  <span className="material-symbols-outlined text-slate-500">verified_user</span>
+                  <ShieldCheck className="w-5 h-5 text-slate-500" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Account Status</p>
@@ -249,13 +250,13 @@ export default function StudentProfile() {
           {/* Academic Details Card */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/30 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">school</span>
+              <GraduationCap className="w-5 h-5 text-primary" />
               <h3 className="font-bold text-slate-800 dark:text-white">Academic Details</h3>
             </div>
             <div className="p-6 space-y-5">
               <div className="flex items-start gap-4">
                 <div className="bg-slate-100 dark:bg-slate-700 p-2 rounded-lg flex-shrink-0">
-                  <span className="material-symbols-outlined text-slate-500">business</span>
+                  <Building2 className="w-5 h-5 text-slate-500" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Institution</p>
@@ -265,7 +266,7 @@ export default function StudentProfile() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex items-start gap-4">
                   <div className="bg-slate-100 dark:bg-slate-700 p-2 rounded-lg flex-shrink-0">
-                    <span className="material-symbols-outlined text-slate-500">calendar_today</span>
+                    <Calendar className="w-5 h-5 text-slate-500" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Current Year</p>
@@ -282,7 +283,7 @@ export default function StudentProfile() {
                 </div>
                 <div className="flex items-start gap-4">
                   <div className="bg-slate-100 dark:bg-slate-700 p-2 rounded-lg flex-shrink-0">
-                    <span className="material-symbols-outlined text-slate-500">tag</span>
+                    <Tag className="w-5 h-5 text-slate-500" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Roll #</p>
@@ -293,7 +294,7 @@ export default function StudentProfile() {
               {user?.academicDetails?.batch && (
                 <div className="flex items-start gap-4">
                   <div className="bg-slate-100 dark:bg-slate-700 p-2 rounded-lg flex-shrink-0">
-                    <span className="material-symbols-outlined text-slate-500">groups</span>
+                    <Users className="w-5 h-5 text-slate-500" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Batch</p>
@@ -309,7 +310,7 @@ export default function StudentProfile() {
         <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">inventory_2</span>
+              <Package className="w-5 h-5 text-primary" />
               <h3 className="font-bold text-slate-800 dark:text-white">Subscribed Packages</h3>
             </div>
             <Link to="/packages" className="text-primary text-sm font-bold hover:underline">
@@ -335,7 +336,7 @@ export default function StudentProfile() {
                     >
                       <div className="flex items-center gap-4">
                         <div className="bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm">
-                          <span className="material-symbols-outlined text-2xl text-primary">medical_services</span>
+                          <Stethoscope className="w-6 h-6 text-primary" />
                         </div>
                         <div>
                           <h4 className="font-bold text-slate-800 dark:text-white">{pkg?.name || 'Package'}</h4>
@@ -356,9 +357,7 @@ export default function StudentProfile() {
               </div>
             ) : (
               <div className="py-8 text-center">
-                <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-600 mb-2 block">
-                  inventory_2
-                </span>
+                <Package className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-2 block mx-auto" />
                 <p className="text-slate-500 dark:text-slate-400">No packages subscribed yet.</p>
                 <Link to="/packages" className="inline-block mt-3 text-primary font-semibold hover:underline">
                   Browse packages
@@ -387,7 +386,7 @@ export default function StudentProfile() {
                 className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                 disabled={saving}
               >
-                <span className="material-symbols-outlined">close</span>
+                <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-4">

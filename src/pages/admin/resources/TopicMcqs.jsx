@@ -4,7 +4,7 @@ import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import Modal from '../../../components/admin/Modal';
 import ConfirmDialog from '../../../components/admin/ConfirmDialog';
-import { Plus, Pencil, Trash2, Upload, HelpCircle, Youtube, Video, FileText, Link as LinkIcon, Download } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, HelpCircle, FileText, Link as LinkIcon, Download } from 'lucide-react';
 
 const basePath = (y, m, s, t) => `/admin/resources/years/${y}/modules/${m}/subjects/${s}/topics/${t}`;
 
@@ -15,12 +15,9 @@ export default function TopicMcqs() {
   const [subject, setSubject] = useState(null);
   const [topic, setTopic] = useState(null);
   const [mcqs, setMcqs] = useState([]);
-  const [oneShotLectures, setOneShotLectures] = useState([]);
   const [topicResources, setTopicResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [lectureForm, setLectureForm] = useState(null);
-  const [lectureDeleteConfirm, setLectureDeleteConfirm] = useState(null);
   const [resourceForm, setResourceForm] = useState(null);
   const [resourceDeleteConfirm, setResourceDeleteConfirm] = useState(null);
   const [downloadingResourceId, setDownloadingResourceId] = useState(null);
@@ -37,20 +34,15 @@ export default function TopicMcqs() {
   };
   const loadTopic = () => api.get('/admin/subjects/' + subjectId + '/topics').then(({ data }) => setTopic(data.find((x) => x._id === topicId) || null)).catch(() => setTopic(null));
   const loadMcqs = () => api.get(`/admin/topics/${topicId}/mcqs`).then(({ data }) => setMcqs(data)).catch(() => setMcqs([]));
-  const loadOneShotLectures = () => api.get(`/admin/topics/${topicId}/one-shot-lectures`).then(({ data }) => setOneShotLectures(data || [])).catch(() => setOneShotLectures([]));
   const loadTopicResources = () => api.get(`/admin/topics/${topicId}/resources`).then(({ data }) => setTopicResources(data || [])).catch(() => setTopicResources([]));
 
   useEffect(() => {
     if (!yearId || !moduleId || !subjectId || !topicId) return;
-    Promise.all([loadMeta(), loadTopic(), loadMcqs(), loadOneShotLectures(), loadTopicResources()]).finally(() => setLoading(false));
+    Promise.all([loadMeta(), loadTopic(), loadMcqs(), loadTopicResources()]).finally(() => setLoading(false));
   }, [yearId, moduleId, subjectId, topicId]);
 
   const handleDelete = async (mcqId) => {
     try { await api.delete(`/admin/topics/${topicId}/mcqs/${mcqId}`); loadMcqs(); setDeleteConfirm(null); } catch (_) {}
-  };
-
-  const handleLectureDelete = async (lectureId) => {
-    try { await api.delete(`/admin/topics/${topicId}/one-shot-lectures/${lectureId}`); loadOneShotLectures(); setLectureDeleteConfirm(null); } catch (_) {}
   };
 
   const handleResourceDelete = async (resourceId) => {
@@ -102,13 +94,6 @@ export default function TopicMcqs() {
           <p className="text-sm text-gray-500 mt-1">MCQs for this topic. Add single MCQs or bulk import (text, image-based, guess-until-correct).</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setLectureForm({})}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-gray-300 text-gray-700 font-medium hover:border-primary/50 hover:text-primary transition-colors"
-          >
-            <Video className="w-5 h-5" /> Add One Shot Lecture
-          </button>
           <Link
             to={`${basePath(yearId, moduleId, subjectId, topicId)}/mcqs/bulk`}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-primary/30 text-primary font-medium hover:bg-primary/5 transition-colors"
@@ -122,47 +107,6 @@ export default function TopicMcqs() {
             <Plus className="w-5 h-5" /> Add MCQ
           </Link>
         </div>
-      </div>
-
-      {/* One Shot Lectures */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-8">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-heading font-semibold text-gray-900">One Shot YouTube Lectures ({oneShotLectures.length})</h2>
-          <button
-            type="button"
-            onClick={() => setLectureForm({})}
-            className="text-sm text-primary font-medium hover:underline"
-          >
-            + Add lecture
-          </button>
-        </div>
-        <ul className="divide-y divide-gray-100">
-          {oneShotLectures.map((lecture, i) => (
-            <li key={lecture._id} className="p-4 hover:bg-gray-50/50 flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3 min-w-0 flex-1">
-                <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0 text-sm font-medium text-red-600">
-                  {i + 1}
-                </div>
-                <div className="min-w-0">
-                  <p className="font-medium text-gray-900">{lecture.title}</p>
-                  <a href={lecture.youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline truncate block">{lecture.youtubeUrl}</a>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button type="button" onClick={() => setLectureForm({ lecture })} className="p-2 text-gray-500 hover:text-primary rounded-lg" title="Edit"><Pencil className="w-4 h-4" /></button>
-                <button type="button" onClick={() => setLectureDeleteConfirm(lecture)} className="p-2 text-gray-500 hover:text-red-600 rounded-lg" title="Delete"><Trash2 className="w-4 h-4" /></button>
-              </div>
-            </li>
-          ))}
-        </ul>
-        {oneShotLectures.length === 0 && (
-          <div className="text-center py-12 bg-gray-50/50">
-            <Video className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-500 font-medium">No one shot lectures yet</p>
-            <p className="text-sm text-gray-400 mt-1">Add YouTube lectures for this topic.</p>
-            <button type="button" onClick={() => setLectureForm({})} className="mt-3 text-primary font-medium hover:underline">Add lecture</button>
-          </div>
-        )}
       </div>
 
       {/* Topic Resources (PDF + Link) */}
@@ -236,7 +180,6 @@ export default function TopicMcqs() {
                   <p className="font-medium text-gray-900 line-clamp-2">{mcq.question}</p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="inline-block text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">{mcq.type}</span>
-                    {mcq.videoUrl && <span className="inline-flex items-center gap-0.5 text-xs text-primary" title="Has video"><Youtube className="w-3.5 h-3.5" /></span>}
                   </div>
                   {mcq.explanation && <p className="text-sm text-gray-500 mt-1 line-clamp-1">{mcq.explanation}</p>}
                 </div>
@@ -271,15 +214,6 @@ export default function TopicMcqs() {
         danger
       />
       <ConfirmDialog
-        open={!!lectureDeleteConfirm}
-        onClose={() => setLectureDeleteConfirm(null)}
-        title="Delete One Shot Lecture"
-        message={lectureDeleteConfirm ? `Delete "${lectureDeleteConfirm.title}"?` : ''}
-        confirmLabel="Delete"
-        onConfirm={() => lectureDeleteConfirm && handleLectureDelete(lectureDeleteConfirm._id)}
-        danger
-      />
-      <ConfirmDialog
         open={!!resourceDeleteConfirm}
         onClose={() => setResourceDeleteConfirm(null)}
         title="Delete Resource"
@@ -300,16 +234,7 @@ export default function TopicMcqs() {
         />
       )}
 
-      {lectureForm && (
-        <OneShotLectureForm
-          key={lectureForm.lecture?._id ?? 'new'}
-          lecture={lectureForm.lecture ?? null}
-          topicId={topicId}
-          onSave={loadOneShotLectures}
-          onClose={() => setLectureForm(null)}
-        />
-      )}
-    </>
+      </>
   );
 }
 
@@ -318,7 +243,6 @@ function TopicResourceForm({ resource, type: initialType, topicId, onSave, onClo
   const [type] = useState(resource?.type ?? initialType ?? 'link');
   const [title, setTitle] = useState(resource?.title ?? '');
   const [url, setUrl] = useState(resource?.url ?? '');
-  const [order, setOrder] = useState(resource?.order ?? 0);
   const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
 
@@ -327,16 +251,15 @@ function TopicResourceForm({ resource, type: initialType, topicId, onSave, onClo
     setSaving(true);
     try {
       if (isEdit) {
-        await api.put(`/admin/topics/${topicId}/resources/${resource._id}`, { title, url: url.trim() || undefined, order });
+        await api.put(`/admin/topics/${topicId}/resources/${resource._id}`, { title, url: url.trim() || undefined });
       } else if (type === 'pdf' && file) {
         const formData = new FormData();
         formData.append('type', 'pdf');
         formData.append('title', title);
         formData.append('file', file);
-        formData.append('order', String(order));
         await api.post(`/admin/topics/${topicId}/resources`, formData);
       } else if (type === 'link') {
-        await api.post(`/admin/topics/${topicId}/resources`, { type: 'link', title, url: url.trim(), order });
+        await api.post(`/admin/topics/${topicId}/resources`, { type: 'link', title, url: url.trim() });
       } else {
         setSaving(false);
         return;
@@ -368,10 +291,6 @@ function TopicResourceForm({ resource, type: initialType, topicId, onSave, onClo
             <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} required={type === 'link' || isEdit} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="https://..." />
           </div>
         )}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
-          <input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value) || 0)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" />
-        </div>
         <div className="flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
           <button type="submit" disabled={saving || (type === 'pdf' && !isEdit && !file)} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">Save</button>
@@ -381,47 +300,3 @@ function TopicResourceForm({ resource, type: initialType, topicId, onSave, onClo
   );
 }
 
-function OneShotLectureForm({ lecture, topicId, onSave, onClose }) {
-  const [title, setTitle] = useState(lecture?.title ?? '');
-  const [youtubeUrl, setYoutubeUrl] = useState(lecture?.youtubeUrl ?? '');
-  const [order, setOrder] = useState(lecture?.order ?? 0);
-  const [saving, setSaving] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      if (lecture?._id) {
-        await api.put(`/admin/topics/${topicId}/one-shot-lectures/${lecture._id}`, { title, youtubeUrl, order });
-      } else {
-        await api.post(`/admin/topics/${topicId}/one-shot-lectures`, { title, youtubeUrl, order });
-      }
-      onSave?.();
-      onClose?.();
-    } catch (_) {}
-    setSaving(false);
-  };
-
-  return (
-    <Modal open onClose={onClose} title={lecture ? 'Edit One Shot Lecture' : 'Add One Shot Lecture'}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="e.g. Foundation Module One Shot" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">YouTube URL</label>
-          <input type="url" value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="https://www.youtube.com/watch?v=..." />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
-          <input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value) || 0)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" />
-        </div>
-        <div className="flex gap-2 justify-end">
-          <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
-          <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">Save</button>
-        </div>
-      </form>
-    </Modal>
-  );
-}

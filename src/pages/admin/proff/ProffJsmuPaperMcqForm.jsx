@@ -20,7 +20,6 @@ export default function ProffJsmuPaperMcqForm() {
   const [options, setOptions] = useState(['', '', '', '']);
   const [correctIndex, setCorrectIndex] = useState(0);
   const [explanation, setExplanation] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
   const [type, setType] = useState('text');
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -45,7 +44,6 @@ export default function ProffJsmuPaperMcqForm() {
           setOptions(d.options?.length ? [...d.options] : ['', '', '', '']);
           setCorrectIndex(d.correctIndex ?? 0);
           setExplanation(d.explanation || '');
-          setVideoUrl(d.videoUrl || '');
           setType(d.type || 'text');
           setImageUrl(d.imageUrl || '');
         }
@@ -89,7 +87,6 @@ export default function ProffJsmuPaperMcqForm() {
         options: opts,
         correctIndex,
         explanation,
-        videoUrl: videoUrl.trim() || undefined,
         type,
         imageUrl: type === 'image' ? imageUrl : undefined,
       };
@@ -174,10 +171,6 @@ export default function ProffJsmuPaperMcqForm() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Explanation</label>
             <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="Why this answer is correct..." />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">YouTube video link (optional)</label>
-            <input type="url" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="https://www.youtube.com/watch?v=..." />
           </div>
           <div className="flex flex-wrap gap-3 pt-2">
             <button type="submit" disabled={saving} className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-medium shadow-sm hover:shadow disabled:opacity-50">

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { ChevronRight, HelpCircle, PlayCircle, Play, Share2, CheckCircle, FileText, Link as LinkIcon, Download, Loader2 } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { recordRecentView } from '../../utils/recentViews';
@@ -31,6 +32,7 @@ export default function TopicDetailPage() {
   const [topic, setTopic] = useState(null);
   const [mcqs, setMcqs] = useState([]);
   const [hasAccess, setHasAccess] = useState(false);
+  const [canUseFreeTrialForThisTopic, setCanUseFreeTrialForThisTopic] = useState(false);
   const [useFreeTrial, setUseFreeTrial] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -71,6 +73,7 @@ export default function TopicDetailPage() {
         setTopic(data.topic);
         setMcqs(data.mcqs || []);
         setHasAccess(data.hasAccess);
+        setCanUseFreeTrialForThisTopic(!!data.canUseFreeTrialForThisTopic);
         if (data.usedFreeTrial) refreshUser();
         if (data.topic) {
           recordRecentView({
@@ -88,6 +91,7 @@ export default function TopicDetailPage() {
       .catch(() => {
         if (cancelled) return;
         setHasAccess(false);
+        setCanUseFreeTrialForThisTopic(false);
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -124,10 +128,13 @@ export default function TopicDetailPage() {
     return (
       <div className="py-12 max-w-md mx-auto px-4 text-center">
         <p className="text-gray-600 mb-4">You do not have access to this topic.</p>
-        {!user?.freeTrialUsed && (
+        {canUseFreeTrialForThisTopic && (
           <button onClick={handleUseFreeTrial} className="bg-primary text-white px-4 py-2 rounded-lg font-medium">
             Use free trial for this topic
           </button>
+        )}
+        {!canUseFreeTrialForThisTopic && !user?.freeTrialUsed && (
+          <p className="text-sm text-slate-500 mb-4">Free trial is available only for the first topic of the first subject of the first module.</p>
         )}
         <Link to={`/student/modules/${moduleId}/subjects/${subjectId}`} className="block mt-4 text-primary">
           Back to Subject
@@ -149,10 +156,10 @@ export default function TopicDetailPage() {
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-slate-500 mb-6">
           <Link to="/modules" className="hover:text-primary">Modules</Link>
-          <span className="material-symbols-outlined text-xs">chevron_right</span>
+          <ChevronRight className="w-3 h-3" />
           <Link to={`/student/modules/${moduleId}`} className="hover:text-primary">{moduleName}</Link>
-          <span className="material-symbols-outlined text-xs">chevron_right</span>
-          <span className="text-slate-900 font-medium">{subjectName}: One Shot</span>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-slate-900 font-medium">{subjectName}: Topic</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -162,7 +169,7 @@ export default function TopicDetailPage() {
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-8">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-2xl">quiz</span>
+                  <HelpCircle className="w-8 h-8 text-primary" />
                   Practice MCQs
                 </h3>
                 {total > 0 && (
@@ -170,7 +177,7 @@ export default function TopicDetailPage() {
                     to={quizPageUrl}
                     className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-teal-700 transition-colors shadow-md shadow-primary/20"
                   >
-                    <span className="material-symbols-outlined text-lg">play_circle</span>
+                    <PlayCircle className="w-5 h-5" />
                     Take Topic Quiz ({total} questions)
                   </Link>
                 )}
@@ -214,7 +221,7 @@ export default function TopicDetailPage() {
                       to={quizPageUrl}
                       className="flex items-center justify-center gap-2 w-full py-4 rounded-xl border-2 border-primary text-primary font-bold hover:bg-primary hover:text-white transition-colors"
                     >
-                      <span className="material-symbols-outlined">quiz</span>
+                      <HelpCircle className="w-5 h-5" />
                       Start Full Quiz — {total} questions
                     </Link>
                   </div>
@@ -226,7 +233,7 @@ export default function TopicDetailPage() {
             <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group">
               {videoPlaying && oneShotEmbedUrl ? (
                 <iframe
-                  title="One Shot Lecture"
+                  title="Topic Explanatory Video"
                   src={oneShotEmbedUrl}
                   className="absolute inset-0 w-full h-full"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -246,7 +253,7 @@ export default function TopicDetailPage() {
                       onClick={() => setVideoPlaying(true)}
                       className="absolute w-20 h-20 bg-primary/90 rounded-full flex items-center justify-center text-white shadow-xl hover:scale-110 transition-transform cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-4xl">play_arrow</span>
+                      <Play className="w-10 h-10" />
                     </button>
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50">
@@ -271,7 +278,7 @@ export default function TopicDetailPage() {
                   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
                   onClick={() => navigator.share?.({ title: topic.name, url: window.location.href })}
                 >
-                  <span className="material-symbols-outlined text-sm">share</span>
+                  <Share2 className="w-4 h-4" />
                   <span className="text-sm font-medium">Share</span>
                 </button>
               </div>
@@ -281,23 +288,23 @@ export default function TopicDetailPage() {
 
             {/* About Section */}
             <div className="prose prose-slate max-w-none">
-              <h3 className="text-lg font-bold mb-4">About this One-Shot Lecture</h3>
+              <h3 className="text-lg font-bold mb-4">About this topic</h3>
               {topic.content ? (
                 <div dangerouslySetInnerHTML={{ __html: topic.content }} className="text-slate-600 text-sm leading-relaxed" />
               ) : (
                 <p className="text-slate-600 text-sm leading-relaxed">
-                  This comprehensive one-shot lecture covers {topic.name}. Master the key concepts through
+                  This explanatory video covers {topic.name}. Master the key concepts through
                   the video and reinforce your learning with the related MCQs.
                 </p>
               )}
               {total > 0 && (
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mt-4 text-sm">
                   <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary text-sm">check_circle</span>
+                    <CheckCircle className="w-4 h-4 text-primary" />
                     {total} Practice MCQs
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary text-sm">check_circle</span>
+                    <CheckCircle className="w-4 h-4 text-primary" />
                     High-yield exam preparation
                   </li>
                 </ul>
@@ -310,7 +317,7 @@ export default function TopicDetailPage() {
             {/* Resources */}
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">description</span>
+                <FileText className="w-5 h-5 text-primary" />
                 Resources
               </h3>
               {resources.length === 0 ? (
@@ -320,9 +327,11 @@ export default function TopicDetailPage() {
                   {resources.map((res) => (
                     <li key={res._id}>
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-transparent hover:border-primary/30 hover:bg-teal-50/50 transition-all group">
-                        <span className="material-symbols-outlined text-primary text-xl flex-shrink-0">
-                          {res.type === 'pdf' ? 'picture_as_pdf' : 'link'}
-                        </span>
+                        {res.type === 'pdf' ? (
+                          <FileText className="w-5 h-5 text-primary flex-shrink-0" />
+                        ) : (
+                          <LinkIcon className="w-5 h-5 text-primary flex-shrink-0" />
+                        )}
                         <span className="text-sm font-medium text-slate-900 truncate flex-1">
                           {res.title}
                         </span>
@@ -335,9 +344,11 @@ export default function TopicDetailPage() {
                               className="p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-white transition-colors disabled:opacity-50"
                               title="Download PDF"
                             >
-                              <span className="material-symbols-outlined text-lg">
-                                {downloadingPdf === res._id ? 'hourglass_empty' : 'download'}
-                              </span>
+                              {downloadingPdf === res._id ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                              ) : (
+                                <Download className="w-5 h-5" />
+                              )}
                             </button>
                           )}
                         </div>

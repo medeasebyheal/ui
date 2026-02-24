@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { Plus, Pencil, Trash2, ArrowRight, Calendar, FileText, LayoutGrid } from 'lucide-react';
 import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import { YearForm } from '../../../components/admin/ResourceForms';
@@ -81,7 +82,7 @@ export default function YearsList() {
             onClick={() => setFormOpen('new')}
             className="bg-primary hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 font-semibold transition-all shadow-md hover:shadow-lg active:scale-95"
           >
-            <span className="material-symbols-outlined text-sm">add</span>
+            <Plus className="w-4 h-4" />
             Add year
           </button>
         </div>
@@ -93,14 +94,13 @@ export default function YearsList() {
                 <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
                   <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Year Name</th>
                   <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Associated Program</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Sort Order</th>
                   <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-right text-slate-500 dark:text-slate-400">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                    <td colSpan={3} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                       No years yet. Add a year to start building the academic structure.
                     </td>
                   </tr>
@@ -119,7 +119,6 @@ export default function YearsList() {
                           {year.program?.name ?? '—'}
                         </span>
                       </td>
-                      <td className="px-6 py-5 text-slate-500 dark:text-slate-400">{year.order ?? 0}</td>
                       <td className="px-6 py-5">
                         <div className="flex items-center justify-end gap-3">
                           <button
@@ -128,7 +127,7 @@ export default function YearsList() {
                             className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
                             title="Edit"
                           >
-                            <span className="material-symbols-outlined text-[18px]">edit</span>
+                            <Pencil className="w-5 h-5" />
                           </button>
                           <button
                             type="button"
@@ -136,14 +135,14 @@ export default function YearsList() {
                             className="p-1.5 text-slate-400 hover:text-red-600 transition-colors rounded hover:bg-red-50 dark:hover:bg-red-900/20"
                             title="Delete"
                           >
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                            <Trash2 className="w-5 h-5" />
                           </button>
                           <Link
                             to={`/admin/resources/years/${year._id}`}
                             className="ml-2 flex items-center gap-1 text-sm font-semibold text-primary hover:underline group-hover:translate-x-1 transition-transform"
                           >
                             Open
-                            <span className="material-symbols-outlined text-sm">trending_flat</span>
+                            <ArrowRight className="w-4 h-4" />
                           </Link>
                         </div>
                       </td>
@@ -201,7 +200,7 @@ export default function YearsList() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
           <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined">calendar_today</span>
+              <Calendar className="w-5 h-5" />
             </div>
             <div>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider">Total Academic Years</p>
@@ -210,7 +209,7 @@ export default function YearsList() {
           </div>
           <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
-              <span className="material-symbols-outlined">assignment</span>
+              <FileText className="w-5 h-5" />
             </div>
             <div>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider">Programs Active</p>
@@ -219,7 +218,7 @@ export default function YearsList() {
           </div>
           <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
-              <span className="material-symbols-outlined">view_module</span>
+              <LayoutGrid className="w-5 h-5" />
             </div>
             <div>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider">Avg Modules / Year</p>

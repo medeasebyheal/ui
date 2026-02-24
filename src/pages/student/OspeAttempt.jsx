@@ -33,10 +33,9 @@ function getStations(ospe) {
   const stations = ospe?.stations || [];
   if (stations.length > 0) return stations;
   if (ospe?.questions?.length) {
-    return ospe.questions.map((q, i) => ({
+    return ospe.questions.map((q) => ({
       imageUrl: q.imageUrl,
       questions: [{ ...q, imageUrl: undefined }],
-      order: i,
     }));
   }
   return [];

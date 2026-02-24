@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { MailCheck, KeyRound, ArrowRight, UserPlus, User, Mail, Lock, Eye, EyeOff, Info, Phone, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 
@@ -74,7 +75,7 @@ export default function RegisterPage() {
         <div className="bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 rounded-xl p-8 md:p-10">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-              <span className="material-symbols-outlined text-primary text-4xl">mark_email_read</span>
+              <MailCheck className="w-10 h-10 text-primary" />
             </div>
             <h2 className="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
               Verify your email
@@ -97,7 +98,7 @@ export default function RegisterPage() {
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <span className="material-symbols-outlined text-[20px]">pin</span>
+                  <KeyRound className="w-5 h-5" />
                 </span>
                 <input
                   type="text"
@@ -119,9 +120,7 @@ export default function RegisterPage() {
               className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 px-4 rounded-lg shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
             >
               {loading ? 'Verifying...' : 'Verify and create account'}
-              <span className="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">
-                arrow_forward
-              </span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
 
             <button
@@ -142,7 +141,7 @@ export default function RegisterPage() {
       <div className="bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 rounded-xl p-8 md:p-10">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-            <span className="material-symbols-outlined text-primary text-4xl">person_add</span>
+            <UserPlus className="w-10 h-10 text-primary" />
           </div>
           <h2 className="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
             Create an Account
@@ -163,7 +162,7 @@ export default function RegisterPage() {
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <span className="material-symbols-outlined text-[20px]">person</span>
+                <User className="w-5 h-5" />
               </span>
               <input
                 id="full_name"
@@ -184,7 +183,7 @@ export default function RegisterPage() {
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <span className="material-symbols-outlined text-[20px]">mail</span>
+                <Mail className="w-5 h-5" />
               </span>
               <input
                 id="email"
@@ -205,7 +204,7 @@ export default function RegisterPage() {
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <span className="material-symbols-outlined text-[20px]">lock</span>
+                <Lock className="w-5 h-5" />
               </span>
               <input
                 id="password"
@@ -223,13 +222,11 @@ export default function RegisterPage() {
                 onClick={() => setShowPassword((p) => !p)}
                 className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               >
-                <span className="material-symbols-outlined text-[20px]">
-                  {showPassword ? 'visibility_off' : 'visibility'}
-                </span>
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
             <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px]">info</span>
+              <Info className="w-3.5 h-3.5" />
               Minimum 6 characters required
             </p>
           </div>
@@ -245,7 +242,7 @@ export default function RegisterPage() {
             </div>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <span className="material-symbols-outlined text-[20px]">call</span>
+                <Phone className="w-5 h-5" />
               </span>
               <input
                 id="contact"
@@ -286,9 +283,7 @@ export default function RegisterPage() {
             className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 px-4 rounded-lg shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
           >
             {loading ? 'Sending code...' : 'Sign up'}
-            <span className="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">
-              arrow_forward
-            </span>
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
         </form>
 
@@ -304,12 +299,12 @@ export default function RegisterPage() {
 
       <div className="mt-8 flex items-center justify-center gap-6 text-slate-400 dark:text-slate-500">
         <div className="flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-[18px]">verified_user</span>
+          <ShieldCheck className="w-4 h-4" />
           <span className="text-xs font-medium uppercase tracking-wider">Secure Platform</span>
         </div>
         <div className="w-px h-3 bg-slate-300 dark:bg-slate-700" />
         <div className="flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-[18px]">lock</span>
+          <Lock className="w-4 h-4" />
           <span className="text-xs font-medium uppercase tracking-wider">Privacy First</span>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { PlusCircle, Check, ListOrdered, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../api/client';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
 
@@ -145,7 +146,7 @@ export default function AdminPromoCodes() {
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800">
               <h2 className="text-lg font-semibold flex items-center text-slate-900 dark:text-white">
-                <span className="material-symbols-outlined mr-2 text-primary">add_circle_outline</span>
+                <PlusCircle className="w-5 h-5 mr-2 text-primary" />
                 {editing ? 'Edit Promo Code' : 'Create Promo Code'}
               </h2>
             </div>
@@ -241,7 +242,7 @@ export default function AdminPromoCodes() {
                     disabled={saving}
                     className="flex-1 py-3 bg-primary hover:bg-teal-600 text-white font-semibold rounded-lg shadow-sm transition-all flex items-center justify-center disabled:opacity-50"
                   >
-                    <span className="material-symbols-outlined text-lg mr-2">check</span>
+                    <Check className="w-5 h-5 mr-2" />
                     {saving ? 'Saving...' : editing ? 'Update Promo Code' : 'Create Promo Code'}
                   </button>
                 </div>
@@ -255,7 +256,7 @@ export default function AdminPromoCodes() {
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <h2 className="text-lg font-semibold flex items-center text-slate-900 dark:text-white">
-                <span className="material-symbols-outlined mr-2 text-primary">list_alt</span>
+                <ListOrdered className="w-5 h-5 mr-2 text-primary" />
                 Existing Promo Codes
               </h2>
               <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-xs font-medium rounded-full text-slate-700 dark:text-slate-300">
@@ -364,7 +365,7 @@ export default function AdminPromoCodes() {
                                 className="p-1.5 text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-all"
                                 title="Edit"
                               >
-                                <span className="material-symbols-outlined text-lg">edit</span>
+                                <Pencil className="w-5 h-5" />
                               </button>
                               <button
                                 type="button"
@@ -372,7 +373,7 @@ export default function AdminPromoCodes() {
                                 className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-all"
                                 title="Delete"
                               >
-                                <span className="material-symbols-outlined text-lg">delete</span>
+                                <Trash2 className="w-5 h-5" />
                               </button>
                             </div>
                           </td>
@@ -392,7 +393,7 @@ export default function AdminPromoCodes() {
                   disabled={page <= 1}
                   className="p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-all disabled:opacity-50"
                 >
-                  <span className="material-symbols-outlined text-sm">chevron_left</span>
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
                 {(() => {
                   const show = Math.min(5, totalPages);
@@ -417,7 +418,7 @@ export default function AdminPromoCodes() {
                   disabled={page >= totalPages}
                   className="p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-all disabled:opacity-50"
                 >
-                  <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>

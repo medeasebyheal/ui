@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { Wallet, TrendingUp, Package, Calendar, Search, SlidersHorizontal, Download, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 
@@ -91,14 +92,14 @@ export default function StudentPayments() {
           <div className="flex items-center justify-between mb-4">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Spent</span>
             <div className="p-2 bg-primary/10 rounded-lg">
-              <span className="material-symbols-outlined text-primary">account_balance_wallet</span>
+              <Wallet className="w-5 h-5 text-primary" />
             </div>
           </div>
           <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{formatAmount(totalSpent)}</h3>
           <p className="text-xs text-emerald-500 mt-2 flex items-center gap-1">
             {lastApprovedPayment ? (
               <>
-                <span className="material-symbols-outlined text-xs">trending_up</span>
+                <TrendingUp className="w-3 h-3" />
                 Last payment on {formatDate(lastApprovedPayment.createdAt)}
               </>
             ) : (
@@ -111,7 +112,7 @@ export default function StudentPayments() {
           <div className="flex items-center justify-between mb-4">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Active Packages</span>
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">inventory_2</span>
+              <Package className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
           <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{activePackagesCount}</h3>
@@ -124,7 +125,7 @@ export default function StudentPayments() {
           <div className="flex items-center justify-between mb-4">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Next Renewal</span>
             <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-              <span className="material-symbols-outlined text-amber-600 dark:text-amber-400">event</span>
+              <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </div>
           </div>
           <h3 className="text-2xl font-bold text-slate-900 dark:text-white">—</h3>
@@ -137,9 +138,7 @@ export default function StudentPayments() {
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Transaction History</h2>
           <div className="flex items-center gap-3">
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
-                search
-              </span>
+              <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
                 value={search}
@@ -152,7 +151,7 @@ export default function StudentPayments() {
               type="button"
               className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-900 rounded-lg text-sm font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
-              <span className="material-symbols-outlined text-lg">filter_list</span>
+              <SlidersHorizontal className="w-5 h-5" />
               Filter
             </button>
           </div>
@@ -218,7 +217,7 @@ export default function StudentPayments() {
                             className="inline-flex p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-primary transition-colors"
                             title="View receipt"
                           >
-                            <span className="material-symbols-outlined">download</span>
+                            <Download className="w-5 h-5" />
                           </a>
                         </td>
                       </tr>
@@ -242,7 +241,7 @@ export default function StudentPayments() {
       <div className="mt-8 bg-primary/5 dark:bg-primary/10 p-6 rounded-2xl border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-white dark:bg-slate-800 rounded-full">
-            <span className="material-symbols-outlined text-primary">contact_support</span>
+            <MessageCircle className="w-5 h-5 text-primary" />
           </div>
           <div>
             <h4 className="font-semibold text-slate-900 dark:text-white">Having trouble with a payment?</h4>
