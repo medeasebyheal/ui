@@ -210,7 +210,7 @@ export default function TopicQuizPage() {
     const timeStr = `${String(Math.floor(frozenSeconds / 60)).padStart(2, '0')}:${String(frozenSeconds % 60).padStart(2, '0')}`;
 
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+      <div className="min-h-screen bg-primary/5 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
         <main className="max-w-5xl mx-auto px-4 py-8 lg:py-10">
           <nav className="flex text-sm text-slate-500 dark:text-slate-400 mb-2">
             <ol className="flex items-center flex-wrap gap-x-2 gap-y-1">
@@ -234,7 +234,7 @@ export default function TopicQuizPage() {
           <h1 className="text-2xl font-bold mb-8 text-slate-900 dark:text-white">Quiz Results: {topic.name}</h1>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-5">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-primary/20 dark:border-slate-700 flex items-center gap-5">
               <div className="w-16 h-16 rounded-full border-4 border-primary/20 flex items-center justify-center relative flex-shrink-0">
                 <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 64 64">
                   <circle
@@ -258,7 +258,7 @@ export default function TopicQuizPage() {
                 <p className="text-2xl font-bold text-slate-900 dark:text-white">{scorePct}%</p>
               </div>
             </div>
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-5">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-primary/20 dark:border-slate-700 flex items-center gap-5">
               <div className="w-14 h-14 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center flex-shrink-0">
                 <Timer className="w-5 h-5" />
               </div>
@@ -267,7 +267,7 @@ export default function TopicQuizPage() {
                 <p className="text-2xl font-bold text-slate-900 dark:text-white">{timeStr}</p>
               </div>
             </div>
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-5">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-primary/20 dark:border-slate-700 flex items-center gap-5">
               <div className="w-14 h-14 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
                 <TrendingUp className="w-5 h-5" />
               </div>
@@ -299,7 +299,7 @@ export default function TopicQuizPage() {
               return (
                 <div
                   key={mcq._id || idx}
-                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden"
+                  className="bg-white dark:bg-slate-800 border border-primary/20 dark:border-slate-700 rounded-2xl overflow-hidden"
                 >
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
@@ -394,7 +394,7 @@ export default function TopicQuizPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background-light text-slate-900">
+    <div className="min-h-screen bg-primary/5 text-slate-900">
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
@@ -407,7 +407,7 @@ export default function TopicQuizPage() {
             </nav>
             <h1 className="text-2xl font-display font-extrabold text-slate-900">{topic.name} Quiz</h1>
           </div>
-          <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-200">
+          <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-2xl shadow-sm border border-primary/20">
             <Timer className="w-5 h-5 text-primary" />
             <span className="font-mono text-xl font-bold tracking-wider">
               {String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:{String(elapsedSeconds % 60).padStart(2, '0')}
@@ -417,7 +417,7 @@ export default function TopicQuizPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <aside className="lg:col-span-3 order-2 lg:order-1">
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-primary/20">
               <h2 className="text-lg font-bold mb-4 flex items-center justify-between">
                 Quiz Progress
                 <span className="text-sm font-normal text-slate-500">
@@ -478,7 +478,7 @@ export default function TopicQuizPage() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden"
+                className="bg-white rounded-3xl shadow-sm border border-primary/10 shadow-primary/5 overflow-hidden"
               >
                 <div className="p-8 md:p-12">
                   <div className="flex items-center justify-between mb-6">

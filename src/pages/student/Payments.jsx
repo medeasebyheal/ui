@@ -88,7 +88,7 @@ export default function StudentPayments() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-primary/20 dark:border-slate-700 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Spent</span>
             <div className="p-2 bg-primary/10 rounded-lg">
@@ -108,7 +108,7 @@ export default function StudentPayments() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-primary/20 dark:border-slate-700 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Active Packages</span>
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
@@ -121,7 +121,7 @@ export default function StudentPayments() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-primary/20 dark:border-slate-700 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Next Renewal</span>
             <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
@@ -133,7 +133,7 @@ export default function StudentPayments() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-primary/20 dark:border-slate-700 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Transaction History</h2>
           <div className="flex items-center gap-3">

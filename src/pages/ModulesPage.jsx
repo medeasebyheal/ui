@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { BookOpen, Lock, LockOpen, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 
@@ -85,7 +86,7 @@ export default function ModulesPage() {
 
         <div className="flex flex-col md:flex-row gap-4 mb-10 items-center justify-between">
           <div className="relative w-full md:w-96">
-            <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+            <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
@@ -144,7 +145,7 @@ export default function ModulesPage() {
                         className="w-full h-full object-cover rounded-lg opacity-80 group-hover:opacity-100 transition-opacity"
                       />
                     ) : (
-                      <span className="material-icons-round text-6xl text-primary/40">menu_book</span>
+                      <BookOpen className="w-16 h-16 text-primary/40" />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-white to-transparent opacity-60 pointer-events-none" />
                   </div>
@@ -153,9 +154,11 @@ export default function ModulesPage() {
                       <span className="text-xs font-bold text-primary bg-teal-50 px-2 py-1 rounded">
                         {mod.yearName || '—'}
                       </span>
-                      <span className="material-icons-round text-slate-400 text-sm">
-                        {moduleHasAccess ? 'lock_open' : 'lock'}
-                      </span>
+                      {moduleHasAccess ? (
+                        <LockOpen className="w-5 h-5 text-slate-400" />
+                      ) : (
+                        <Lock className="w-5 h-5 text-slate-400" />
+                      )}
                     </div>
                     <h3 className="text-xl font-bold text-slate-800 mb-2 line-clamp-1">{mod.name}</h3>
                     <p className="text-sm text-slate-500 line-clamp-2">
@@ -169,7 +172,7 @@ export default function ModulesPage() {
                   >
                     {moduleHasAccess ? (
                       <>
-                        <span className="material-icons-round text-white text-4xl mb-3">menu_book</span>
+                        <BookOpen className="w-12 h-12 text-white mb-3" />
                         <h4 className="text-white font-bold text-lg mb-1">{mod.name}</h4>
                         <p className="text-teal-50 text-sm mb-6">View subjects and lessons</p>
                         <Link
@@ -181,7 +184,7 @@ export default function ModulesPage() {
                       </>
                     ) : (
                       <>
-                        <span className="material-icons-round text-slate-400 text-4xl mb-3">lock</span>
+                        <Lock className="w-12 h-12 text-slate-400 mb-3" />
                         <h4 className="text-white font-bold text-lg mb-1">Locked Content</h4>
                         <p className="text-slate-300 text-sm mb-6">Register or purchase a package to access this module.</p>
                         <Link

@@ -151,7 +151,7 @@ export default function TopicDetailPage() {
   const quizPageUrl = `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topicId}/quiz`;
 
   return (
-    <div className="min-h-screen bg-background-light text-slate-900">
+    <div className="min-h-screen bg-primary/5 text-slate-900">
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-slate-500 mb-6">
@@ -166,66 +166,21 @@ export default function TopicDetailPage() {
           {/* Left Column - MCQs first, then Video & Content */}
           <div className="lg:col-span-8">
             {/* Practice MCQs - First */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <HelpCircle className="w-8 h-8 text-primary" />
-                  Practice MCQs
-                </h3>
-                {total > 0 && (
-                  <Link
-                    to={quizPageUrl}
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-teal-700 transition-colors shadow-md shadow-primary/20"
-                  >
-                    <PlayCircle className="w-5 h-5" />
-                    Take Topic Quiz ({total} questions)
-                  </Link>
-                )}
-              </div>
+            <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 shadow-sm mb-8">
+              <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2 mb-4">
+                <HelpCircle className="w-8 h-8 text-primary" />
+                Practice MCQs
+              </h3>
               {total === 0 ? (
                 <p className="text-slate-500 py-4">No MCQs for this topic yet.</p>
               ) : (
-                <>
-                  <p className="text-sm text-slate-600 mb-6">Reinforce your learning with these practice questions. Click below to start the full quiz.</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {mcqs.slice(0, 6).map((m, idx) => (
-                      <Link
-                        key={m._id}
-                        to={quizPageUrl}
-                        className="block p-5 rounded-xl bg-slate-50 border border-slate-100 hover:border-primary/30 hover:bg-teal-50/30 transition-all cursor-pointer group"
-                      >
-                        <p className="text-sm font-medium text-slate-900 mb-3 line-clamp-2 group-hover:text-primary transition-colors">{m.question}</p>
-                        <div className="space-y-1.5">
-                          {(m.options || []).slice(0, 2).map((opt, i) => (
-                            <div
-                              key={i}
-                              className="text-xs p-2 rounded-lg bg-white border border-slate-200 truncate"
-                            >
-                              {String.fromCharCode(65 + i)}) {opt}
-                            </div>
-                          ))}
-                          {(m.options?.length || 0) > 2 && (
-                            <div className="text-xs text-slate-500">+ {(m.options?.length || 0) - 2} more options</div>
-                          )}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                  {total > 6 && (
-                    <p className="text-sm text-slate-500 mt-4 text-center">
-                      + {total - 6} more in the full quiz
-                    </p>
-                  )}
-                  <div className="mt-6 pt-6 border-t border-slate-200">
-                    <Link
-                      to={quizPageUrl}
-                      className="flex items-center justify-center gap-2 w-full py-4 rounded-xl border-2 border-primary text-primary font-bold hover:bg-primary hover:text-white transition-colors"
-                    >
-                      <HelpCircle className="w-5 h-5" />
-                      Start Full Quiz — {total} questions
-                    </Link>
-                  </div>
-                </>
+                <Link
+                  to={quizPageUrl}
+                  className="flex items-center justify-center gap-2 w-full py-4 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
+                >
+                  <PlayCircle className="w-5 h-5" />
+                  Take Topic Quiz — {total} question{total !== 1 ? 's' : ''}
+                </Link>
               )}
             </div>
 
@@ -315,7 +270,7 @@ export default function TopicDetailPage() {
           {/* Right Sidebar */}
           <div className="lg:col-span-4 space-y-6">
             {/* Resources */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <div className="bg-white border border-primary/20 rounded-2xl p-6 shadow-sm">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-primary" />
                 Resources

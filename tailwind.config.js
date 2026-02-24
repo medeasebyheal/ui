@@ -20,7 +20,8 @@ export default {
         display: ['Plus Jakarta Sans', 'sans-serif'],
       },
       backgroundImage: {
-        'pastel-quiz': 'linear-gradient(135deg, #e0e7ff 0%, #fae8ff 50%, #dcfce7 100%)',
+        'pastel-quiz': 'linear-gradient(135deg, rgba(6,146,133,0.08) 0%, #e0e7ff 25%, #fae8ff 50%, #dcfce7 100%)',
+        'student-page': 'linear-gradient(135deg, rgba(6,146,133,0.06) 0%, rgba(6,146,133,0.02) 50%, #f8fafc 100%)',
       },
       animation: {
         'spin-slow': 'spin 20s linear infinite',

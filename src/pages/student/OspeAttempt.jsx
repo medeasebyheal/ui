@@ -242,10 +242,10 @@ export default function StudentOspeAttempt() {
     });
 
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-primary/5">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <header className="flex flex-col md:flex-row gap-6 mb-10">
-            <div className="flex-1 bg-white p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center gap-8">
+            <div className="flex-1 bg-white p-8 rounded-2xl shadow-sm border border-primary/20 flex flex-col md:flex-row items-center gap-8">
               <div className="relative w-32 h-32 flex items-center justify-center rounded-full bg-slate-100">
                 <span className="text-3xl font-bold text-slate-900">{pct}%</span>
               </div>
@@ -272,7 +272,7 @@ export default function StudentOspeAttempt() {
                 </div>
               </div>
             </div>
-            <div className="w-full md:w-80 bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+            <div className="w-full md:w-80 bg-white p-8 rounded-2xl shadow-sm border border-primary/20">
               <h3 className="font-bold mb-6 flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-primary" />
                 Section Summary
@@ -323,7 +323,7 @@ export default function StudentOspeAttempt() {
                   <div
                     key={si}
                     className={`border rounded-xl overflow-hidden cursor-pointer transition-all ${
-                      isExpanded ? 'border-primary shadow-lg' : 'border-slate-200 hover:border-slate-300'
+                      isExpanded ? 'border-primary shadow-lg' : 'border-primary/20 hover:border-primary/30'
                     } bg-white`}
                   >
                     <div
@@ -422,8 +422,8 @@ export default function StudentOspeAttempt() {
   stations.slice(0, currentStationIndex).forEach((s) => { globalIdx += (s.questions || []).length; });
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
-      <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+    <div className="min-h-screen flex flex-col bg-primary/5">
+      <header className="sticky top-0 z-50 bg-white border-b border-primary/10 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row md:items-center gap-4">
             <div className="flex items-center gap-4">
@@ -483,7 +483,7 @@ export default function StudentOspeAttempt() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.25 }}
-              className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden"
+              className="bg-white rounded-2xl shadow-xl border border-primary/20 overflow-hidden"
             >
               <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                 <h2 className="text-xl font-bold flex items-center gap-2">
@@ -614,7 +614,7 @@ export default function StudentOspeAttempt() {
         </div>
       </main>
 
-      <footer className="bg-white border-t border-slate-200 px-4 py-4 sticky bottom-0">
+      <footer className="bg-white border-t border-primary/10 px-4 py-4 sticky bottom-0">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <label className="flex items-center gap-2 cursor-pointer">
             <input

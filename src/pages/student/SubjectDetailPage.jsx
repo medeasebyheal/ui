@@ -138,7 +138,7 @@ export default function SubjectDetailPage() {
   const sortedModuleSubjects = [...moduleSubjects].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   return (
-    <div className="min-h-screen bg-background-light text-slate-800">
+    <div className="min-h-screen bg-primary/5 text-slate-800">
       <div className="max-w-7xl mx-auto px-4 py-8 flex gap-8">
         {/* Sidebar - Subjects */}
         <aside className="w-64 flex-shrink-0 hidden lg:block">
@@ -157,7 +157,7 @@ export default function SubjectDetailPage() {
                     className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
                       isActive
                         ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                        : 'hover:bg-white text-slate-600 hover:text-slate-900'
+                        : 'hover:bg-primary/5 text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     {(function() {
@@ -224,7 +224,7 @@ export default function SubjectDetailPage() {
 
           {/* Stats Card */}
           <div className="mb-8">
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-4 max-w-xs">
+            <div className="bg-white p-4 rounded-2xl border border-primary/20 flex items-center gap-4 max-w-xs">
               <div className="h-12 w-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
                 <BookOpen className="w-6 h-6" />
               </div>
@@ -257,7 +257,7 @@ export default function SubjectDetailPage() {
                         href={lecture.youtubeUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-4 rounded-xl bg-white border border-slate-200 hover:border-primary/40 hover:shadow-md transition-all group"
+                        className="flex items-center gap-3 p-4 rounded-xl bg-white border border-primary/20 hover:border-primary/40 hover:bg-primary/5 hover:shadow-md transition-all group"
                       >
                         <div className="w-10 h-10 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400">
                           <Video className="w-5 h-5" />
@@ -288,9 +288,9 @@ export default function SubjectDetailPage() {
                 return (
                   <div
                     key={topic._id}
-                    className={`bg-white rounded-2xl border border-slate-200 p-5 transition-all group ${
+                    className={`bg-white rounded-2xl border border-primary/20 p-5 transition-all group ${
                       accessible
-                        ? 'hover:shadow-xl hover:shadow-slate-200/50'
+                        ? 'hover:shadow-xl hover:shadow-primary/10 hover:bg-primary/5'
                         : 'opacity-80'
                     }`}
                   >

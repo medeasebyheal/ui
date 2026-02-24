@@ -129,7 +129,7 @@ export default function StudentProfile() {
       {/* Profile Dashboard Layout */}
       <div className="space-y-8">
         {/* User Identity Header Card */}
-        <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
+        <section className="bg-primary/5 dark:bg-slate-800 rounded-2xl shadow-sm border border-primary/20 dark:border-slate-700 p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
           <div className="flex-shrink-0 flex flex-col items-center">
             <div className="relative">
               <input
@@ -192,7 +192,7 @@ export default function StudentProfile() {
         {/* Information Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Personal Information Card */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-primary/20 dark:border-slate-700 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/30 flex items-center gap-2">
               <BadgeCheck className="w-5 h-5 text-primary" />
               <h3 className="font-bold text-slate-800 dark:text-white">Personal Information</h3>
@@ -248,7 +248,7 @@ export default function StudentProfile() {
           </div>
 
           {/* Academic Details Card */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-primary/20 dark:border-slate-700 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/30 flex items-center gap-2">
               <GraduationCap className="w-5 h-5 text-primary" />
               <h3 className="font-bold text-slate-800 dark:text-white">Academic Details</h3>
@@ -307,7 +307,7 @@ export default function StudentProfile() {
         </div>
 
         {/* Subscribed Packages Card */}
-        <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+        <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-primary/20 dark:border-slate-700 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-2">
               <Package className="w-5 h-5 text-primary" />

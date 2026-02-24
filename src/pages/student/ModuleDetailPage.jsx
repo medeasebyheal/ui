@@ -8,7 +8,7 @@ import { recordRecentView } from '../../utils/recentViews';
 const SUBJECT_PLACEHOLDER_IMAGES = [
   'https://images.unsplash.com/photo-1559757175-5700dde675bc?w=400&h=200&fit=crop',
   'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=400&h=200&fit=crop',
-  'https://images.unsplash.com/photo-1551076805-e1869033e561?w=400&h=200&fit=crop',
+  'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=400&h=200&fit=crop',
   'https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=400&h=200&fit=crop',
   'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=400&h=200&fit=crop',
 ];
@@ -111,7 +111,7 @@ export default function ModuleDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background-light text-slate-800">
+    <div className="min-h-screen bg-primary/5 text-slate-800">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="flex text-sm text-slate-500 mb-4">
@@ -201,9 +201,9 @@ export default function ModuleDetailPage() {
                   <Wrapper
                     key={sub._id}
                     {...wrapperProps}
-                    className={`group relative bg-white border border-slate-200 rounded-xl overflow-hidden transition-all duration-300 ${
+                    className={`group relative bg-white border border-primary/20 rounded-xl overflow-hidden transition-all duration-300 ${
                       accessible
-                        ? 'hover:shadow-xl hover:-translate-y-1 cursor-pointer'
+                        ? 'hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 cursor-pointer hover:border-primary/30'
                         : 'grayscale opacity-90 cursor-default'
                     }`}
                   >
@@ -278,10 +278,10 @@ export default function ModuleDetailPage() {
                     key={ospe._id}
                     to={accessible ? `/student/ospes/${ospe._id}` : '#'}
                     onClick={(e) => !accessible && e.preventDefault()}
-                    className={`flex items-start p-6 bg-white border rounded-2xl transition-colors shadow-sm ${
+                    className={`flex items-start p-6 bg-white border border-primary/20 rounded-2xl transition-colors shadow-sm ${
                       accessible
-                        ? 'border-slate-200 hover:border-primary/50 cursor-pointer'
-                        : 'border-slate-200 opacity-75 cursor-default pointer-events-none'
+                        ? 'hover:border-primary/50 hover:shadow-primary/10 cursor-pointer'
+                        : 'opacity-75 cursor-default pointer-events-none'
                     }`}
                   >
                     <div

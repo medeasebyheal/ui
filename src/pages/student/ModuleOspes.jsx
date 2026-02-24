@@ -20,7 +20,7 @@ export default function StudentModuleOspes() {
         <ul className="space-y-2">
           {ospes.map((ospe) => (
             <li key={ospe._id}>
-              <Link to={`/student/ospes/${ospe._id}`} className="block p-4 bg-white rounded-xl border border-gray-200 hover:border-primary/50">
+              <Link to={`/student/ospes/${ospe._id}`} className="block p-4 bg-white rounded-xl border border-primary/20 hover:border-primary/30 hover:bg-primary/5 transition-all">
                 {ospe.name}
               </Link>
             </li>

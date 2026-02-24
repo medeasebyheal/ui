@@ -16,6 +16,8 @@ const MODULE_ICONS = [
 
 const SUBJECT_ICONS = [Accessibility, Activity, FlaskConical, Dna, Syringe, BarChart3];
 
+const RECENT_ICONS = ['book', 'file-text', 'book-open'];
+
 function getSubjectIconComponent(idx) {
   return SUBJECT_ICONS[idx % SUBJECT_ICONS.length];
 }
@@ -45,6 +47,7 @@ export default function StudentResources() {
   const [topicsBySubject, setTopicsBySubject] = useState({});
   const [ospesByModule, setOspesByModule] = useState({});
   const [expanded, setExpanded] = useState({});
+  const [loadingSubjects, setLoadingSubjects] = useState({});
   const [recentViews, setRecentViews] = useState([]);
   const [studyTipIndex, setStudyTipIndex] = useState(() =>
     Math.floor(Math.random() * MBBS_STUDY_TIPS.length)
@@ -106,25 +109,37 @@ export default function StudentResources() {
   };
 
   const loadSubjects = async (moduleId) => {
-    if (subjectsByModule[moduleId]) return;
-    const [subRes, ospeRes] = await Promise.all([
-      api.get(`/content/modules/${moduleId}/subjects`),
-      api.get(`/ospes/modules/${moduleId}`).catch(() => ({ data: [] })),
-    ]);
-    const subs = subRes.data || [];
-    setSubjectsByModule((p) => ({ ...p, [moduleId]: subs }));
-    setOspesByModule((p) => ({ ...p, [moduleId]: ospeRes.data }));
-    const topicPromises = subs.map((s) =>
-      api.get(`/content/subjects/${s._id}/topics`).then((r) => ({ subjectId: s._id, data: r.data }))
-    );
-    const results = await Promise.all(topicPromises);
-    setTopicsBySubject((p) => {
-      const next = { ...p };
-      results.forEach(({ subjectId, data }) => {
-        next[subjectId] = data || [];
+    const id = String(moduleId);
+    if (subjectsByModule[id]) return;
+    setLoadingSubjects((p) => ({ ...p, [id]: true }));
+    try {
+      const [subRes, ospeRes] = await Promise.all([
+        api.get(`/content/modules/${id}/subjects`),
+        api.get(`/ospes/modules/${id}`).catch(() => ({ data: [] })),
+      ]);
+      const subs = Array.isArray(subRes.data) ? subRes.data : (subRes.data?.data ?? []);
+      setSubjectsByModule((p) => ({ ...p, [id]: subs }));
+      setOspesByModule((p) => ({ ...p, [id]: ospeRes.data ?? [] }));
+      const topicPromises = subs.map((s) =>
+        api.get(`/content/subjects/${s._id}/topics`).then((r) => ({
+          subjectId: s._id,
+          data: Array.isArray(r.data) ? r.data : (r.data?.data ?? []),
+        }))
+      );
+      const results = await Promise.all(topicPromises);
+      setTopicsBySubject((p) => {
+        const next = { ...p };
+        results.forEach(({ subjectId, data }) => {
+          next[String(subjectId)] = data || [];
+        });
+        return next;
       });
-      return next;
-    });
+    } catch (err) {
+      setSubjectsByModule((p) => ({ ...p, [id]: [] }));
+      setOspesByModule((p) => ({ ...p, [id]: [] }));
+    } finally {
+      setLoadingSubjects((p) => ({ ...p, [id]: false }));
+    }
   };
 
   const toggle = (key) => setExpanded((e) => ({ ...e, [key]: !e[key] }));
@@ -176,7 +191,7 @@ export default function StudentResources() {
   return (
     <div className="flex flex-1 min-w-0 w-full">
       <div className="flex-1 min-w-0 max-w-6xl mx-auto w-full">
-        <div className="mb-8">
+        <div className="mb-8 border-l-4 border-primary pl-4">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">My Resources</h1>
           <p className="text-slate-500 text-sm">Explore your medical curriculum modules and materials.</p>
         </div>
@@ -189,7 +204,7 @@ export default function StudentResources() {
                 <Link
                   key={`${item.type}-${item.id}-${idx}`}
                   to={item.url}
-                  className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4 hover:border-primary transition-all cursor-pointer group"
+                  className="bg-primary/5 dark:bg-slate-800 p-4 rounded-xl border border-primary/20 dark:border-slate-700 shadow-sm flex items-center gap-4 hover:bg-primary/5 hover:border-primary/30 transition-all cursor-pointer group"
                 >
                   <div
                     className={`w-12 h-12 ${item.iconBg || 'bg-teal-50 dark:bg-teal-900/30'} rounded-lg flex items-center justify-center ${item.iconColor || 'text-primary'}`}
@@ -217,24 +232,26 @@ export default function StudentResources() {
               </div>
               {modulesByYear[year._id] ? (
                 (modulesByYear[year._id] || []).map((mod, modIdx) => {
-                  const isExpanded = expanded[`m-${mod._id}`];
+                  const modId = String(mod._id);
+                  const isExpanded = expanded[`m-${modId}`];
                   const hasAccess = hasModuleAccess(mod._id);
-                  const subjects = subjectsByModule[mod._id] || [];
-                  const ospes = ospesByModule[mod._id] || [];
+                  const subjects = subjectsByModule[modId] || [];
+                  const ospes = ospesByModule[modId] || [];
+                  const loading = loadingSubjects[modId];
                   const style = getModuleStyle(modIdx);
                   const ModuleIcon = style.Icon;
-                  const totalTopics = subjects.reduce((acc, s) => acc + (topicsBySubject[s._id]?.length || 0), 0);
+                  const totalTopics = subjects.reduce((acc, s) => acc + (topicsBySubject[String(s._id)]?.length || 0), 0);
 
                   return (
                     <div
                       key={mod._id}
-                      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm mb-4"
+                      className={`bg-white dark:bg-slate-900 border rounded-2xl overflow-hidden shadow-sm mb-4 ${isExpanded ? 'border-primary/20 border-t-4 border-t-primary' : 'border-primary/20 dark:border-slate-800'}`}
                     >
                       <div
-                        className="p-6 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-200 dark:border-slate-800"
+                        className={`p-6 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b ${isExpanded ? 'border-primary/20' : 'border-slate-200 dark:border-slate-800'}`}
                         onClick={() => {
-                          toggle(`m-${mod._id}`);
-                          loadSubjects(mod._id);
+                          toggle(`m-${modId}`);
+                          loadSubjects(modId);
                         }}
                       >
                         <div className="flex items-center gap-4">
@@ -257,29 +274,39 @@ export default function StudentResources() {
                       </div>
 
                       {isExpanded && (
-                        <div className="p-6 space-y-8 bg-slate-50/50 dark:bg-slate-800/30">
-                          {subjects.map((sub, subIdx) => {
-                            const topics = (topicsBySubject[sub._id] || []).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                        <div className="p-6 space-y-8 bg-primary/5 dark:bg-slate-800/30">
+                          {loading && (
+                            <p className="text-slate-500 dark:text-slate-400 text-sm py-4 text-center">Loading subjects and topics…</p>
+                          )}
+                          {!loading && subjects.length === 0 && (
+                            <p className="text-slate-500 dark:text-slate-400 text-sm py-4">No subjects in this module yet.</p>
+                          )}
+                          {!loading && subjects.length > 0 && subjects.map((sub, subIdx) => {
+                            const topics = (topicsBySubject[String(sub._id)] || []).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
                             const SubIcon = getSubjectIconComponent(subIdx);
                             const subjectUrl = `/student/modules/${mod._id}/subjects/${sub._id}`;
 
                             return (
-                              <div key={sub._id}>
+                              <div key={sub._id} className="mb-8 last:mb-0">
                                 <Link
                                   to={subjectUrl}
-                                  className="flex items-center justify-between mb-4 group/subject cursor-pointer rounded-lg -mx-2 px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors"
+                                  className="flex items-center justify-between rounded-xl px-4 py-3 mb-4 bg-white dark:bg-slate-800/50 border border-primary/20 shadow-sm group/subject cursor-pointer hover:border-primary/40 hover:shadow-md transition-all"
                                 >
-                                  <div className="flex items-center gap-2">
-                                    <SubIcon className="w-5 h-5 text-primary/80 group-hover/subject:text-primary transition-colors" />
-                                    <h4 className="font-semibold text-slate-700 dark:text-slate-300 group-hover/subject:text-primary transition-colors">{sub.name}</h4>
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                      <SubIcon className="w-5 h-5 text-primary" />
+                                    </div>
+                                    <div>
+                                      <h4 className="font-bold text-slate-900 dark:text-white group-hover/subject:text-primary transition-colors">{sub.name}</h4>
+                                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        {topics.length} Topic{topics.length !== 1 ? 's' : ''} · View all
+                                      </p>
+                                    </div>
                                   </div>
-                                  <span className="text-xs font-medium bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-slate-500 flex items-center gap-1">
-                                    {topics.length} Topic{topics.length !== 1 ? 's' : ''}
-                                    <ChevronRight className="w-3.5 h-3.5 opacity-70" />
-                                  </span>
+                                  <ChevronRight className="w-5 h-5 text-slate-400 group-hover/subject:text-primary transition-colors shrink-0" />
                                 </Link>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pl-7 border-l-2 border-slate-100 dark:border-slate-800 ml-2">
-                                  {topics.map((topic) => {
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pl-2">
+                                  {topics.map((topic, topicIdx) => {
                                     const accessible = hasAccess;
                                     const Wrapper = accessible ? Link : 'div';
                                     const wrapperProps = accessible
@@ -290,29 +317,33 @@ export default function StudentResources() {
                                       <Wrapper
                                         key={topic._id}
                                         {...wrapperProps}
-                                        className={`p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20 hover:shadow-md transition-shadow group cursor-pointer ${!accessible ? 'opacity-70' : ''}`}
+                                        className={`flex items-start gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-primary/40 hover:shadow-md hover:bg-primary/5 dark:hover:bg-primary/10 transition-all group cursor-pointer ${!accessible ? 'opacity-70' : ''}`}
                                       >
-                                        {accessible ? (
-                                          <BookOpen className="w-5 h-5 mb-3 text-primary" />
-                                        ) : (
-                                          <Lock className="w-5 h-5 mb-3 text-slate-400" />
-                                        )}
-                                        <h5 className={`text-sm font-semibold mb-1 ${accessible ? 'group-hover:text-primary transition-colors' : ''}`}>
-                                          {topic.name}
-                                        </h5>
-                                        <p className="text-[11px] text-slate-500 mb-4 line-clamp-2">
-                                          {topic.description || 'Study material for this topic.'}
-                                        </p>
-                                        <span className={`inline-flex items-center text-[11px] font-bold uppercase gap-1 ${accessible ? 'text-primary' : 'text-slate-400'}`}>
+                                        <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
                                           {accessible ? (
-                                            <>
-                                              <BookOpen className="w-3.5 h-3.5 inline-block" />
-                                              Open
-                                            </>
+                                            <BookOpen className="w-5 h-5 text-primary" />
                                           ) : (
-                                            'Locked'
+                                            <Lock className="w-5 h-5 text-slate-400" />
                                           )}
-                                        </span>
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <h5 className={`text-sm font-bold text-slate-900 dark:text-white mb-1 line-clamp-2 ${accessible ? 'group-hover:text-primary transition-colors' : ''}`}>
+                                            {topic.name}
+                                          </h5>
+                                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-2">
+                                            {topic.description || 'Study material for this topic.'}
+                                          </p>
+                                          <span className={`inline-flex items-center text-[11px] font-bold uppercase tracking-wide gap-1 ${accessible ? 'text-primary' : 'text-slate-400'}`}>
+                                            {accessible ? (
+                                              <>
+                                                Open
+                                                <ChevronRight className="w-3.5 h-3.5" />
+                                              </>
+                                            ) : (
+                                              'Locked'
+                                            )}
+                                          </span>
+                                        </div>
                                       </Wrapper>
                                     );
                                   })}
@@ -321,7 +352,7 @@ export default function StudentResources() {
                             );
                           })}
 
-                          {ospes.length > 0 && (
+                          {!loading && ospes.length > 0 && (
                             <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
                               {ospes.map((ospe) => (
                                 <div
@@ -359,7 +390,7 @@ export default function StudentResources() {
                   );
                 })
               ) : (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm p-8">
+                <div className="bg-white dark:bg-slate-900 border border-primary/20 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm p-8">
                   <p className="text-slate-500 text-center animate-pulse">Loading modules for {year.name}...</p>
                 </div>
               )}
@@ -374,7 +405,7 @@ export default function StudentResources() {
         )}
       </div>
 
-      <aside className="hidden xl:flex w-72 flex-shrink-0 flex-col p-6 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-y-auto">
+      <aside className="hidden xl:flex w-72 flex-shrink-0 flex-col p-6 border-l border-primary/10 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-y-auto">
         <h2 className="text-sm font-bold text-slate-900 dark:text-white mb-6">Upcoming Milestones</h2>
         <div className="space-y-6">
           <div className="relative pl-6 pb-6 border-l-2 border-slate-100 dark:border-slate-800">
@@ -397,7 +428,7 @@ export default function StudentResources() {
           </div>
         </div>
 
-        <div className="mt-10 p-4 bg-teal-50 dark:bg-teal-900/20 rounded-xl border border-teal-100 dark:border-teal-900/30 overflow-hidden">
+        <div className="mt-10 p-4 bg-primary/10 dark:bg-teal-900/20 rounded-xl border border-primary/20 dark:border-teal-900/30 overflow-hidden">
           <h4 className="text-sm font-bold text-primary mb-2">Study Tip</h4>
           <p
             key={studyTipIndex}
