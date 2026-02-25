@@ -1,34 +1,40 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Dna, Bone, FlaskConical, Pill, Microscope, BarChart3, Brain, Syringe, BookOpen, Search, HelpCircle, PlayCircle, ChevronLeft, ChevronRight, Lock, Video, ExternalLink } from 'lucide-react';
+import {
+  ChevronRight,
+  BookOpen,
+  Dna,
+  Brain,
+  GraduationCap,
+  FlaskConical,
+  Pill,
+  Microscope,
+  BarChart3,
+  Video,
+  HelpCircle,
+  PlayCircle,
+  Lock,
+  ExternalLink,
+  Film,
+  ArrowRight,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import { recordRecentView } from '../../utils/recentViews';
 
-const SUBJECT_ICON_MAP = {
-  biotech: Dna,
-  skeleton: Bone,
-  science: FlaskConical,
-  pill: Pill,
-  microbiology: Microscope,
-  analytics: BarChart3,
-  psychology: Brain,
-  vaccines: Syringe,
-};
+const TOPIC_ICON_MAP = [
+  { Icon: Dna, bg: 'bg-blue-50 dark:bg-blue-900/30', text: 'text-blue-600 dark:text-blue-400' },
+  { Icon: Brain, bg: 'bg-purple-50 dark:bg-purple-900/30', text: 'text-purple-600 dark:text-purple-400' },
+  { Icon: GraduationCap, bg: 'bg-emerald-50 dark:bg-emerald-900/30', text: 'text-emerald-600 dark:text-emerald-400' },
+  { Icon: FlaskConical, bg: 'bg-amber-50 dark:bg-amber-900/30', text: 'text-amber-600 dark:text-amber-400' },
+  { Icon: Pill, bg: 'bg-rose-50 dark:bg-rose-900/30', text: 'text-rose-600 dark:text-rose-400' },
+  { Icon: Microscope, bg: 'bg-cyan-50 dark:bg-cyan-900/30', text: 'text-cyan-600 dark:text-cyan-400' },
+  { Icon: BarChart3, bg: 'bg-indigo-50 dark:bg-indigo-900/30', text: 'text-indigo-600 dark:text-indigo-400' },
+];
 
-const SUBJECT_ICON_KEYS = ['biotech', 'skeleton', 'science', 'pill', 'microbiology', 'analytics', 'psychology', 'vaccines'];
-
-function getSubjectIcon(name, index) {
-  const lower = (name || '').toLowerCase();
-  if (lower.includes('physio')) return 'biotech';
-  if (lower.includes('anatomy')) return 'skeleton';
-  if (lower.includes('biochem')) return 'science';
-  if (lower.includes('pharma')) return 'pill';
-  if (lower.includes('path')) return 'microbiology';
-  return SUBJECT_ICON_KEYS[index % SUBJECT_ICON_KEYS.length];
+function getTopicIcon(index) {
+  return TOPIC_ICON_MAP[index % TOPIC_ICON_MAP.length];
 }
-
-const TOPICS_PER_PAGE = 8;
 
 export default function SubjectDetailPage() {
   const { moduleId, subjectId } = useParams();
@@ -37,10 +43,9 @@ export default function SubjectDetailPage() {
   const [topics, setTopics] = useState([]);
   const [oneShotLectures, setOneShotLectures] = useState([]);
   const [moduleSubjects, setModuleSubjects] = useState([]);
+  const [moduleName, setModuleName] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [topicSearch, setTopicSearch] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,13 +54,15 @@ export default function SubjectDetailPage() {
       api.get(`/content/subjects/${subjectId}/topics`).then((r) => r.data),
       api.get(`/content/subjects/${subjectId}/one-shot-lectures`).then((r) => r.data || []).catch(() => []),
       api.get(`/content/modules/${moduleId}/subjects`).then((r) => r.data),
+      api.get(`/content/modules/${moduleId}`).then((r) => r.data).catch(() => ({ name: 'Module' })),
     ])
-      .then(([sub, tops, lectures, subs]) => {
+      .then(([sub, tops, lectures, subs, mod]) => {
         if (cancelled) return;
         setSubject(sub);
         setTopics(tops || []);
         setOneShotLectures(Array.isArray(lectures) ? lectures : []);
         setModuleSubjects(subs || []);
+        setModuleName(mod?.name || subject?.module?.name || 'Module');
         if (sub) {
           recordRecentView({
             type: 'subject',
@@ -98,21 +105,9 @@ export default function SubjectDetailPage() {
     return [...(topics || [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [topics]);
 
-  const filteredTopics = useMemo(() => {
-    if (!topicSearch.trim()) return sortedTopics;
-    const q = topicSearch.trim().toLowerCase();
-    return sortedTopics.filter((t) => t.name?.toLowerCase().includes(q));
-  }, [sortedTopics, topicSearch]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredTopics.length / TOPICS_PER_PAGE));
-  const paginatedTopics = useMemo(() => {
-    const start = (currentPage - 1) * TOPICS_PER_PAGE;
-    return filteredTopics.slice(start, start + TOPICS_PER_PAGE);
-  }, [filteredTopics, currentPage]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [topicSearch]);
+  const sortedModuleSubjects = useMemo(() => {
+    return [...moduleSubjects].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [moduleSubjects]);
 
   if (loading) {
     return (
@@ -123,290 +118,241 @@ export default function SubjectDetailPage() {
   }
   if (error || !subject) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 text-slate-600">
+      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 text-slate-600 dark:text-slate-400">
         <p className="mb-4">{error || 'Subject not found'}</p>
-        <Link
-          to={`/student/modules/${moduleId}`}
-          className="text-primary font-medium hover:underline"
-        >
+        <Link to={`/student/modules/${moduleId}`} className="text-primary font-medium hover:underline">
           Back to Module
         </Link>
       </div>
     );
   }
 
-  const sortedModuleSubjects = [...moduleSubjects].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
   return (
-    <div className="min-h-screen bg-primary/5 text-slate-800">
-      <div className="max-w-7xl mx-auto px-4 py-8 flex gap-8">
-        {/* Sidebar - Subjects */}
-        <aside className="w-64 flex-shrink-0 hidden lg:block">
-          <div className="sticky top-24">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 px-2">
-              Subjects
-            </h3>
-            <nav className="space-y-1">
-              {sortedModuleSubjects.map((s, idx) => {
-                const isActive = s._id === subjectId;
-                const icon = getSubjectIcon(s.name, idx);
-                return (
-                  <Link
-                    key={s._id}
-                    to={`/student/modules/${moduleId}/subjects/${s._id}`}
-                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                      isActive
-                        ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                        : 'hover:bg-primary/5 text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {(function() {
-                    const IconComp = SUBJECT_ICON_MAP[icon] || BookOpen;
-                    return <IconComp className="w-5 h-5" />;
-                  })()}
-                    <span className="font-medium truncate">{s.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-        </aside>
+    <div className="min-h-screen bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-100">
+      <div className="p-8 max-w-7xl mx-auto">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-6 flex-wrap">
+          <Link to="/student" className="hover:text-primary transition-colors">Modules</Link>
+          <ChevronRight className="w-4 h-4 flex-shrink-0" />
+          <Link to={`/student/modules/${moduleId}`} className="hover:text-primary transition-colors">
+            {moduleName}
+          </Link>
+          <ChevronRight className="w-4 h-4 flex-shrink-0" />
+          <span className="text-slate-900 dark:text-white font-medium">{subject.name}</span>
+        </nav>
 
-        {/* Main Content */}
-        <main className="flex-1 min-w-0">
-          {/* Breadcrumb */}
-          <nav aria-label="Breadcrumb" className="flex text-xs font-medium text-slate-500 mb-4">
-            <ol className="inline-flex items-center space-x-1">
-              <li>
-                <Link to="/modules" className="hover:text-primary">
-                  Modules
-                </Link>
-              </li>
-              <li>
-                <span className="mx-2">/</span>
-              </li>
-              <li>
-                <Link to={`/student/modules/${moduleId}`} className="hover:text-primary">
-                  {subject.module?.name || 'Module'}
-                </Link>
-              </li>
-              <li>
-                <span className="mx-2">/</span>
-              </li>
-              <li className="text-slate-900">{subject.name}</li>
-            </ol>
-          </nav>
-
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">
-                  {subject.name}: Topic List
-                </h1>
-                <p className="text-slate-600 max-w-xl">
-                  Master the fundamentals through our curriculum of lecture series and
-                  practice assessments.
-                </p>
-              </div>
-              <div className="relative w-full md:w-64">
-                <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                <input
-                  type="text"
-                  value={topicSearch}
-                  onChange={(e) => setTopicSearch(e.target.value)}
-                  placeholder="Search topics..."
-                  className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-primary focus:border-primary transition-all w-full"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Stats Card */}
-          <div className="mb-8">
-            <div className="bg-white p-4 rounded-2xl border border-primary/20 flex items-center gap-4 max-w-xs">
-              <div className="h-12 w-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                <BookOpen className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 font-medium">Total Topics</p>
-                <p className="text-lg font-bold text-slate-900">{filteredTopics.length}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* One Shot Lectures */}
-          <div className="mb-8">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-              <Video className="w-5 h-5 text-primary" />
-              One Shot Lectures
-            </h2>
-            {!hasModuleAccess ? (
-                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 text-center">
-                  <Lock className="w-10 h-10 text-amber-500 mx-auto mb-2" />
-                  <p className="text-slate-700 dark:text-slate-300 font-medium">Unlock with a package to access One Shot lectures for this subject.</p>
-                  <Link to="/packages" className="inline-block mt-3 text-primary font-semibold hover:underline">View packages</Link>
-                </div>
-              ) : oneShotLectures.length === 0 ? (
-                <p className="text-slate-500 text-sm">No One Shot lectures for this subject yet.</p>
-              ) : (
-                <ul className="space-y-3">
-                  {oneShotLectures.map((lecture) => (
-                    <li key={lecture._id}>
-                      <a
-                        href={lecture.youtubeUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-4 rounded-xl bg-white border border-primary/20 hover:border-primary/40 hover:bg-primary/5 hover:shadow-md transition-all group"
-                      >
-                        <div className="w-10 h-10 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400">
-                          <Video className="w-5 h-5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{lecture.title}</p>
-                          <p className="text-xs text-slate-500 truncate">{lecture.youtubeUrl}</p>
-                        </div>
-                        <ExternalLink className="w-4 h-4 text-slate-400 flex-shrink-0 group-hover:text-primary transition-colors" />
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              )}
-          </div>
-
-          {/* Topic List */}
-          <div className="space-y-4">
-            {paginatedTopics.length === 0 ? (
-              <p className="text-slate-500 py-12 text-center">
-                No topics match your search.
+        {/* Hero card - same background & layout as Dashboard "Welcome back" */}
+        <div className="mb-10 rounded-2xl p-8 shadow-lg border border-white/30 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #26D0CE 0%, #1A938F 50%, #0D5C58 100%)' }}>
+          <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" aria-hidden />
+          <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-white/5 rounded-full blur-2xl" aria-hidden />
+          <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-white mb-2 font-heading">
+                {subject.name}: Topic List
+              </h1>
+              <p className="text-white/90 text-lg">
+                Master the fundamentals through our curriculum of high-yield lecture series and interactive practice
+                assessments designed for medical professionals.
               </p>
-            ) : (
-              paginatedTopics.map((topic) => {
-                const topicId = String(topic._id).slice(-6).toUpperCase();
-                const accessible = hasModuleAccess;
+              <p className="mt-3 text-white/80 text-sm font-medium">
+                Total Topics: <span className="font-bold text-white">{sortedTopics.length}</span>
+              </p>
+            </div>
+            <img src="/stato.png" alt="" className="w-24 h-auto sm:w-28 flex-shrink-0 opacity-95 drop-shadow-lg" aria-hidden />
+          </div>
+        </div>
 
-                return (
-                  <div
-                    key={topic._id}
-                    className={`bg-white rounded-2xl border border-primary/20 p-5 transition-all group ${
-                      accessible
-                        ? 'hover:shadow-xl hover:shadow-primary/10 hover:bg-primary/5'
-                        : 'opacity-80'
-                    }`}
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="text-xs font-bold px-2 py-0.5 bg-slate-100 rounded-md text-slate-500">
-                            ID: {topicId}
-                          </span>
-                        </div>
-                        <h3 className="text-xl font-display font-bold text-slate-900 group-hover:text-primary transition-colors">
-                          {topic.name}
-                        </h3>
-                        <p className="text-sm text-slate-600 mt-1 line-clamp-2">
-                          {topic.content?.replace(/<[^>]*>/g, '').slice(0, 120) ||
-                            `Study ${topic.name} with MCQs and explanatory video.`}
-                          {(topic.content?.length || 0) > 120 ? '...' : ''}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        <Link
-                          to={
-                            accessible
-                              ? `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}/quiz`
-                              : '#'
-                          }
-                          onClick={(e) => !accessible && e.preventDefault()}
-                          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border font-semibold text-sm transition-colors ${
-                            accessible
-                              ? 'border-slate-200 hover:bg-slate-50'
-                              : 'border-slate-200 text-slate-400 cursor-not-allowed'
-                          }`}
-                        >
-                          <HelpCircle className="w-5 h-5 text-primary" />
-                          MCQs
-                        </Link>
-                        <Link
-                          to={
-                            accessible
-                              ? `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}`
-                              : '#'
-                          }
-                          onClick={(e) => !accessible && e.preventDefault()}
-                          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-                            accessible
-                              ? 'bg-primary text-white hover:bg-teal-700 shadow-md shadow-primary/20'
-                              : 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                          }`}
-                        >
-                          <PlayCircle className="w-5 h-5" />
-                          Explanatory Video
-                        </Link>
-                      </div>
+        {/* Subject pills */}
+        <div className="flex items-center gap-3 mb-10 overflow-x-auto pb-2 scrollbar-hide">
+          {sortedModuleSubjects.map((s) => {
+            const isActive = s._id === subjectId;
+            return (
+              <Link
+                key={s._id}
+                to={`/student/modules/${moduleId}/subjects/${s._id}`}
+                className={`shrink-0 px-6 py-2.5 rounded-full font-medium transition-all active:scale-95 ${
+                  isActive
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                {s.name}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Topic grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          {sortedTopics.length === 0 ? (
+            <div className="col-span-full py-16 text-center text-slate-500 dark:text-slate-400">
+              No topics in this subject yet.
+            </div>
+          ) : (
+            sortedTopics.map((topic, index) => {
+              const topicIdShort = String(topic._id).slice(-6).toUpperCase();
+              const { Icon, bg, text } = getTopicIcon(index);
+              const progressPercent = topic.progressPercent ?? 0;
+              const accessible = hasModuleAccess;
+
+              return (
+                <div
+                  key={topic._id}
+                  className="group bg-white dark:bg-slate-800 rounded-[2rem] p-6 shadow-sm hover:shadow-2xl transition-all duration-300 border border-slate-100 dark:border-slate-700 flex flex-col h-full"
+                >
+                  <div className="mb-6 flex justify-between items-start">
+                    <div
+                      className={`w-16 h-16 ${bg} ${text} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}
+                    >
+                      <Icon className="w-8 h-8" />
+                    </div>
+                    <span className="text-xs font-mono text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
+                      ID: {topicIdShort}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors font-heading">
+                    {topic.name}
+                  </h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 flex-1 line-clamp-3">
+                    {topic.content?.replace(/<[^>]*>/g, '').slice(0, 140) ||
+                      `Study ${topic.name} with MCQs and explanatory video.`}
+                    {(topic.content?.length || 0) > 140 ? '...' : ''}
+                  </p>
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between text-xs font-semibold mb-2">
+                      <span className="text-slate-500 dark:text-slate-400">Progress</span>
+                      <span className="text-primary">{progressPercent}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="bg-primary h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${progressPercent}%`,
+                          boxShadow: '0 0 10px rgba(6, 146, 133, 0.4)',
+                        }}
+                      />
                     </div>
                   </div>
-                );
-              })
-            )}
+                  <div className="flex gap-3">
+                    <Link
+                      to={
+                        accessible
+                          ? `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}/quiz`
+                          : '#'
+                      }
+                      onClick={(e) => !accessible && e.preventDefault()}
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors ${
+                        accessible
+                          ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600'
+                          : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <HelpCircle className="w-5 h-5" />
+                      MCQs
+                    </Link>
+                    <Link
+                      to={
+                        accessible
+                          ? `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}`
+                          : '#'
+                      }
+                      onClick={(e) => !accessible && e.preventDefault()}
+                      className={`flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all ${
+                        accessible
+                          ? 'bg-primary text-white hover:bg-teal-700 shadow-lg shadow-primary/20'
+                          : 'bg-slate-200 dark:bg-slate-600 text-slate-500 cursor-not-allowed'
+                      }`}
+                    >
+                      <PlayCircle className="w-5 h-5" />
+                      Explanatory Video
+                    </Link>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* One Shot Lectures */}
+        <section className="mt-16">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+                <Video className="w-5 h-5" />
+              </div>
+              <h2 className="text-2xl font-bold font-heading">One Shot Lectures</h2>
+            </div>
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-12 flex items-center justify-between border-t border-slate-200 pt-6">
-              <button
-                type="button"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="w-5 h-5" />
-                Previous
-              </button>
-              <div className="flex items-center gap-2">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setCurrentPage(p)}
-                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
-                      p === currentPage
-                        ? 'bg-primary text-white'
-                        : 'hover:bg-slate-100'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          )}
-
-          {!hasModuleAccess && sortedTopics.length > 0 && (
-            <div className="mt-8 p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center">
-              <Lock className="w-10 h-10 text-amber-500 mb-2 block mx-auto" />
-              <p className="font-bold text-slate-900 mb-1">Unlock with Premium Package</p>
-              <p className="text-sm text-slate-600 mb-4">
-                Purchase a package to access all topics, MCQs, and explanatory videos.
+          {!hasModuleAccess ? (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-3xl p-8 text-center">
+              <Lock className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+              <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Unlock with a package</h4>
+              <p className="text-slate-600 dark:text-slate-400 mb-4 max-w-sm mx-auto">
+                Purchase a package to access One Shot lectures for this subject.
               </p>
               <Link
                 to="/packages"
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-semibold hover:bg-teal-700 transition-colors"
+                className="inline-flex items-center gap-2 text-primary font-semibold hover:underline"
               >
-                View Packages
+                View packages
+                <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
+          ) : oneShotLectures.length === 0 ? (
+            <div className="bg-white dark:bg-slate-800/50 rounded-3xl p-12 border border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center text-center">
+              <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+                <Film className="w-10 h-10 text-slate-300 dark:text-slate-500" />
+              </div>
+              <h4 className="text-xl font-semibold mb-2 text-slate-900 dark:text-white">No One Shot Lectures Found</h4>
+              <p className="text-slate-500 dark:text-slate-400 max-w-sm">
+                There are currently no &quot;One Shot&quot; comprehensive review lectures available for this module.
+                Check back soon!
+              </p>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {oneShotLectures.map((lecture) => (
+                <li key={lecture._id}>
+                  <a
+                    href={lecture.youtubeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-primary/30 hover:shadow-lg transition-all group"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400">
+                      <Video className="w-6 h-6" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                        {lecture.title}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate">{lecture.youtubeUrl}</p>
+                    </div>
+                    <ExternalLink className="w-5 h-5 text-slate-400 flex-shrink-0 group-hover:text-primary transition-colors" />
+                  </a>
+                </li>
+              ))}
+            </ul>
           )}
-        </main>
+        </section>
+
+        {!hasModuleAccess && sortedTopics.length > 0 && (
+          <div className="mt-12 p-8 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-3xl text-center">
+            <Lock className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+            <p className="font-bold text-slate-900 dark:text-white mb-1">Unlock with Premium Package</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+              Purchase a package to access all topics, MCQs, and explanatory videos.
+            </p>
+            <Link
+              to="/packages"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-semibold hover:bg-teal-700 transition-colors"
+            >
+              View Packages
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

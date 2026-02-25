@@ -191,9 +191,16 @@ export default function StudentResources() {
   return (
     <div className="flex flex-1 min-w-0 w-full">
       <div className="flex-1 min-w-0 max-w-6xl mx-auto w-full">
-        <div className="mb-8 border-l-4 border-primary pl-4">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">My Resources</h1>
-          <p className="text-slate-500 text-sm">Explore your medical curriculum modules and materials.</p>
+        <div className="mb-8 rounded-2xl p-8 shadow-lg border border-white/30 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #26D0CE 0%, #1A938F 50%, #0D5C58 100%)' }}>
+          <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+          <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
+          <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-white mb-2">My Resources</h1>
+              <p className="text-white/90 text-lg">Explore your medical curriculum modules and materials.</p>
+            </div>
+            <img src="/stato.png" alt="" className="w-24 h-auto sm:w-28 flex-shrink-0 opacity-95 drop-shadow-lg" aria-hidden />
+          </div>
         </div>
 
         {recentToShow.length > 0 && (

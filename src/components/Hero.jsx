@@ -13,7 +13,7 @@ function Hero() {
   ];
 
   return (
-    <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20 lg:py-24 relative overflow-hidden">
+    <section className="container mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-12 py-12 sm:py-16 md:py-20 lg:py-24 relative overflow-hidden">
       <div className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8">
         {/* Trust Badge */}
         <div className="inline-block relative z-10">
@@ -28,6 +28,18 @@ function Hero() {
         {/* Gradient Glow Background */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[600px] h-[300px] sm:w-[800px] sm:h-[500px] md:w-[1000px] md:h-[600px] opacity-30 pointer-events-none">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/40 via-primary/60 to-primary/40 rounded-full blur-[80px] sm:blur-[120px] md:blur-[150px]"></div>
+        </div>
+
+        {/* Stethoscope branding (stato) - animated up/down */}
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-48 sm:w-64 md:w-80 h-auto max-h-[70vh] opacity-20 pointer-events-none select-none hidden sm:block" aria-hidden>
+          <div className="animate-stato-float w-full h-full inline-block">
+            <img src="/stato.png" alt="" className="w-full h-full object-contain object-right block" />
+          </div>
+        </div>
+        <div className="absolute left-0 bottom-0 w-40 sm:w-52 md:w-64 h-auto max-h-[50vh] opacity-15 pointer-events-none select-none sm:hidden" aria-hidden>
+          <div className="animate-stato-float w-full h-full inline-block">
+            <img src="/stato.png" alt="" className="w-full h-full object-contain object-left block" />
+          </div>
         </div>
         
         {/* Main Heading */}

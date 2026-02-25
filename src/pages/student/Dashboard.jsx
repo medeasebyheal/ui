@@ -38,61 +38,73 @@ export default function StudentDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Welcome card */}
+      {/* Welcome card - teal gradient like login/signup */}
       <section className="mb-12">
-        <div className="bg-gradient-to-r from-white to-primary/10 rounded-2xl p-8 shadow-sm border border-primary/20 relative overflow-hidden">
-          <div className="relative z-10">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome back, {displayName}! 👋</h1>
-            <p className="text-slate-500 text-lg">Access your modules and continue learning.</p>
+        <div className="rounded-2xl p-8 shadow-lg border border-white/30 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #26D0CE 0%, #1A938F 50%, #0D5C58 100%)' }}>
+          <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+          <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
+          <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-white mb-2">Welcome back, {displayName}! 👋</h1>
+              <p className="text-white/90 text-lg">Access your modules and continue learning.</p>
+            </div>
+            <img src="/stato.png" alt="" className="w-24 h-auto sm:w-28 flex-shrink-0 opacity-95 drop-shadow-lg" aria-hidden />
           </div>
-          <div className="absolute -right-16 -top-16 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-          <div className="absolute -left-16 -bottom-16 w-48 h-48 bg-primary/10 rounded-full blur-2xl" />
         </div>
       </section>
 
-      {/* Info cards */}
+      {/* Info cards - colored backgrounds */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         <Link
           to="/student/resources"
-          className="group bg-primary/5 p-6 rounded-2xl border border-primary/20 shadow-sm hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 transition-all block"
+          className="group p-6 rounded-2xl border border-primary/30 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all block bg-white/80 backdrop-blur-sm hover:bg-white"
         >
-          <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-5 group-hover:scale-105 transition-transform">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white mb-5 group-hover:scale-105 transition-transform" style={{ background: 'linear-gradient(145deg, #1A938F, #0D5C58)' }}>
             <BookOpen className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-1">My Resources</h3>
-          <p className="text-sm text-slate-500">Access your Topics &amp; OSPEs study materials.</p>
+          <p className="text-sm text-slate-600">Access your Topics &amp; OSPEs study materials.</p>
         </Link>
 
-        <div className="bg-white p-6 rounded-2xl border border-primary/10 shadow-sm">
-          <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-5">
+        <Link
+          to="/student/profile"
+          className="group p-6 rounded-2xl border border-primary/20 shadow-md bg-white/80 backdrop-blur-sm hover:shadow-xl hover:-translate-y-0.5 transition-all block hover:bg-white"
+        >
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white mb-5 group-hover:scale-105 transition-transform" style={{ background: 'linear-gradient(145deg, #26D0CE, #1A938F)' }}>
             <BarChart3 className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-1">Study Progress</h3>
-          <p className="text-sm text-slate-500">View your detailed performance analytics.</p>
-        </div>
+          <p className="text-sm text-slate-600">View your detailed performance analytics.</p>
+        </Link>
 
-        <div className="bg-white p-6 rounded-2xl border border-primary/10 shadow-sm">
-          <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 mb-5">
+        <Link
+          to="/packages"
+          className="group p-6 rounded-2xl border border-amber-200 shadow-md bg-amber-50/80 backdrop-blur-sm hover:shadow-xl hover:-translate-y-0.5 transition-all block hover:bg-amber-50"
+        >
+          <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 mb-5 group-hover:scale-105 transition-transform">
             <CreditCard className="w-6 h-6" />
           </div>
           <div className="flex justify-between items-start mb-1">
             <h3 className="text-lg font-bold text-slate-900">Packages</h3>
             {hasPackages && (
-              <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Active</span>
+              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Active</span>
             )}
           </div>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-600">
             {hasPackages ? `${packageName} • Manage your subscription.` : 'Apply for a package to unlock content.'}
           </p>
-        </div>
+        </Link>
 
-        <div className="bg-white p-6 rounded-2xl border border-primary/10 shadow-sm">
-          <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center text-rose-600 mb-5">
+        <Link
+          to="/proff"
+          className="group p-6 rounded-2xl border border-rose-200 shadow-md bg-rose-50/80 backdrop-blur-sm hover:shadow-xl hover:-translate-y-0.5 transition-all block hover:bg-rose-50"
+        >
+          <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center text-rose-600 mb-5 group-hover:scale-105 transition-transform">
             <Calendar className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-1">Upcoming Proffs</h3>
-          <p className="text-sm text-slate-500">Practice with past papers and MCQs.</p>
-        </div>
+          <p className="text-sm text-slate-600">Practice with past papers and MCQs.</p>
+        </Link>
       </section>
 
       {/* Continue Learning */}
@@ -105,7 +117,7 @@ export default function StudentDashboard() {
         </div>
         <Link
           to={continueLearning.url}
-          className="block bg-primary/5 rounded-2xl border border-primary/20 shadow-sm p-2 hover:shadow-md transition-shadow"
+          className="block rounded-2xl border-2 border-primary/30 shadow-md p-2 hover:shadow-lg transition-all bg-white/90 backdrop-blur-sm hover:bg-white"
         >
           <div className="flex flex-col lg:flex-row items-center">
             <div className="w-full lg:w-1/3 p-4">
@@ -124,7 +136,7 @@ export default function StudentDashboard() {
               <h3 className="text-2xl font-bold text-slate-900 mb-3">{continueLearning.title}</h3>
               <p className="text-slate-500 mb-6 max-w-2xl">{continueLearning.description}</p>
               <div className="flex flex-col sm:flex-row items-center gap-6">
-                <span className="inline-flex items-center gap-2 w-full sm:w-auto px-10 py-4 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 hover:bg-teal-700 transition-all justify-center">
+                <span className="inline-flex items-center gap-2 w-full sm:w-auto px-10 py-4 text-white font-bold rounded-xl shadow-lg transition-all justify-center" style={{ background: 'linear-gradient(145deg, #26D0CE, #1A938F)' }}>
                   <PlayCircle className="w-5 h-5" />
                   {recentView ? 'Resume Learning' : 'Open Resources'}
                 </span>
@@ -138,8 +150,8 @@ export default function StudentDashboard() {
       </section>
 
       {/* Info banner */}
-      <div className="mt-8 p-4 bg-primary/10 border border-primary/20 rounded-xl flex items-center gap-3">
-        <Info className="w-5 h-5 text-primary" />
+      <div className="mt-8 p-5 rounded-xl flex items-center gap-3 border border-primary/30 shadow-sm" style={{ background: 'linear-gradient(135deg, rgba(38, 208, 206, 0.15) 0%, rgba(26, 147, 143, 0.2) 100%)' }}>
+        <Info className="w-5 h-5 text-primary flex-shrink-0" />
         <p className="text-sm text-slate-800">
           {hasPackages ? (
             <>You have access to {user.packages.length} package(s). Open <Link to="/student/resources" className="font-bold underline">Resources</Link> to start learning.</>

@@ -129,7 +129,7 @@ export default function StudentProfile() {
       {/* Profile Dashboard Layout */}
       <div className="space-y-8">
         {/* User Identity Header Card */}
-        <section className="bg-primary/5 dark:bg-slate-800 rounded-2xl shadow-sm border border-primary/20 dark:border-slate-700 p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
+        <section className="dark:bg-slate-800 rounded-2xl shadow-md border border-primary/20 dark:border-slate-700 p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8" style={{ background: 'linear-gradient(135deg, rgba(38, 208, 206, 0.1) 0%, rgba(26, 147, 143, 0.06) 100%)' }}>
           <div className="flex-shrink-0 flex flex-col items-center">
             <div className="relative">
               <input

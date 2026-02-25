@@ -80,19 +80,19 @@ export default function StudentPayments() {
 
   return (
     <div className="max-w-6xl mx-auto w-full">
-      <div className="mb-8">
+      <div className="mb-8 rounded-2xl p-6 border border-primary/20 shadow-md" style={{ background: 'linear-gradient(135deg, rgba(38, 208, 206, 0.12) 0%, rgba(26, 147, 143, 0.08) 100%)' }}>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Payments & Billing</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">
+        <p className="text-slate-600 dark:text-slate-400 mt-1">
           Manage your subscriptions and view transaction history.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-primary/20 dark:border-slate-700 shadow-sm">
+        <div className="bg-white/90 dark:bg-slate-800 p-6 rounded-2xl border border-primary/30 dark:border-slate-700 shadow-md backdrop-blur-sm">
           <div className="flex items-center justify-between mb-4">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Spent</span>
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Wallet className="w-5 h-5 text-primary" />
+            <div className="p-2 rounded-lg text-white" style={{ background: 'linear-gradient(145deg, #1A938F, #0D5C58)' }}>
+              <Wallet className="w-5 h-5" />
             </div>
           </div>
           <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{formatAmount(totalSpent)}</h3>
@@ -108,7 +108,7 @@ export default function StudentPayments() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-primary/20 dark:border-slate-700 shadow-sm">
+        <div className="bg-white/90 dark:bg-slate-800 p-6 rounded-2xl border border-primary/20 dark:border-slate-700 shadow-md backdrop-blur-sm">
           <div className="flex items-center justify-between mb-4">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Active Packages</span>
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
@@ -121,7 +121,7 @@ export default function StudentPayments() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-primary/20 dark:border-slate-700 shadow-sm">
+        <div className="bg-white/90 dark:bg-slate-800 p-6 rounded-2xl border border-primary/20 dark:border-slate-700 shadow-md backdrop-blur-sm">
           <div className="flex items-center justify-between mb-4">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Next Renewal</span>
             <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">

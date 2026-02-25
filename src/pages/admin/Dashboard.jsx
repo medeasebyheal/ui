@@ -274,7 +274,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* MCQ Maintenance */}
+      {/* MCQ Maintenance - commented out from UI
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
           <Wrench className="w-5 h-5 text-slate-500 dark:text-slate-400" />
@@ -299,6 +299,7 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+      */}
 
       {/* CTA Banner */}
       <div className="bg-gradient-to-r from-teal-500 to-primary p-8 rounded-3xl text-white flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">

@@ -1,5 +1,17 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  Search,
+  GraduationCap,
+  Lock,
+  FileText,
+  ChevronRight,
+  Dna,
+  Building2,
+  Bone,
+  Circle,
+  LockKeyhole,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 
@@ -105,9 +117,7 @@ export default function ProffPage() {
             </button>
           </div>
           <div className="relative w-full sm:w-80">
-            <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
-              search
-            </span>
+            <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
@@ -127,7 +137,7 @@ export default function ProffPage() {
               <section className="mb-12">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white">
-                    <span className="material-icons-round">school</span>
+                    <GraduationCap className="w-6 h-6" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-slate-900">JSMU</h2>
@@ -168,7 +178,7 @@ export default function ProffPage() {
                               </span>
                             ) : (
                               <div className="flex items-center gap-2 px-3 py-1 bg-amber-100 text-amber-600 text-xs font-bold rounded-full uppercase tracking-wider">
-                                <span className="material-icons-round text-xs">lock</span>
+                                <Lock className="w-3.5 h-3.5" />
                                 Locked
                               </div>
                             )}
@@ -188,13 +198,11 @@ export default function ProffPage() {
                               >
                                 <div className="flex items-center gap-4">
                                   <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-                                    <span
-                                      className={`material-icons-round ${
+                                    <FileText
+                                      className={`w-5 h-5 ${
                                         accessible ? 'text-primary' : 'text-slate-400'
                                       }`}
-                                    >
-                                      description
-                                    </span>
+                                    />
                                   </div>
                                   <div>
                                     <p
@@ -212,9 +220,7 @@ export default function ProffPage() {
                                   </div>
                                 </div>
                                 {accessible && (
-                                  <span className="material-icons-round text-slate-400 group-hover:text-primary transition-all">
-                                    chevron_right
-                                  </span>
+                                  <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-primary transition-all flex-shrink-0" />
                                 )}
                               </Wrapper>
                               );
@@ -231,13 +237,11 @@ export default function ProffPage() {
                                       accessible ? 'hover:bg-primary/5' : 'cursor-default'
                                     }`}
                                   >
-                                    <span
-                                      className={`material-icons-round text-xl ${
+                                    <Dna
+                                      className={`w-6 h-6 ${
                                         accessible ? 'text-primary' : 'text-slate-400'
                                       }`}
-                                    >
-                                      biotech
-                                    </span>
+                                    />
                                     <span
                                       className={`font-semibold text-sm ${
                                         accessible
@@ -256,9 +260,7 @@ export default function ProffPage() {
                           {!accessible && (
                             <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center flex-col p-6 text-center">
                               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg mb-4">
-                                <span className="material-icons-round text-primary text-3xl">
-                                  lock
-                                </span>
+                                <Lock className="w-8 h-8 text-primary" />
                               </div>
                               <p className="font-bold text-slate-900 mb-1">
                                 Premium Content
@@ -288,7 +290,7 @@ export default function ProffPage() {
               <section>
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white">
-                    <span className="material-icons-round">account_balance</span>
+                    <Building2 className="w-6 h-6" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-slate-900">
@@ -332,26 +334,20 @@ export default function ProffPage() {
                               {accessibleSubjects.map((sub) => (
                                 <div key={sub._id}>
                                   <div className="flex items-center gap-3 mb-4">
-                                    <span className="material-icons-round text-primary">
-                                      anatomy
-                                    </span>
+                                    <Bone className="w-5 h-5 text-primary flex-shrink-0" />
                                     <h4 className="text-lg font-bold text-slate-900">
                                       {sub.name || 'Subject'}
                                     </h4>
                                   </div>
                                   <ul className="space-y-3">
                                     <li className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 cursor-pointer group">
-                                      <span className="material-icons-round text-slate-400 group-hover:text-primary text-sm">
-                                        circle
-                                      </span>
+                                      <Circle className="w-3.5 h-3.5 text-slate-400 group-hover:text-primary flex-shrink-0 fill-current" />
                                       <span className="text-slate-600 font-medium group-hover:text-slate-900">
                                         Subject-wise Mix MCQs
                                       </span>
                                     </li>
                                     <li className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 cursor-pointer group">
-                                      <span className="material-icons-round text-slate-400 group-hover:text-primary text-sm">
-                                        circle
-                                      </span>
+                                      <Circle className="w-3.5 h-3.5 text-slate-400 group-hover:text-primary flex-shrink-0 fill-current" />
                                       <span className="text-slate-600 font-medium group-hover:text-slate-900">
                                         Subject-wise OSPE
                                       </span>
@@ -365,9 +361,7 @@ export default function ProffPage() {
                                     accessibleSubjects.length === 0 ? 'md:col-span-2' : ''
                                   }`}
                                 >
-                                  <span className="material-icons-round text-slate-300 text-4xl mb-2">
-                                    lock_person
-                                  </span>
+                                  <LockKeyhole className="w-10 h-10 text-slate-300 mb-2" />
                                   <p className="text-sm font-semibold text-slate-500">
                                     {lockedSubjects.length === 1
                                       ? `Unlock ${lockedSubjects[0].name}`

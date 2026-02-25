@@ -48,9 +48,10 @@ export default function StudentLayout() {
       )}
 
       <aside
-        className={`fixed top-0 left-0 z-50 w-64 h-screen bg-primary border-r border-white/20 flex flex-col transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 w-64 h-screen border-r border-white/20 flex flex-col transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
+        style={{ background: 'linear-gradient(145deg, #1A938F 0%, #1A938F 50%, #0D5C58 100%)' }}
       >
         <div className="flex flex-col h-full min-h-0">
           <div className="flex items-center justify-between flex-shrink-0 p-4 border-b border-white/20">
@@ -121,7 +122,7 @@ export default function StudentLayout() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-h-screen min-w-0 lg:ml-64 bg-student-page">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0 lg:ml-64" style={{ background: 'linear-gradient(135deg, #e0f7f4 0%, #f0fdfa 50%, #f5f8f8 100%)' }}>
         <header className="sticky top-0 z-30 flex items-center justify-between gap-4 bg-white/95 border-b border-primary/10 px-4 py-3 lg:px-8 flex-shrink-0">
           <div className="flex flex-1 items-center gap-3">
             <button
@@ -175,7 +176,7 @@ export default function StudentLayout() {
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-8 overflow-auto min-h-0">
+        <main className="flex-1 p-4 overflow-auto min-h-0">
           <Outlet />
         </main>
       </div>
