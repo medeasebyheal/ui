@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Users, Wallet, AlertTriangle, BookOpen, HelpCircle, BadgeCheck, Clock, Pencil, Receipt, PlusCircle, FileEdit, GraduationCap } from 'lucide-react';
+import { Download, Users, Wallet, AlertTriangle, BookOpen, HelpCircle, BadgeCheck, Clock, Pencil, Receipt, PlusCircle, FileEdit, GraduationCap, Wrench } from 'lucide-react';
 import api from '../../api/client';
 
 export default function AdminDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [removeFifthLoading, setRemoveFifthLoading] = useState(false);
+  const [removeFifthResult, setRemoveFifthResult] = useState(null);
 
   useEffect(() => {
     api
@@ -14,6 +16,20 @@ export default function AdminDashboard() {
       .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleRemoveFifthOption = () => {
+    if (removeFifthLoading) return;
+    setRemoveFifthResult(null);
+    setRemoveFifthLoading(true);
+    api
+      .post('/admin/mcqs/remove-fifth-option')
+      .then(({ data: res }) => {
+        setRemoveFifthResult(res);
+        if (res?.updated > 0) setData((prev) => (prev ? { ...prev, mcqCount: (prev.mcqCount ?? 0) } : null));
+      })
+      .catch((err) => setRemoveFifthResult({ error: err.response?.data?.message || err.message || 'Request failed' }))
+      .finally(() => setRemoveFifthLoading(false));
+  };
 
   const stats = data || {};
   const recentUsers = data?.recentUsers || [];
@@ -255,6 +271,32 @@ export default function AdminDashboard() {
               </Link>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* MCQ Maintenance */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+          <Wrench className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          MCQ Maintenance
+        </h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          Remove the 5th option from any MCQs that have more than 4 options (e.g. when &quot;Correct Answer: C&quot; was saved as option E).
+        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            onClick={handleRemoveFifthOption}
+            disabled={removeFifthLoading}
+            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+          >
+            {removeFifthLoading ? 'Running…' : 'Remove 5th option from all MCQs'}
+          </button>
+          {removeFifthResult && (
+            <span className={`text-sm font-medium ${removeFifthResult.error ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+              {removeFifthResult.error || (removeFifthResult.updated === 0 ? removeFifthResult.message : `${removeFifthResult.message} (correctIndex fixed for ${removeFifthResult.correctedIndex ?? 0})`)}
+            </span>
+          )}
         </div>
       </div>
 

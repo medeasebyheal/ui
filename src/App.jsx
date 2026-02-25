@@ -45,6 +45,7 @@ import ProffOtherSubjectBulkMcqPage from './pages/admin/proff/ProffOtherSubjectB
 import ProffOtherSubjectOspe from './pages/admin/proff/ProffOtherSubjectOspe';
 import AdminPackages from './pages/admin/Packages';
 import AdminPromoCodes from './pages/admin/PromoCodes';
+import GeminiUsage from './pages/admin/GeminiUsage';
 import AdminResources from './pages/admin/Resources';
 import ResourceLayout from './pages/admin/resources/ResourceLayout';
 import ProgramsList from './pages/admin/resources/ProgramsList';
@@ -138,6 +139,7 @@ function App() {
           </Route>
             <Route path="packages" element={<AdminPackages />} />
             <Route path="promo-codes" element={<AdminPromoCodes />} />
+            <Route path="gemini-usage" element={<GeminiUsage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import ConfirmDialog from '../../components/admin/ConfirmDialog';
 import { Check, ChevronDown, ChevronRight, ChevronLeft, Info, Timer, TrendingUp, ClipboardCheck, CheckCircle, XCircle, Lightbulb, ArrowLeft, RefreshCw, ArrowRight, Send, Flag } from 'lucide-react';
 
 export default function TopicQuizPage() {
@@ -28,6 +29,7 @@ export default function TopicQuizPage() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [submittedAtSeconds, setSubmittedAtSeconds] = useState(null);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setElapsedSeconds(Math.floor((Date.now() - quizStartTime) / 1000)), 1000);
@@ -91,7 +93,6 @@ export default function TopicQuizPage() {
   };
 
   const handleNext = () => {
-    if (result == null) return;
     setTransitioning(true);
     setTimeout(() => {
       if (currentIndex < mcqs.length - 1) {
@@ -139,6 +140,12 @@ export default function TopicQuizPage() {
   const handleFinish = () => {
     setSubmittedAtSeconds(elapsedSeconds);
     setShowResults(true);
+  };
+  const answeredCount = Object.keys(answerResults).length;
+  const unansweredCount = mcqs.length - answeredCount;
+  const handleSubmitClick = () => {
+    if (unansweredCount > 0) setShowSubmitConfirm(true);
+    else handleFinish();
   };
   const handleRetake = () => {
     setAnswerResults({});
@@ -461,7 +468,7 @@ export default function TopicQuizPage() {
               </div>
               <button
                 type="button"
-                onClick={handleFinish}
+                onClick={handleSubmitClick}
                 className="w-full mt-10 py-4 px-6 bg-primary hover:bg-teal-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-teal-500/20 flex items-center justify-center gap-2"
               >
                 <span>Submit Quiz</span>
@@ -488,14 +495,22 @@ export default function TopicQuizPage() {
                     <button
                       type="button"
                       onClick={toggleFlag}
-                      className="flex items-center gap-1 font-semibold text-amber-500 hover:text-amber-600 transition-colors"
+                      className={`flex items-center gap-1 font-semibold transition-colors rounded-lg px-2 py-1 ${
+                        flaggedQuestions.has(currentIndex)
+                          ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50'
+                          : 'text-amber-500 hover:text-amber-600'
+                      }`}
                     >
                       <Flag className="w-5 h-5" />
-                      <span>Flag Question</span>
+                      <span>{flaggedQuestions.has(currentIndex) ? 'Unflag Question' : 'Flag Question'}</span>
                     </button>
                   </div>
                   <div className="mb-10">
-                    <h3 className="text-xl md:text-2xl font-display font-bold leading-relaxed text-slate-800">
+                    <h3
+                      className={`text-xl md:text-2xl font-display font-bold leading-relaxed ${
+                        flaggedQuestions.has(currentIndex) ? 'text-amber-600 dark:text-amber-500' : 'text-slate-800 dark:text-slate-200'
+                      }`}
+                    >
                       {mcq?.question}
                     </h3>
                     {mcq?.imageUrl && (
@@ -593,8 +608,8 @@ export default function TopicQuizPage() {
                   {isLast ? (
                     <button
                       type="button"
-                      onClick={handleFinish}
-                      disabled={result == null || transitioning}
+                      onClick={handleSubmitClick}
+                      disabled={transitioning}
                       className="w-full sm:w-auto px-10 py-3 bg-primary text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span>Submit Quiz</span>
@@ -604,7 +619,7 @@ export default function TopicQuizPage() {
                     <button
                       type="button"
                       onClick={handleNext}
-                      disabled={result == null || transitioning}
+                      disabled={transitioning}
                       className="w-full sm:w-auto px-10 py-3 bg-primary text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span>Next Question</span>
@@ -616,6 +631,19 @@ export default function TopicQuizPage() {
             </AnimatePresence>
           </section>
         </div>
+        <ConfirmDialog
+          open={showSubmitConfirm}
+          onClose={() => setShowSubmitConfirm(false)}
+          title="Unanswered questions"
+          message={`You have ${unansweredCount} unanswered question(s). Are you sure you want to submit?`}
+          confirmLabel="Submit anyway"
+          cancelLabel="Cancel"
+          danger={false}
+          onConfirm={() => {
+            setShowSubmitConfirm(false);
+            handleFinish();
+          }}
+        />
       </main>
     </div>
   );

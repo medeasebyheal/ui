@@ -16,6 +16,7 @@ import {
   Home,
   ChevronDown,
   ChevronRight,
+  BarChart3,
 } from 'lucide-react';
 
 const navItems = [
@@ -47,6 +48,7 @@ const navItems = [
   },
   { to: '/admin/packages', end: false, label: 'Packages', icon: Package },
   { to: '/admin/promo-codes', end: false, label: 'Promo Codes', icon: Tag },
+  { to: '/admin/gemini-usage', end: true, label: 'Gemini Usage', icon: BarChart3 },
 ];
 
 export default function AdminLayout() {

@@ -51,7 +51,7 @@ export default function ProffJsmuPaperBulkMcqPage() {
     setImportResult(null);
     try {
       const { data } = await api.post(`${basePath}/mcqs/parse`, { text: text.trim() });
-      setPreview(data);
+      setPreview({ ...data, source: data.source ?? null });
     } catch (e) {
       setPreview({ mcqs: [], errors: [{ message: e.response?.data?.message || 'Parse failed' }] });
     }
@@ -64,7 +64,7 @@ export default function ProffJsmuPaperBulkMcqPage() {
     setImportResult(null);
     try {
       const { data } = await api.post(`${basePath}/mcqs/bulk`, { text: text.trim(), type });
-      setImportResult({ success: true, created: data.created, errors: data.errors, partialBlockIndices: data.partialBlockIndices || [] });
+      setImportResult({ success: true, created: data.created, errors: data.errors, partialBlockIndices: data.partialBlockIndices || [], source: data.source, usage: data.usage });
       if (data.created > 0) {
         setText('');
         setPreview(null);
@@ -170,6 +170,16 @@ export default function ProffJsmuPaperBulkMcqPage() {
               {importResult.success ? (
                 <>
                   <span className="font-medium">Imported {importResult.created} MCQ(s).</span>
+                  {importResult.source && (
+                    <span className="ml-2 text-xs px-2 py-0.5 rounded bg-green-100 text-green-800 font-medium">
+                      {importResult.source === 'gemini' ? 'Gemini' : 'Custom parser'}
+                    </span>
+                  )}
+                  {importResult.source === 'gemini' && importResult.usage && (
+                    <span className="ml-2 text-xs text-gray-600" title="Token usage">
+                      ({[importResult.usage.promptTokenCount != null && `In: ${importResult.usage.promptTokenCount}`, importResult.usage.outputTokenCount != null && `Out: ${importResult.usage.outputTokenCount}`, importResult.usage.totalTokenCount != null && `Total: ${importResult.usage.totalTokenCount}`].filter(Boolean).join(' · ')})
+                    </span>
+                  )}
                   {importResult.errors?.length > 0 && <span className="block mt-1"> {importResult.errors.length} block(s) had errors.</span>}
                   {importResult.partialBlockIndices?.length > 0 && <span className="block mt-1 text-amber-700">Block(s) {importResult.partialBlockIndices.join(', ')} were parsed without options – please edit those MCQs to add choices.</span>}
                 </>
@@ -189,9 +199,23 @@ export default function ProffJsmuPaperBulkMcqPage() {
           </div>
           {preview && (
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+              <div className="p-3 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
                 <h3 className="font-semibold text-gray-900">Preview</h3>
-                {hasParsedMcqs && <span className="text-sm text-green-600">{preview.mcqs.length} MCQ(s) parsed</span>}
+                {hasParsedMcqs && (
+                  <span className="text-sm text-green-600 flex items-center gap-2 flex-wrap">
+                    {preview.mcqs.length} MCQ(s) parsed
+                    {preview.source && (
+                      <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
+                        {preview.source === 'gemini' ? 'Gemini' : 'Custom parser'}
+                      </span>
+                    )}
+                    {preview.source === 'gemini' && preview.usage && (
+                      <span className="text-xs text-gray-500" title="Token usage">
+                        {[preview.usage.promptTokenCount != null && `In: ${preview.usage.promptTokenCount}`, preview.usage.outputTokenCount != null && `Out: ${preview.usage.outputTokenCount}`, preview.usage.totalTokenCount != null && `Total: ${preview.usage.totalTokenCount}`].filter(Boolean).join(' · ')}
+                      </span>
+                    )}
+                  </span>
+                )}
               </div>
               {hasErrors && (
                 <div className="p-3 bg-amber-50 border-b border-amber-100 space-y-1">
