@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Package, User, CreditCard, Tag, CheckCircle, Download } from 'lucide-react';
+import { ChevronLeft, Package, User, CreditCard, Tag, CheckCircle, Download, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 
@@ -31,6 +31,7 @@ export default function CheckoutPage() {
   const [promoLoading, setPromoLoading] = useState(false);
   const [receipt, setReceipt] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
+  const receiptInputRef = useRef(null);
 
   const MAX_RECEIPT_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -197,7 +198,7 @@ export default function CheckoutPage() {
               </h2>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-gray-700 font-medium">{pkg?.name ?? (planKey === 'master-proff' ? 'Master Proff' : planKey === 'half-year' ? 'Half Year' : 'Full Year')}</p>
+              <p className="text-gray-700 font-medium">{pkg?.name ?? (planKey === 'master-proff' ? 'Proff Buster' : planKey === 'half-year' ? 'Half Year' : 'Full Year')}</p>
               {planKey !== 'master-proff' && (
                 <>
                   <div>
@@ -310,7 +311,28 @@ export default function CheckoutPage() {
                 3. Payment
               </h2>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-6">
+              {/* Bank details */}
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-4">
+                <h3 className="font-heading font-semibold text-gray-900 flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-primary" />
+                  💳 Payment method – Bank transfer
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <p className="font-semibold text-gray-900 mb-2">HBL Bank</p>
+                    <p className="text-gray-600">Account Number: <span className="font-mono font-medium text-gray-900">00657992536699</span></p>
+                    <p className="text-gray-600">Account Title: <span className="font-medium text-gray-900">Muneeb ADA</span></p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <p className="font-semibold text-gray-900 mb-2">Meezan Bank</p>
+                    <p className="text-gray-600">Account: <span className="font-medium text-gray-900">MUNEEB BIN ANAS FAROOQUI</span></p>
+                    <p className="text-gray-600">Account Number: <span className="font-mono font-medium text-gray-900">99330107737202</span></p>
+                    <p className="text-gray-600 break-all">IBAN: <span className="font-mono font-medium text-gray-900">PK85MEZN0099330107737202</span></p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">Transfer the amount to either account, then upload your payment receipt below.</p>
+              </div>
               {basePrice > 0 && (
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -343,23 +365,39 @@ export default function CheckoutPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Upload receipt <span className="text-red-500">*</span></label>
                 <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${fieldErrors.receipt ? 'border-red-500' : 'border-gray-300 hover:border-primary/50'}`}>
                   <input
+                    ref={receiptInputRef}
                     type="file"
                     accept="image/*"
                     onChange={(e) => { const f = e.target.files?.[0]; setReceipt(f); setFieldErrors((err) => ({ ...err, receipt: '' })); }}
                     className="hidden"
                     id="receipt-upload"
                   />
-                  <label htmlFor="receipt-upload" className="cursor-pointer flex flex-col items-center">
-                    {receipt ? (
-                      <p className="text-sm font-medium text-primary">{receipt.name}</p>
-                    ) : (
-                      <>
-                        <CreditCard className="w-10 h-10 mx-auto text-gray-400 mb-2" />
-                        <p className="text-sm text-gray-600">Click to upload payment receipt</p>
-                        <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
-                      </>
-                    )}
-                  </label>
+                  {receipt ? (
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                      <p className="text-sm font-medium text-primary truncate max-w-[200px] sm:max-w-none">{receipt.name}</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReceipt(null);
+                          setFieldErrors((err) => ({ ...err, receipt: '' }));
+                          if (receiptInputRef.current) receiptInputRef.current.value = '';
+                        }}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                        aria-label="Remove file"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <label htmlFor="receipt-upload" className="text-xs text-primary font-medium cursor-pointer hover:underline">
+                        Choose different file
+                      </label>
+                    </div>
+                  ) : (
+                    <label htmlFor="receipt-upload" className="cursor-pointer flex flex-col items-center">
+                      <CreditCard className="w-10 h-10 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600">Click to upload payment receipt</p>
+                      <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
+                    </label>
+                  )}
                 </div>
                 {fieldErrors.receipt && <p className="text-xs text-red-600 mt-1">{fieldErrors.receipt}</p>}
               </div>

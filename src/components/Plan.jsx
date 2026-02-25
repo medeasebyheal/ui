@@ -18,7 +18,7 @@ export const PLAN_DATA = [
         { name: "High-Yield MCQ Quizzes", available: true },
         { name: "Limited OSPE Practice", available: true },
         { name: "Community Support", available: true },
-        { name: "Live Zoom Classes", available: false },
+        { name: "One Shot Videos", available: false },
         { name: "Recorded Lectures", available: false },
         { name: "Books, Slides & Past Papers", available: false },
       ],
@@ -35,7 +35,7 @@ export const PLAN_DATA = [
       features: [
         { name: "Full MCQ Database", available: true },
         { name: "Complete OSPE Practice", available: true },
-        { name: "Live Zoom Classes", available: true },
+        { name: "One Shot Videos", available: true },
         { name: "Recorded Lectures", available: true },
         { name: "Books, Slides & Past Papers", available: true },
         { name: "MS 1–3 Part 1 & 2 modules", available: true },
@@ -54,7 +54,7 @@ export const PLAN_DATA = [
       features: [
         { name: "Full MCQ Database", available: true },
         { name: "Complete OSPE Practice", available: true },
-        { name: "Live Zoom Classes", available: true },
+        { name: "One Shot Videos", available: true },
         { name: "Recorded Lectures", available: true },
         { name: "Books, Slides & Past Papers", available: true },
         { name: "All MS 1, 2 & 3 modules", available: true },
@@ -65,7 +65,7 @@ export const PLAN_DATA = [
     },
     {
       planKey: 'master-proff',
-      name: "Master Proff",
+      name: "Proff Buster",
       price: "—",
       originalPrice: null,
       promoPrice: null,
@@ -76,7 +76,7 @@ export const PLAN_DATA = [
         { name: "Paper 1, 2, 3 & 4", available: true },
         { name: "Full MCQ Database", available: true },
         { name: "Complete OSPE Practice", available: true },
-        { name: "Unlimited Live Zoom Classes", available: true },
+        { name: "Unlimited One Shot Videos", available: true },
         { name: "All Recorded Lectures", available: true },
         { name: "Premium Resources", available: true },
         { name: "24/7 Priority Support", available: true },
@@ -185,9 +185,6 @@ function Plan() {
         <div className="mt-8 sm:mt-12 md:mt-16 text-center px-4">
           <p className="text-gray-600 font-body text-xs sm:text-sm md:text-base mb-2 sm:mb-4">
             🎓 All plans include access to our growing library of resources • Cancel anytime
-          </p>
-          <p className="text-primary font-body text-xs sm:text-sm md:text-base font-semibold">
-            ⚡ Limited seats per batch • First come, first served
           </p>
         </div>
       </div>

@@ -10,8 +10,6 @@ import {
   Smile,
 } from 'lucide-react';
 
-const HERO_IMAGE = 'https://lh3.googleusercontent.com/aida-public/AB6AXuAfFpTaKICbpdIpnL3Fsc5ju5HPmXBvjCGNq1_UxFy6mNA-RdN-24pUcNq-usrdKEy46_qmujRh0uV5F5XQpwjL-zzbEkjsVuWne7EOPawiI6AQURGLkCahnylHX6dfn5ps8huIsTAmd1k5JrAktid8kgV5DmXzdhkfViE5W8bx_51fyERegVm6VL-TwtUVTBab8lTFSDruSt_UDKHiYxs4XyVP3bB9M4wijhx8knTugaaJB9LtJYIbpMYFdCzgKEiMuCsspe-Lbzo';
-
 export default function AboutPage() {
   return (
     <div
@@ -35,30 +33,27 @@ export default function AboutPage() {
                     Say goodbye to stress and hello to MedEase. Built by medical toppers, tailored for your success.
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-row flex-wrap justify-start gap-3 sm:gap-4">
                   <Link
                     to="/register"
-                    className="flex min-w-[180px] cursor-pointer items-center justify-center rounded-xl h-14 px-8 bg-primary text-white text-base font-bold shadow-lg shadow-primary/25 hover:scale-105 transition-transform"
+                    className="flex-1 min-w-0 sm:flex-initial sm:min-w-[180px] flex cursor-pointer items-center justify-center rounded-xl h-11 sm:h-14 px-4 sm:px-8 py-3 sm:py-0 bg-primary text-white text-sm sm:text-base font-bold shadow-lg shadow-primary/25 hover:scale-[1.02] sm:hover:scale-105 active:scale-[0.98] transition-transform"
                   >
                     Start Your Journey
                   </Link>
                   <Link
                     to="/packages"
-                    className="flex min-w-[180px] cursor-pointer items-center justify-center rounded-xl h-14 px-8 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-base font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+                    className="flex-1 min-w-0 sm:flex-initial sm:min-w-[180px] flex cursor-pointer items-center justify-center rounded-xl h-11 sm:h-14 px-4 sm:px-8 py-3 sm:py-0 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm sm:text-base font-bold hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] transition-transform"
                   >
                     Explore Features
                   </Link>
                 </div>
               </div>
-              <div className="w-full lg:w-1/2">
-                <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                  <img
-                    alt="Two doctors discussing medical cases"
-                    className="w-full h-auto object-cover aspect-[4/3]"
-                    src={HERO_IMAGE}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                </div>
+              <div className="w-full lg:w-1/2 flex justify-center lg:justify-end">
+                <img
+                  src="/doctor.png"
+                  alt="Medical professionals collaborating"
+                  className="w-full max-w-md h-auto object-contain"
+                />
               </div>
             </div>
           </div>

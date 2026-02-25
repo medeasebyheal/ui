@@ -55,13 +55,15 @@ export default function StudentLayout() {
       >
         <div className="flex flex-col h-full min-h-0">
           <div className="flex items-center justify-between flex-shrink-0 p-4 border-b border-white/20">
-            <Link to="/student" className="flex items-center gap-2">
-              <img src="/logo.png" alt="MedEase" className="h-9 w-auto brightness-0 invert" />
-              <span className="text-xl font-bold tracking-tight text-white">MedEase</span>
+            <div className="flex-1 min-w-0" />
+            <Link to="/student" className="flex items-center justify-center bg-white rounded-lg p-1.5 shrink-0" aria-label="MedEase">
+              <img src="/logo.png" alt="" className="h-10 w-auto" />
             </Link>
-            <button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-white" aria-label="Close sidebar">
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex-1 min-w-0 flex justify-end">
+              <button type="button" onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-white" aria-label="Close sidebar">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 min-h-0">

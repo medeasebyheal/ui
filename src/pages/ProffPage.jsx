@@ -60,7 +60,7 @@ export default function ProffPage() {
     );
   }, [otherYears, searchQuery]);
 
-  // Year 1 = free preview; Year 2+ = requires Master Proff package
+  // Year 1 = free preview; Year 2+ = requires Proff Buster package
   const isYearAccessible = (yearIndex) => {
     if (hasProffAccess) return true;
     return yearIndex === 0;
@@ -75,7 +75,7 @@ export default function ProffPage() {
           </h1>
           <p className="text-slate-600 max-w-2xl mx-auto text-lg">
             JSMU and other university formats. Purchase{' '}
-            <span className="text-primary font-semibold">Master Proff Package</span>{' '}
+            <span className="text-primary font-semibold">Proff Buster Package</span>{' '}
             for full access to premium resources.
           </p>
         </div>
@@ -310,7 +310,7 @@ export default function ProffPage() {
                         const yearIndex = otherYears.findIndex((y) => y._id === yr._id);
                         const yearAccessible = isYearAccessible(yearIndex);
                         const subjects = yr.subjects || [];
-                        // Year 1 first subject = free preview; rest need Master Proff
+                        // Year 1 first subject = free preview; rest need Proff Buster
                         const accessibleSubjects = yearAccessible
                           ? subjects
                           : yearIndex === 0

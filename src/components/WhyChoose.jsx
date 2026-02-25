@@ -34,8 +34,8 @@ function WhyChoose() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
         </svg>
       ),
-      title: "Live Zoom Classes",
-      description: "Interactive live sessions by top JSMU seniors with real-time doubt resolution."
+      title: "One Shot Videos",
+      description: "One-shot videos covering the whole subject in one go for quick revision before exams."
     },
     {
       icon: (
@@ -59,38 +59,40 @@ function WhyChoose() {
   ];
 
   return (
-    <section className="py-16 sm:py-20 md:py-24 bg-white">
+    <section className="py-16 sm:py-20 md:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #e0f7f4 0%, #f0fdfa 40%, #f8fafc 100%)' }}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center mb-12 sm:mb-16">
-          <div className="inline-block mb-4">
-            <span className="text-primary font-body text-sm sm:text-base px-5 py-2 rounded-full bg-primary/10 border border-primary/20">
-              Why Choose Us
-            </span>
+        {/* Section Header + Doctor illustration */}
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-10 lg:gap-16 mb-12 sm:mb-16">
+          <div className="text-center lg:text-left flex-1">
+            <div className="inline-block mb-4">
+              <span className="text-primary font-body text-sm sm:text-base px-5 py-2 rounded-full bg-primary/10 border border-primary/20">
+                Why Choose Us
+              </span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-gray-900 mb-6">
+              Why Choose <span className="text-primary">MedEase?</span>
+            </h2>
+            <p className="text-gray-600 font-body text-base sm:text-lg md:text-xl max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+              Built by Medical Toppers. Tailored for Your Success. Experience the difference with Pakistan's most advanced medical learning platform.
+            </p>
+            {/* Key Highlights - below the text */}
+            <div className="flex flex-wrap justify-center lg:justify-start gap-3 sm:gap-4 mt-6">
+              <div className="flex items-center gap-2 bg-primary/5 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 rounded-full border border-primary/20">
+                <span className="text-xl sm:text-2xl">💡</span>
+                <span className="text-gray-700 font-body text-xs sm:text-sm md:text-base font-medium whitespace-nowrap">Less stress. More success.</span>
+              </div>
+              <div className="flex items-center gap-2 bg-primary/5 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 rounded-full border border-primary/20">
+                <span className="text-xl sm:text-2xl">📈</span>
+                <span className="text-gray-700 font-body text-xs sm:text-sm md:text-base font-medium whitespace-nowrap">Smarter prep. Stronger results.</span>
+              </div>
+              <div className="flex items-center gap-2 bg-primary/5 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 rounded-full border border-primary/20">
+                <span className="text-xl sm:text-2xl">💪</span>
+                <span className="text-gray-700 font-body text-xs sm:text-sm md:text-base font-medium whitespace-nowrap">We've got your back!</span>
+              </div>
+            </div>
           </div>
-          
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-gray-900 mb-6">
-            Why Choose <span className="text-primary">MedEase?</span>
-          </h2>
-          
-          <p className="text-gray-600 font-body text-base sm:text-lg md:text-xl max-w-4xl mx-auto leading-relaxed">
-            Built by Medical Toppers. Tailored for Your Success. Experience the difference with Pakistan's most advanced medical learning platform.
-          </p>
-        </div>
-
-        {/* Key Highlights */}
-        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 mb-12 sm:mb-16 px-2">
-          <div className="flex items-center gap-2 bg-primary/5 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 rounded-full border border-primary/20">
-            <span className="text-xl sm:text-2xl">💡</span>
-            <span className="text-gray-700 font-body text-xs sm:text-sm md:text-base font-medium whitespace-nowrap">Less stress. More success.</span>
-          </div>
-          <div className="flex items-center gap-2 bg-primary/5 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 rounded-full border border-primary/20">
-            <span className="text-xl sm:text-2xl">📈</span>
-            <span className="text-gray-700 font-body text-xs sm:text-sm md:text-base font-medium whitespace-nowrap">Smarter prep. Stronger results.</span>
-          </div>
-          <div className="flex items-center gap-2 bg-primary/5 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 rounded-full border border-primary/20">
-            <span className="text-xl sm:text-2xl">💪</span>
-            <span className="text-gray-700 font-body text-xs sm:text-sm md:text-base font-medium whitespace-nowrap">We've got your back!</span>
+          <div className="flex-shrink-0 w-full max-w-sm lg:max-w-md">
+            <img src="/doctor.png" alt="Medical professionals collaborating" className="w-full h-auto object-contain" />
           </div>
         </div>
 
@@ -141,9 +143,6 @@ function WhyChoose() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </button>
-            <p className="mt-4 text-sm text-gray-500 font-body">
-              ⚡ Limited seats available • First come, first served
-            </p>
           </div>
         </div>
       </div>

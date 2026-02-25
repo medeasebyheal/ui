@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Layout from './components/Layout';
 import AuthLayout from './components/AuthLayout';
+import ScrollToTop from './components/ScrollToTop';
 import { StudentRoute, AdminRoute } from './components/ProtectedRoute';
 
 import Home from './pages/Home';
@@ -66,6 +67,7 @@ import TopicsList from './pages/admin/resources/TopicsList';
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthProvider>
         <Routes>
           <Route path="/" element={<Layout />}>

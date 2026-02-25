@@ -94,9 +94,6 @@ export default function PackagesPage() {
           <p className="text-gray-600 font-body text-xs sm:text-sm md:text-base mb-2 sm:mb-4">
             🎓 All plans include access to our growing library of resources • Cancel anytime
           </p>
-          <p className="text-primary font-body text-xs sm:text-sm md:text-base font-semibold">
-            ⚡ Limited seats per batch • First come, first served
-          </p>
         </div>
       </div>
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} planKey={authModalPlanKey} />

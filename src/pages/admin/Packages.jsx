@@ -8,7 +8,7 @@ const PACKAGE_TYPES = [
   { value: 'year_half_part1', label: 'Half Year - Part 1', badge: 'blue' },
   { value: 'year_half_part2', label: 'Half Year - Part 2', badge: 'blue' },
   { value: 'year_full', label: 'Full Year', badge: 'purple' },
-  { value: 'master_proff', label: 'Master Proff', badge: 'amber' },
+  { value: 'master_proff', label: 'Proff Buster', badge: 'amber' },
 ];
 
 const PER_PAGE = 10;
