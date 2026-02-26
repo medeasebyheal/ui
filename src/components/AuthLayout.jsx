@@ -1,8 +1,15 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function AuthLayout() {
   const { pathname } = useLocation();
+  const { user, loading } = useAuth();
   const isAuthPage = pathname === '/login' || pathname === '/register';
+
+  if (!loading && user) {
+    const to = user.role === 'admin' ? '/admin' : '/student';
+    return <Navigate to={to} replace />;
+  }
 
   return (
     <div className={`flex flex-col bg-background-light dark:bg-background-dark font-body ${isAuthPage ? 'min-h-screen h-screen' : 'min-h-screen'}`}>

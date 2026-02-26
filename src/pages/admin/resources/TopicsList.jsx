@@ -371,10 +371,26 @@ export default function TopicsList() {
 function AddTopicForm({ subjects, onSave, onClose }) {
   const [subjectId, setSubjectId] = useState('');
   const [name, setName] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [content, setContent] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('image', file);
+      const { data } = await api.post('/admin/upload-image', form);
+      setImageUrl(data.url);
+    } catch (_) {}
+    setUploading(false);
+    e.target.value = '';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -387,6 +403,7 @@ function AddTopicForm({ subjects, onSave, onClose }) {
     try {
       await api.post(`/admin/subjects/${subjectId}/topics`, {
         name: name.trim(),
+        imageUrl: imageUrl.trim() || undefined,
         videoUrl: videoUrl.trim() || undefined,
         content: content.trim() || undefined,
       });
@@ -434,13 +451,25 @@ function AddTopicForm({ subjects, onSave, onClose }) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Topic Explanatory video</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Image (optional)</label>
+          <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} className="w-full text-sm text-slate-600 dark:text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-primary/10 file:text-primary file:font-medium" />
+          {imageUrl && (
+            <div className="mt-2 flex items-center gap-2">
+              <img src={imageUrl} alt="" className="max-h-32 rounded object-contain border border-slate-200 dark:border-slate-700" />
+              <button type="button" onClick={() => setImageUrl('')} className="text-sm text-red-600 dark:text-red-400 hover:underline">
+                Remove image
+              </button>
+            </div>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Topic explanatory video (YouTube URL)</label>
           <input
-            type="url"
+            type="text"
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
             className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:text-white"
-            placeholder="https://youtube.com/..."
+            placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
           />
         </div>
         <div>

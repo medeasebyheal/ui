@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard,
@@ -22,6 +22,7 @@ const navItems = [
 
 export default function StudentLayout() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
@@ -113,7 +114,7 @@ export default function StudentLayout() {
               </Link>
               <button
                 type="button"
-                onClick={() => { setSidebarOpen(false); logout(); window.location.href = '/'; }}
+                onClick={() => { setSidebarOpen(false); logout(); navigate('/login', { replace: true }); }}
                 className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-white/90 hover:bg-white/10 hover:text-red-200"
               >
                 <LogOut className="w-4 h-4" />
@@ -167,7 +168,7 @@ export default function StudentLayout() {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => { setProfileOpen(false); logout(); window.location.href = '/'; }}
+                  onClick={() => { setProfileOpen(false); logout(); navigate('/login', { replace: true }); }}
                   className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-slate-700 hover:bg-red-50 hover:text-red-600 text-left"
                 >
                   <LogOut className="w-4 h-4" />

@@ -131,13 +131,77 @@ export function ModuleForm({ yearId, module, onSave, onClose }) {
 
 export function SubjectForm({ moduleId, subject, onSave, onClose }) {
   const [name, setName] = useState(subject?.name ?? '');
+  const [imageUrl, setImageUrl] = useState(subject?.imageUrl ?? '');
+  const [oneShotTitle, setOneShotTitle] = useState('');
+  const [oneShotYoutubeUrl, setOneShotYoutubeUrl] = useState('');
+  const [firstLectureId, setFirstLectureId] = useState(null);
+  const [initialLectureTitle, setInitialLectureTitle] = useState('');
+  const [initialLectureUrl, setInitialLectureUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!subject?._id) return;
+    api.get(`/admin/subjects/${subject._id}/one-shot-lectures`).then(({ data }) => {
+      const lectures = Array.isArray(data) ? data : [];
+      const first = lectures[0];
+      if (first) {
+        const t = first.title ?? '';
+        const u = first.youtubeUrl ?? '';
+        setOneShotTitle(t);
+        setOneShotYoutubeUrl(u);
+        setFirstLectureId(first._id);
+        setInitialLectureTitle(t);
+        setInitialLectureUrl(u);
+      }
+    }).catch(() => {});
+  }, [subject?._id]);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('image', file);
+      const { data } = await api.post('/admin/upload-image', form);
+      setImageUrl(data.url);
+    } catch (_) {}
+    setUploading(false);
+    e.target.value = '';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      if (subject?._id) await api.put(`/admin/subjects/${subject._id}`, { name });
-      else await api.post(`/admin/modules/${moduleId}/subjects`, { name });
+      const trimmedImage = (imageUrl || '').trim();
+      const titleTrim = (oneShotTitle || '').trim();
+      const urlTrim = (oneShotYoutubeUrl || '').trim();
+      const payload = {
+        name: (name || '').trim(),
+        imageUrl: trimmedImage || null,
+      };
+      let subjectId = subject?._id;
+      if (subjectId) {
+        if (titleTrim || urlTrim) {
+          payload.oneShotTitle = titleTrim || initialLectureTitle || '';
+          payload.youtubeUrl = urlTrim || initialLectureUrl || '';
+        }
+        await api.put(`/admin/subjects/${subjectId}`, payload);
+      } else {
+        const postPayload = {
+          name: payload.name,
+          imageUrl: trimmedImage || undefined,
+        };
+        const oneShotTitleTrim = (oneShotTitle || '').trim();
+        const oneShotYoutubeTrim = (oneShotYoutubeUrl || '').trim();
+        if (oneShotTitleTrim && oneShotYoutubeTrim) {
+          postPayload.oneShotTitle = oneShotTitleTrim;
+          postPayload.youtubeUrl = oneShotYoutubeTrim;
+        }
+        await api.post(`/admin/modules/${moduleId}/subjects`, postPayload);
+      }
       onSave?.();
       onClose?.();
     } catch (_) {}
@@ -150,6 +214,26 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
           <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
           <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" />
         </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Image (optional)</label>
+          <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} className="w-full text-sm" />
+          {imageUrl && (
+            <div className="mt-2 flex items-center gap-2">
+              <img src={imageUrl} alt="" className="max-h-32 rounded object-contain" />
+              <button type="button" onClick={() => setImageUrl('')} className="text-sm text-red-600 hover:underline">
+                Remove image
+              </button>
+            </div>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">One shot lecture title (optional)</label>
+          <input value={oneShotTitle} onChange={(e) => setOneShotTitle(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="e.g. Foundation Module One Shot" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">One shot lecture YouTube URL (optional)</label>
+          <input type="text" value={oneShotYoutubeUrl} onChange={(e) => setOneShotYoutubeUrl(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." />
+        </div>
         <div className="flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
           <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">Save</button>
@@ -161,15 +245,48 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
 
 export function TopicForm({ subjectId, topic, onSave, onClose }) {
   const [name, setName] = useState(topic?.name ?? '');
+  const [imageUrl, setImageUrl] = useState(topic?.imageUrl ?? '');
   const [videoUrl, setVideoUrl] = useState(topic?.videoUrl ?? '');
   const [content, setContent] = useState(topic?.content ?? '');
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('image', file);
+      const { data } = await api.post('/admin/upload-image', form);
+      setImageUrl(data.url);
+    } catch (_) {}
+    setUploading(false);
+    e.target.value = '';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      if (topic?._id) await api.put(`/admin/topics/${topic._id}`, { name, videoUrl, content });
-      else await api.post(`/admin/subjects/${subjectId}/topics`, { name, videoUrl, content });
+      const trimmedImage = (imageUrl || '').trim();
+      const trimmedVideo = (videoUrl || '').trim();
+      const payload = {
+        name: (name || '').trim(),
+        imageUrl: trimmedImage || null,
+        videoUrl: trimmedVideo || null,
+        content: (content || '').trim() || undefined,
+      };
+      if (topic?._id) {
+        await api.put(`/admin/topics/${topic._id}`, payload);
+      } else {
+        await api.post(`/admin/subjects/${subjectId}/topics`, {
+          name: payload.name,
+          imageUrl: trimmedImage || undefined,
+          videoUrl: trimmedVideo || undefined,
+          content: payload.content,
+        });
+      }
       onSave?.();
       onClose?.();
     } catch (_) {}
@@ -183,8 +300,26 @@ export function TopicForm({ subjectId, topic, onSave, onClose }) {
           <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Topic Explanatory video</label>
-          <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="https://youtube.com/..." />
+          <label className="block text-sm font-medium text-gray-700 mb-1">Image (optional)</label>
+          <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} className="w-full text-sm" />
+          {imageUrl && (
+            <div className="mt-2 flex items-center gap-2">
+              <img src={imageUrl} alt="" className="max-h-32 rounded object-contain" />
+              <button type="button" onClick={() => setImageUrl('')} className="text-sm text-red-600 hover:underline">
+                Remove image
+              </button>
+            </div>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Topic explanatory video (YouTube URL)</label>
+          <input
+            type="text"
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Content (optional)</label>

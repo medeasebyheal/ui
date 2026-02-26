@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { Download, Users, Wallet, AlertTriangle, BookOpen, HelpCircle, BadgeCheck, Clock, Pencil, Receipt, PlusCircle, FileEdit, GraduationCap, Wrench } from 'lucide-react';
 import api from '../../api/client';
 
 export default function AdminDashboard() {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'superadmin';
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [removeFifthLoading, setRemoveFifthLoading] = useState(false);
@@ -85,30 +88,32 @@ export default function AdminDashboard() {
           </div>
         </Link>
 
-        <Link
-          to="/admin/payments"
-          className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pending Payments</p>
-              <h3 className="text-3xl font-bold text-slate-800 dark:text-white">{stats.pendingPayments ?? 0}</h3>
+        {isSuperAdmin && (
+          <Link
+            to="/admin/payments"
+            className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pending Payments</p>
+                <h3 className="text-3xl font-bold text-slate-800 dark:text-white">{stats.pendingPayments ?? 0}</h3>
+              </div>
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl">
+                <Wallet className="w-6 h-6" />
+              </div>
             </div>
-            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl">
-              <Wallet className="w-6 h-6" />
+            <div className="mt-4 flex items-center gap-2">
+              {(stats.pendingPayments ?? 0) > 0 ? (
+                <span className="flex items-center text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 rounded-full gap-0.5">
+                  <AlertTriangle className="w-3 h-3" />
+                  Action Needed
+                </span>
+              ) : (
+                <span className="text-xs text-slate-400 dark:text-slate-500">All clear</span>
+              )}
             </div>
-          </div>
-          <div className="mt-4 flex items-center gap-2">
-            {(stats.pendingPayments ?? 0) > 0 ? (
-              <span className="flex items-center text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 rounded-full gap-0.5">
-                <AlertTriangle className="w-3 h-3" />
-                Action Needed
-              </span>
-            ) : (
-              <span className="text-xs text-slate-400 dark:text-slate-500">All clear</span>
-            )}
-          </div>
-        </Link>
+          </Link>
+        )}
 
         <Link
           to="/admin/resources"
@@ -147,9 +152,9 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Users + Recent Payments */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      {/* Recent Users + Recent Payments (payments only for super admin) */}
+      <div className={`grid grid-cols-1 gap-8 ${isSuperAdmin ? 'lg:grid-cols-3' : ''}`}>
+        <div className={`${isSuperAdmin ? 'lg:col-span-2' : ''} bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden`}>
           <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
             <h3 className="text-lg font-bold text-slate-800 dark:text-white">Recent Users</h3>
             <Link to="/admin/users" className="text-primary hover:underline text-sm font-medium">
@@ -208,70 +213,72 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-          <div className="p-6 border-b border-slate-100 dark:border-slate-700">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-white">Recent Payments</h3>
-          </div>
-          <div className="p-6 space-y-6">
-            {recentPayments.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400">No payments yet.</p>
-            ) : (
-              recentPayments.slice(0, 5).map((p) => (
-                <div key={p._id} className="flex items-start gap-4">
-                  <div
-                    className={`p-2 rounded-lg ${
-                      p.status === 'approved'
-                        ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                        : p.status === 'rejected'
-                          ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'
-                          : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
-                    }`}
-                  >
-                    <Receipt className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 space-y-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{p.user?.name || '—'}</h4>
-                      <span className="text-xs font-bold text-slate-600 dark:text-slate-300 shrink-0">Rs. {p.amount}</span>
+        {isSuperAdmin && (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white">Recent Payments</h3>
+            </div>
+            <div className="p-6 space-y-6">
+              {recentPayments.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-slate-400">No payments yet.</p>
+              ) : (
+                recentPayments.slice(0, 5).map((p) => (
+                  <div key={p._id} className="flex items-start gap-4">
+                    <div
+                      className={`p-2 rounded-lg ${
+                        p.status === 'approved'
+                          ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                          : p.status === 'rejected'
+                            ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'
+                            : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
+                      }`}
+                    >
+                      <Receipt className="w-5 h-5" />
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{p.package?.name || '—'}</p>
-                    <div className="flex items-center justify-between pt-2">
-                      <span
-                        className={`text-[10px] font-bold uppercase ${
-                          p.status === 'approved'
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : p.status === 'rejected'
-                              ? 'text-rose-600 dark:text-rose-400'
-                              : 'text-amber-600 dark:text-amber-400'
-                        }`}
-                      >
-                        {p.status}
-                      </span>
-                      {p.receiptUrl && (
-                        <a
-                          href={p.receiptUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[10px] font-bold text-primary hover:underline"
+                    <div className="flex-1 space-y-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{p.user?.name || '—'}</h4>
+                        <span className="text-xs font-bold text-slate-600 dark:text-slate-300 shrink-0">Rs. {p.amount}</span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{p.package?.name || '—'}</p>
+                      <div className="flex items-center justify-between pt-2">
+                        <span
+                          className={`text-[10px] font-bold uppercase ${
+                            p.status === 'approved'
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : p.status === 'rejected'
+                                ? 'text-rose-600 dark:text-rose-400'
+                                : 'text-amber-600 dark:text-amber-400'
+                          }`}
                         >
-                          VIEW RECEIPT
-                        </a>
-                      )}
+                          {p.status}
+                        </span>
+                        {p.receiptUrl && (
+                          <a
+                            href={p.receiptUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] font-bold text-primary hover:underline"
+                          >
+                            VIEW RECEIPT
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
-              <Link
-                to="/admin/payments"
-                className="block w-full py-2.5 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-600 transition-all text-center"
-              >
-                View All Transactions
-              </Link>
+                ))
+              )}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+                <Link
+                  to="/admin/payments"
+                  className="block w-full py-2.5 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-600 transition-all text-center"
+                >
+                  View All Transactions
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* MCQ Maintenance - commented out from UI

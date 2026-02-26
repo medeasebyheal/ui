@@ -61,6 +61,10 @@ export default function CheckoutPage() {
       navigate('/packages');
       return;
     }
+    if (user?.packages?.length > 0) {
+      navigate('/student', { replace: true, state: { message: 'You already have an active package.' } });
+      return;
+    }
     api.get('/packages').then(({ data }) => setPackages(data)).catch(() => setPackages([])).finally(() => setLoading(false));
   }, [user, planKey, navigate]);
 

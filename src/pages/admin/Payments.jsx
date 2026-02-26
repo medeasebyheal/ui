@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Wallet, Clock, Search, Download, Receipt, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { Wallet, Clock, Search, Download, Receipt, MoreVertical, ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react';
 import api from '../../api/client';
 import Modal from '../../components/admin/Modal';
 
@@ -25,6 +26,8 @@ function packageSubtitle(pkg) {
 }
 
 export default function AdminPayments() {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'superadmin';
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState('');
@@ -43,8 +46,9 @@ export default function AdminPayments() {
   };
 
   useEffect(() => {
-    fetchPayments();
-  }, []);
+    if (isSuperAdmin) fetchPayments();
+    else setLoading(false);
+  }, [isSuperAdmin]);
 
   useEffect(() => {
     setPage(1);
@@ -99,6 +103,15 @@ export default function AdminPayments() {
 
   const start = totalFiltered === 0 ? 0 : (page - 1) * PER_PAGE + 1;
   const end = Math.min(page * PER_PAGE, totalFiltered);
+
+  if (!isSuperAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 px-4">
+        <ShieldCheck className="w-12 h-12 text-slate-400 mb-4" />
+        <p className="text-slate-600 dark:text-slate-400 font-medium">Access denied. Payments and revenue are only visible to super admin.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">

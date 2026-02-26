@@ -30,6 +30,7 @@ import StudentPayments from './pages/student/Payments';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminUsers from './pages/admin/Users';
 import AdminPayments from './pages/admin/Payments';
+import AdminsPage from './pages/admin/Admins';
 import ProffLayout from './pages/admin/proff/ProffLayout';
 import ProffDashboard from './pages/admin/proff/ProffDashboard';
 import ProffJsmuYears from './pages/admin/proff/ProffJsmuYears';
@@ -103,6 +104,7 @@ function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="payments" element={<AdminPayments />} />
+            <Route path="admins" element={<AdminsPage />} />
             <Route path="resources" element={<ResourceLayout />}>
             <Route index element={<ProgramsList />} />
             <Route path="hierarchy" element={<AdminResources />} />

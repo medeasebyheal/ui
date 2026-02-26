@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import {
@@ -17,12 +17,18 @@ import {
   ChevronDown,
   ChevronRight,
   BarChart3,
+  ShieldCheck,
 } from 'lucide-react';
 
-const navItems = [
+const navItems = (isSuperAdmin) => [
   { to: '/admin', end: true, label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/users', end: false, label: 'Users', icon: Users },
-  { to: '/admin/payments', end: false, label: 'Payments', icon: CreditCard, showPendingDot: true },
+  ...(isSuperAdmin
+    ? [
+        { to: '/admin/payments', end: false, label: 'Payments', icon: CreditCard, showPendingDot: true },
+        { to: '/admin/admins', end: true, label: 'Admins', icon: ShieldCheck },
+      ]
+    : []),
   {
     to: '/admin/resources',
     end: false,
@@ -53,6 +59,8 @@ const navItems = [
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const isSuperAdmin = user?.role === 'superadmin';
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [resourcesExpanded, setResourcesExpanded] = useState(false);
   const [proffExpanded, setProffExpanded] = useState(false);
@@ -65,11 +73,15 @@ export default function AdminLayout() {
   const isOnProff = location.pathname.startsWith('/admin/proff');
 
   useEffect(() => {
+    if (!isSuperAdmin) {
+      setPendingPaymentsCount(0);
+      return;
+    }
     api.get('/admin/dashboard').then(({ data }) => {
       const n = data?.pendingPayments ?? 0;
       setPendingPaymentsCount(typeof n === 'number' ? n : 0);
     }).catch(() => setPendingPaymentsCount(0));
-  }, [location.pathname]);
+  }, [location.pathname, isSuperAdmin]);
 
   useEffect(() => {
     if (isOnResources) setResourcesExpanded(true);
@@ -122,7 +134,7 @@ export default function AdminLayout() {
           </div>
 
           <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 min-h-0">
-            {navItems.map((item) => {
+            {navItems(isSuperAdmin).map((item) => {
               if (item.children) {
                 const isActive = item.children.some(
                   (c) => location.pathname === c.to || (c.to !== item.to && location.pathname.startsWith(c.to))
@@ -211,7 +223,7 @@ export default function AdminLayout() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">Hi, {displayName}</p>
-                <p className="text-xs text-gray-400 truncate">Admin</p>
+                <p className="text-xs text-gray-400 truncate">{user?.role === 'superadmin' ? 'Super Admin' : 'Admin'}</p>
               </div>
               <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -231,7 +243,7 @@ export default function AdminLayout() {
                     setProfileOpen(false);
                     setSidebarOpen(false);
                     logout();
-                    window.location.href = '/';
+                    navigate('/login', { replace: true });
                   }}
                   className="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-red-200"
                 >
@@ -282,7 +294,7 @@ export default function AdminLayout() {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => { setProfileOpen(false); logout(); window.location.href = '/'; }}
+                  onClick={() => { setProfileOpen(false); logout(); navigate('/login', { replace: true }); }}
                   className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-red-600 text-left"
                 >
                   <LogOut className="w-4 h-4" />

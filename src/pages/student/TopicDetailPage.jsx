@@ -1,28 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, HelpCircle, PlayCircle, Play, Share2, CheckCircle, FileText, Link as LinkIcon, Download, Loader2 } from 'lucide-react';
+import { ChevronRight, HelpCircle, PlayCircle, Play, Pause, Share2, CheckCircle, FileText, Link as LinkIcon, Download, Loader2, Maximize, Minimize } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { recordRecentView } from '../../utils/recentViews';
-
-function getYouTubeVideoId(url) {
-  if (!url || typeof url !== 'string') return null;
-  const trimmed = url.trim();
-  const watchMatch = trimmed.match(/(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/);
-  const shortMatch = trimmed.match(/(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  const embedMatch = trimmed.match(/(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
-  return watchMatch?.[1] || shortMatch?.[1] || embedMatch?.[1] || null;
-}
-
-function getYouTubeEmbedUrl(url) {
-  const id = getYouTubeVideoId(url);
-  return id ? `https://www.youtube.com/embed/${id}?modestbranding=1&rel=0&autoplay=1` : null;
-}
-
-function getYouTubeThumbnail(url) {
-  const id = getYouTubeVideoId(url);
-  return id ? `https://img.youtube.com/vi/${id}/maxresdefault.jpg` : null;
-}
+import { getYouTubeVideoId, getYouTubeEmbedUrl, getYouTubeThumbnail } from '../../utils/youtube';
 
 const LECTURE_PREVIEW_FALLBACK = 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1280&h=720&fit=crop';
 
@@ -35,9 +17,14 @@ export default function TopicDetailPage() {
   const [canUseFreeTrialForThisTopic, setCanUseFreeTrialForThisTopic] = useState(false);
   const [useFreeTrial, setUseFreeTrial] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
+  const [videoPaused, setVideoPaused] = useState(false);
+  const [ytApiReady, setYtApiReady] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [resources, setResources] = useState([]);
   const [downloadingPdf, setDownloadingPdf] = useState(null);
+  const videoContainerRef = useRef(null);
+  const ytPlayerRef = useRef(null);
 
   const handleResourceClick = async (e, res) => {
     if (res.type !== 'pdf') return;
@@ -104,6 +91,81 @@ export default function TopicDetailPage() {
       .catch(() => setResources([]));
   }, [topicId]);
 
+  // Load YouTube IFrame API once
+  useEffect(() => {
+    if (window.YT && window.YT.Player) {
+      setYtApiReady(true);
+      return;
+    }
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    const firstScript = document.getElementsByTagName('script')[0];
+    firstScript?.parentNode?.insertBefore(tag, firstScript);
+    window.onYouTubeIframeAPIReady = () => setYtApiReady(true);
+    return () => { window.onYouTubeIframeAPIReady = null; };
+  }, []);
+
+  const videoId = topic?.videoUrl ? getYouTubeVideoId(topic.videoUrl) : null;
+
+  // Create/destroy YouTube player when video is shown/hidden
+  useEffect(() => {
+    if (!ytApiReady || !videoId || !videoPlaying || !videoContainerRef.current) return;
+    const opts = {
+      videoId,
+      playerVars: {
+        autoplay: 1,
+        controls: 0,
+        disablekb: 1,
+        fs: 0,
+        modestbranding: 1,
+        rel: 0,
+        iv_load_policy: 3,
+      },
+      events: {
+        onReady: (e) => { e.target.playVideo(); setVideoPaused(false); },
+      },
+    };
+    ytPlayerRef.current = new window.YT.Player(videoContainerRef.current, opts);
+    return () => {
+      if (ytPlayerRef.current && ytPlayerRef.current.destroy) {
+        ytPlayerRef.current.destroy();
+        ytPlayerRef.current = null;
+      }
+    };
+  }, [ytApiReady, videoId, videoPlaying]);
+
+  // Fullscreen change listener
+  useEffect(() => {
+    const onFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
+  // Disable right-click on the whole topic page
+  useEffect(() => {
+    const preventContextMenu = (e) => e.preventDefault();
+    document.addEventListener('contextmenu', preventContextMenu);
+    return () => document.removeEventListener('contextmenu', preventContextMenu);
+  }, []);
+
+  const handleVideoPlay = () => {
+    if (ytPlayerRef.current?.playVideo) ytPlayerRef.current.playVideo();
+    setVideoPaused(false);
+  };
+  const handleVideoPause = () => {
+    if (ytPlayerRef.current?.pauseVideo) ytPlayerRef.current.pauseVideo();
+    setVideoPaused(true);
+  };
+  const handleFullscreen = () => {
+    const el = videoContainerRef.current?.closest('.aspect-video');
+    if (!el) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.();
+    } else {
+      el.requestFullscreen?.();
+    }
+  };
+
   const handleUseFreeTrial = () => {
     setUseFreeTrial(true);
     setLoading(true);
@@ -145,7 +207,7 @@ export default function TopicDetailPage() {
 
   const total = mcqs.length;
   const oneShotEmbedUrl = topic?.videoUrl ? getYouTubeEmbedUrl(topic.videoUrl) : null;
-  const thumbnailUrl = topic?.videoUrl ? getYouTubeThumbnail(topic.videoUrl) : LECTURE_PREVIEW_FALLBACK;
+  const thumbnailUrl = topic?.imageUrl || (topic?.videoUrl ? getYouTubeThumbnail(topic.videoUrl) : null) || LECTURE_PREVIEW_FALLBACK;
   const moduleName = topic.subject?.module?.name || 'Module';
   const subjectName = topic.subject?.name || 'Subject';
   const quizPageUrl = `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topicId}/quiz`;
@@ -185,15 +247,52 @@ export default function TopicDetailPage() {
             </div>
 
             {/* Video Player - Second */}
-            <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group">
+            <div
+              className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group"
+              onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            >
               {videoPlaying && oneShotEmbedUrl ? (
-                <iframe
-                  title="Topic Explanatory Video"
-                  src={oneShotEmbedUrl}
-                  className="absolute inset-0 w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+                <>
+                  <div
+                    ref={videoContainerRef}
+                    className="absolute inset-0 w-full h-full"
+                    title="Topic Explanatory Video"
+                  />
+                  {/* Full overlay: captures all pointer events so right-click never reaches iframe (prevents Copy video URL / embed) */}
+                  <div
+                    className="absolute inset-0 z-10"
+                    style={{ pointerEvents: 'auto' }}
+                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    aria-hidden
+                  />
+                  {/* Custom controls: play, pause, fullscreen (above overlay so they stay clickable) */}
+                  <div className="absolute left-0 right-0 bottom-0 h-14 z-20 flex items-center justify-center gap-2 bg-gradient-to-t from-black/80 to-transparent pointer-events-auto">
+                    <button
+                      type="button"
+                      onClick={handleVideoPlay}
+                      className="p-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+                      aria-label="Play"
+                    >
+                      <Play className="w-6 h-6" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleVideoPause}
+                      className="p-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+                      aria-label="Pause"
+                    >
+                      <Pause className="w-6 h-6" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleFullscreen}
+                      className="p-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+                      aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                    >
+                      {isFullscreen ? <Minimize className="w-6 h-6" /> : <Maximize className="w-6 h-6" />}
+                    </button>
+                  </div>
+                </>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <img

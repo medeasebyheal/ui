@@ -31,6 +31,35 @@ export default function TopicQuizPage() {
   const [submittedAtSeconds, setSubmittedAtSeconds] = useState(null);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
+  // Deter dev tools access: disable context menu and dev-tools shortcuts on quiz
+  useEffect(() => {
+    const preventContextMenu = (e) => e.preventDefault();
+    const preventDevToolsShortcuts = (e) => {
+      if (e.key === 'F12') {
+        e.preventDefault();
+        return;
+      }
+      if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'U'].includes(e.key)) {
+        e.preventDefault();
+        return;
+      }
+      if (e.metaKey && e.altKey && ['i', 'j', 'I', 'J', 'c', 'C'].includes(e.key)) {
+        e.preventDefault();
+        return;
+      }
+      if (e.ctrlKey && e.key === 'u') {
+        e.preventDefault();
+        return;
+      }
+    };
+    document.addEventListener('contextmenu', preventContextMenu);
+    document.addEventListener('keydown', preventDevToolsShortcuts);
+    return () => {
+      document.removeEventListener('contextmenu', preventContextMenu);
+      document.removeEventListener('keydown', preventDevToolsShortcuts);
+    };
+  }, []);
+
   useEffect(() => {
     const interval = setInterval(() => setElapsedSeconds(Math.floor((Date.now() - quizStartTime) / 1000)), 1000);
     return () => clearInterval(interval);
@@ -85,7 +114,7 @@ export default function TopicQuizPage() {
       const { data } = await api.post('/mcqs/attempts', {
         mcqId: mcqs[currentIndex]._id,
         selectedIndex: index,
-      });
+      }, { skipLoader: true });
       setResult(data);
       setAnswerResults((prev) => ({ ...prev, [currentIndex]: { ...data, selectedIndex: index } }));
     } catch (_) {}
@@ -489,7 +518,13 @@ export default function TopicQuizPage() {
               >
                 <div className="p-8 md:p-12">
                   <div className="flex items-center justify-between mb-6">
-                    <span className="px-4 py-1.5 bg-slate-100 text-slate-600 rounded-full text-xs font-bold uppercase tracking-wider">
+                    <span
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+                        flaggedQuestions.has(currentIndex)
+                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                          : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                      }`}
+                    >
                       Question {currentIndex + 1} of {total}
                     </span>
                     <button

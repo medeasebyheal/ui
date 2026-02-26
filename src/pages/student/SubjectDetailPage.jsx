@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ChevronRight,
-  BookOpen,
   Dna,
   Brain,
   GraduationCap,
@@ -14,13 +13,16 @@ import {
   HelpCircle,
   PlayCircle,
   Lock,
-  ExternalLink,
   Film,
   ArrowRight,
 } from 'lucide-react';
+import ControlledYouTubePlayer from '../../components/student/ControlledYouTubePlayer';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import { recordRecentView } from '../../utils/recentViews';
+import { getYouTubeThumbnail } from '../../utils/youtube';
+
+const TOPIC_PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=200&fit=crop';
 
 const TOPIC_ICON_MAP = [
   { Icon: Dna, bg: 'bg-blue-50 dark:bg-blue-900/30', text: 'text-blue-600 dark:text-blue-400' },
@@ -46,6 +48,8 @@ export default function SubjectDetailPage() {
   const [moduleName, setModuleName] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedLecture, setSelectedLecture] = useState(null);
+  const [oneShotVideoPlaying, setOneShotVideoPlaying] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,7 +64,10 @@ export default function SubjectDetailPage() {
         if (cancelled) return;
         setSubject(sub);
         setTopics(tops || []);
-        setOneShotLectures(Array.isArray(lectures) ? lectures : []);
+        const list = Array.isArray(lectures) ? lectures : [];
+        setOneShotLectures(list);
+        setSelectedLecture(list[0] || null);
+        setOneShotVideoPlaying(false);
         setModuleSubjects(subs || []);
         setModuleName(mod?.name || subject?.module?.name || 'Module');
         if (sub) {
@@ -158,7 +165,12 @@ export default function SubjectDetailPage() {
                 Total Topics: <span className="font-bold text-white">{sortedTopics.length}</span>
               </p>
             </div>
-            <img src="/stato.png" alt="" className="w-24 h-auto sm:w-28 flex-shrink-0 opacity-95 drop-shadow-lg" aria-hidden />
+            <div className="flex items-center gap-4 flex-shrink-0">
+              {subject.imageUrl && (
+                <img src={subject.imageUrl} alt="" className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-white/30 shadow-lg" />
+              )}
+              <img src="/stato.png" alt="" className="w-24 h-auto sm:w-28 opacity-95 drop-shadow-lg" aria-hidden />
+            </div>
           </div>
         </div>
 
@@ -194,22 +206,33 @@ export default function SubjectDetailPage() {
               const { Icon, bg, text } = getTopicIcon(index);
               const progressPercent = topic.progressPercent ?? 0;
               const accessible = hasModuleAccess;
+              const topicImageUrl = topic.imageUrl || TOPIC_PLACEHOLDER_IMAGE;
 
               return (
                 <div
                   key={topic._id}
-                  className="group bg-white dark:bg-slate-800 rounded-[2rem] p-6 shadow-sm hover:shadow-2xl transition-all duration-300 border border-slate-100 dark:border-slate-700 flex flex-col h-full"
+                  className="group bg-white dark:bg-slate-800 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 border border-slate-100 dark:border-slate-700 flex flex-col h-full"
                 >
-                  <div className="mb-6 flex justify-between items-start">
-                    <div
-                      className={`w-16 h-16 ${bg} ${text} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}
-                    >
-                      <Icon className="w-8 h-8" />
-                    </div>
-                    <span className="text-xs font-mono text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
+                  <div className="h-24 bg-slate-100 dark:bg-slate-700/50 relative overflow-hidden">
+                    {topic.imageUrl ? (
+                      <img
+                        src={topicImageUrl}
+                        alt=""
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => {
+                          e.target.src = TOPIC_PLACEHOLDER_IMAGE;
+                        }}
+                      />
+                    ) : (
+                      <div className={`w-full h-full ${bg} ${text} flex items-center justify-center group-hover:scale-105 transition-transform duration-300`}>
+                        <Icon className="w-10 h-10" />
+                      </div>
+                    )}
+                    <span className="absolute top-2 right-2 text-xs font-mono text-slate-500 bg-white/90 dark:bg-slate-800/90 px-2 py-0.5 rounded">
                       ID: {topicIdShort}
                     </span>
                   </div>
+                  <div className="p-6 flex flex-col flex-1">
                   <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors font-heading">
                     {topic.name}
                   </h3>
@@ -267,6 +290,7 @@ export default function SubjectDetailPage() {
                       Explanatory Video
                     </Link>
                   </div>
+                  </div>
                 </div>
               );
             })
@@ -311,29 +335,70 @@ export default function SubjectDetailPage() {
               </p>
             </div>
           ) : (
-            <ul className="space-y-3">
-              {oneShotLectures.map((lecture) => (
-                <li key={lecture._id}>
-                  <a
-                    href={lecture.youtubeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-primary/30 hover:shadow-lg transition-all group"
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400">
-                      <Video className="w-6 h-6" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                        {lecture.title}
-                      </p>
-                      <p className="text-xs text-slate-500 truncate">{lecture.youtubeUrl}</p>
-                    </div>
-                    <ExternalLink className="w-5 h-5 text-slate-400 flex-shrink-0 group-hover:text-primary transition-colors" />
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <>
+              {/* Inline embedded player - same style as topic page */}
+              <div
+                className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group"
+                onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              >
+                {oneShotVideoPlaying && selectedLecture ? (
+                  <ControlledYouTubePlayer
+                    youtubeUrl={selectedLecture.youtubeUrl}
+                    title={selectedLecture.title}
+                    className="absolute inset-0 w-full h-full rounded-2xl"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <img
+                      alt={selectedLecture?.title || 'One Shot Lecture'}
+                      className="w-full h-full object-cover opacity-60"
+                      src={getYouTubeThumbnail(selectedLecture?.youtubeUrl) || 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1280&h=720&fit=crop'}
+                      onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1280&h=720&fit=crop'; }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setOneShotVideoPlaying(true)}
+                      className="absolute w-20 h-20 bg-primary/90 rounded-full flex items-center justify-center text-white shadow-xl hover:scale-110 transition-transform cursor-pointer"
+                      aria-label="Play One Shot Lecture"
+                    >
+                      <PlayCircle className="w-10 h-10" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              {selectedLecture && (
+                <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">{selectedLecture.title}</h3>
+              )}
+              {/* Switch lecture if multiple */}
+              {oneShotLectures.length > 1 && (
+                <ul className="mt-6 space-y-2">
+                  {oneShotLectures.map((lecture) => (
+                    <li key={lecture._id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedLecture(lecture);
+                          setOneShotVideoPlaying(false);
+                        }}
+                        className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all group text-left ${
+                          selectedLecture?._id === lecture._id
+                            ? 'bg-primary/10 dark:bg-primary/20 border-primary/30'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-primary/30'
+                        }`}
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400">
+                          <Video className="w-6 h-6" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-slate-900 dark:text-white">{lecture.title}</p>
+                        </div>
+                        <PlayCircle className="w-5 h-5 text-slate-400 flex-shrink-0 group-hover:text-primary transition-colors" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </section>
 

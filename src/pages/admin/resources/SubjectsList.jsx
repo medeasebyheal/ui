@@ -403,8 +403,26 @@ export default function SubjectsList() {
 function AddSubjectForm({ modules, onSave, onClose }) {
   const [moduleId, setModuleId] = useState('');
   const [name, setName] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [oneShotTitle, setOneShotTitle] = useState('');
+  const [oneShotYoutubeUrl, setOneShotYoutubeUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('image', file);
+      const { data } = await api.post('/admin/upload-image', form);
+      setImageUrl(data.url);
+    } catch (_) {}
+    setUploading(false);
+    e.target.value = '';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -415,9 +433,17 @@ function AddSubjectForm({ modules, onSave, onClose }) {
     }
     setSaving(true);
     try {
-      await api.post(`/admin/modules/${moduleId}/subjects`, {
+      const payload = {
         name: name.trim(),
-      });
+        imageUrl: (imageUrl || '').trim() || undefined,
+      };
+      const oneShotTitleTrim = (oneShotTitle || '').trim();
+      const oneShotYoutubeTrim = (oneShotYoutubeUrl || '').trim();
+      if (oneShotTitleTrim && oneShotYoutubeTrim) {
+        payload.oneShotTitle = oneShotTitleTrim;
+        payload.youtubeUrl = oneShotYoutubeTrim;
+      }
+      await api.post(`/admin/modules/${moduleId}/subjects`, payload);
       onSave?.();
       onClose?.();
     } catch (err) {
@@ -459,6 +485,37 @@ function AddSubjectForm({ modules, onSave, onClose }) {
             required
             className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:text-white"
             placeholder="e.g. Anatomy"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Image (optional)</label>
+          <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} className="w-full text-sm text-slate-600 dark:text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-primary/10 file:text-primary file:font-medium" />
+          {imageUrl && (
+            <div className="mt-2 flex items-center gap-2">
+              <img src={imageUrl} alt="" className="max-h-32 rounded object-contain border border-slate-200 dark:border-slate-700" />
+              <button type="button" onClick={() => setImageUrl('')} className="text-sm text-red-600 dark:text-red-400 hover:underline">
+                Remove image
+              </button>
+            </div>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">One shot lecture title (optional)</label>
+          <input
+            value={oneShotTitle}
+            onChange={(e) => setOneShotTitle(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:text-white"
+            placeholder="e.g. Foundation Module One Shot"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">One shot lecture YouTube URL (optional)</label>
+          <input
+            type="url"
+            value={oneShotYoutubeUrl}
+            onChange={(e) => setOneShotYoutubeUrl(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:text-white"
+            placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
           />
         </div>
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}

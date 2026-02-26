@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { Plus, Search, Layers, Pencil, Trash2, ChevronLeft, ChevronRight, Package, CheckCircle, CreditCard, BarChart3 } from 'lucide-react';
 import api from '../../api/client';
 import Modal from '../../components/admin/Modal';
@@ -29,6 +30,8 @@ function typeBadgeClass(badge) {
 }
 
 export default function AdminPackages() {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'superadmin';
   const [packages, setPackages] = useState([]);
   const [years, setYears] = useState([]);
   const [modules, setModules] = useState([]);
@@ -278,8 +281,8 @@ export default function AdminPackages() {
         </div>
       </div>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Stats cards (revenue-related only for super admin) */}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-6 ${isSuperAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-2'}`}>
         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Packages</span>
@@ -290,26 +293,30 @@ export default function AdminPackages() {
           <p className="text-2xl font-bold text-slate-900 dark:text-white">{packages.length}</p>
           <span className="text-xs text-slate-400 dark:text-slate-500">in catalog</span>
         </div>
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Active Subscriptions</span>
-            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+        {isSuperAdmin && (
+          <>
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Active Subscriptions</span>
+                <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">—</p>
+              <span className="text-xs text-slate-400 dark:text-slate-500">across all packages</span>
             </div>
-          </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">—</p>
-          <span className="text-xs text-slate-400 dark:text-slate-500">across all packages</span>
-        </div>
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Monthly Revenue</span>
-            <div className="p-2 bg-teal-50 dark:bg-teal-900/20 rounded-lg">
-              <CreditCard className="w-5 h-5 text-teal-500 dark:text-teal-400" />
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Monthly Revenue</span>
+                <div className="p-2 bg-teal-50 dark:bg-teal-900/20 rounded-lg">
+                  <CreditCard className="w-5 h-5 text-teal-500 dark:text-teal-400" />
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">—</p>
+              <span className="text-xs text-slate-400 dark:text-slate-500">from approved payments</span>
             </div>
-          </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">—</p>
-          <span className="text-xs text-slate-400 dark:text-slate-500">from approved payments</span>
-        </div>
+          </>
+        )}
         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Avg. Package Price</span>

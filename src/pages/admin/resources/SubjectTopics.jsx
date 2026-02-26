@@ -211,7 +211,7 @@ function OneShotLectureForm({ lecture, subjectId, onSave, onClose }) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">YouTube URL</label>
-          <input type="url" value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="https://www.youtube.com/watch?v=..." />
+          <input type="text" value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." />
         </div>
         <div className="flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
