@@ -1,11 +1,12 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
-import { Check, ChevronDown, ChevronRight, ChevronLeft, Info, Timer, TrendingUp, ClipboardCheck, CheckCircle, XCircle, Lightbulb, ArrowLeft, RefreshCw, ArrowRight, Send, Flag } from 'lucide-react';
+import EaseGPTChat from '../../components/student/EaseGPTChat';
+import { Check, ChevronDown, ChevronRight, ChevronLeft, Info, Timer, TrendingUp, ClipboardCheck, CheckCircle, XCircle, Lightbulb, ArrowLeft, RefreshCw, ArrowRight, Send, Flag, Sparkles } from 'lucide-react';
 
 export default function TopicQuizPage() {
   const { moduleId, subjectId, topicId } = useParams();
@@ -30,6 +31,7 @@ export default function TopicQuizPage() {
   const [showResults, setShowResults] = useState(false);
   const [submittedAtSeconds, setSubmittedAtSeconds] = useState(null);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const easegptRef = useRef(null);
 
   // Deter dev tools access: disable context menu and dev-tools shortcuts on quiz
   useEffect(() => {
@@ -623,6 +625,16 @@ export default function TopicQuizPage() {
                                 <Info className="w-5 h-5 text-success-green flex-shrink-0 mt-0.5" />
                                 <p className="text-slate-600">{result.explanation || 'No explanation available.'}</p>
                               </div>
+                              {result && !result.correct && (
+                                <button
+                                  type="button"
+                                  onClick={() => easegptRef.current?.openAndSendFirstMessage?.()}
+                                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary font-semibold transition-colors"
+                                >
+                                  <Sparkles className="w-5 h-5 flex-shrink-0" />
+                                  Still having confusion? Ask EaseGPT Now
+                                </button>
+                              )}
                             </div>
                           </motion.div>
                         )}
@@ -666,6 +678,18 @@ export default function TopicQuizPage() {
             </AnimatePresence>
           </section>
         </div>
+        <EaseGPTChat
+          ref={easegptRef}
+          enabled={result != null && !result.correct}
+          mcqId={mcq?._id}
+          context={{
+            question: mcq?.question,
+            options: mcq?.options,
+            correctIndex: result?.correctIndex,
+            selectedIndex: result?.selectedIndex ?? selected,
+            explanation: result?.explanation,
+          }}
+        />
         <ConfirmDialog
           open={showSubmitConfirm}
           onClose={() => setShowSubmitConfirm(false)}

@@ -1,0 +1,381 @@
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, X, Send } from 'lucide-react';
+
+const LOADING_PHRASES = [
+  'EaseGPT is thinking... 🤔',
+  'Crafting your explanation... ✨',
+  'Connecting the concepts... 🧠',
+  'Almost there... 📚',
+  'Putting it in simple words... 💡',
+  'One moment, polishing the answer... 🌟',
+];
+import api from '../../api/client';
+
+const MAX_INPUT_LENGTH = 500;
+
+/** Escape HTML to prevent XSS. */
+function escapeHtml(text) {
+  if (typeof text !== 'string') return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Format chat message: **bold**, *italic*, * at line start → bullet, newlines preserved. Safe for dangerouslySetInnerHTML. */
+function formatMessageContent(text) {
+  if (typeof text !== 'string') return '';
+  const escaped = escapeHtml(text);
+  return escaped
+    .replace(/\*\*([^*]*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|\n)\* +/g, '$1• ') // line-start "* " → bullet
+    .replace(/\*([^*\s][^*]*?)\*/g, '<em>$1</em>') // *word* italic
+    .replace(/\n/g, '<br />');
+}
+
+/** Build first message from MCQ context: question, correct answer, and explanation (truncated to maxLength). */
+function buildFirstMessage(context, maxLength = 500) {
+  const question = (context?.question || '').trim();
+  const options = Array.isArray(context?.options) ? context.options : [];
+  const correctIdx = context?.correctIndex ?? 0;
+  const correctAnswerText = (options[correctIdx] || '').trim();
+  const explanation = (context?.explanation || '').trim();
+  const raw = `Question: ${question}\n\nCorrect answer: ${correctAnswerText}\n\nExplanation: ${explanation}\n\nPlease help me understand this.`;
+  return raw.slice(0, maxLength).trim() || 'Please explain this question and the correct answer.';
+}
+
+async function sendEaseGPTMessage(apiClient, { mcqId, context, message, history }) {
+  const { data } = await apiClient.post('/mcqs/easegpt', {
+    mcqId,
+    context: {
+      question: context.question,
+      options: context.options,
+      correctIndex: context.correctIndex,
+      selectedIndex: context.selectedIndex,
+      explanation: context.explanation,
+    },
+    message,
+    history,
+  }, { skipLoader: true });
+  return data;
+}
+
+/** Normalize MCQ id to string so state keys are never "[object Object]" (per-question remaining). */
+function toMcqKey(mcqId) {
+  return mcqId != null ? String(mcqId) : null;
+}
+
+const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, onOpen }, ref) {
+  const mcqKey = toMcqKey(mcqId);
+  const [open, setOpen] = useState(false);
+  const [messagesByMcq, setMessagesByMcq] = useState({});
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingPhraseIndex, setLoadingPhraseIndex] = useState(0);
+  const [typingState, setTypingState] = useState(null); // { mcqId, messageIndex, fullText, displayedLength }
+  const [error, setError] = useState(null);
+  const [pendingFirstMessage, setPendingFirstMessage] = useState(false);
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+  const firstMessageRequestStartedRef = useRef(false);
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingPhraseIndex(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setLoadingPhraseIndex((i) => (i + 1) % LOADING_PHRASES.length);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, [loading]);
+
+  useEffect(() => {
+    if (!typingState) return;
+    const interval = setInterval(() => {
+      setTypingState((prev) => {
+        if (!prev) return null;
+        const step = 2;
+        const next = Math.min(prev.displayedLength + step, prev.fullText.length);
+        if (next >= prev.fullText.length) return null;
+        return { ...prev, displayedLength: next };
+      });
+    }, 20);
+    return () => clearInterval(interval);
+  }, [typingState?.mcqId, typingState?.messageIndex]);
+
+  useImperativeHandle(ref, () => ({
+    open: () => handleOpen(),
+    openAndSendFirstMessage: () => {
+      if (!enabled || !mcqId || !context) return;
+      setOpen(true);
+      setError(null);
+      setPendingFirstMessage(true);
+      onOpen?.();
+    },
+  }), [enabled, mcqId, context, onOpen]);
+
+  const messages = messagesByMcq[mcqKey] || [];
+  const canSend = enabled && !!mcqKey && input.trim().length > 0 && !loading;
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading, typingState?.displayedLength]);
+
+  useEffect(() => {
+    setTypingState(null);
+    firstMessageRequestStartedRef.current = false;
+  }, [mcqKey]);
+
+  useEffect(() => {
+    if (open && inputRef.current) inputRef.current.focus();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) firstMessageRequestStartedRef.current = false;
+  }, [open]);
+
+  const handleOpen = () => {
+    if (!enabled) return;
+    setOpen(true);
+    setError(null);
+    onOpen?.();
+  };
+
+  useEffect(() => {
+    if (!open || !pendingFirstMessage || !mcqKey || !context || loading) return;
+    if (firstMessageRequestStartedRef.current) return;
+    firstMessageRequestStartedRef.current = true;
+    setPendingFirstMessage(false);
+    const text = buildFirstMessage(context, MAX_INPUT_LENGTH);
+    const newUserMessage = { role: 'user', content: text };
+    setMessagesByMcq((prev) => ({
+      ...prev,
+      [mcqKey]: [...(prev[mcqKey] || []), newUserMessage],
+    }));
+    setLoading(true);
+    setError(null);
+
+    const history = (messagesByMcq[mcqKey] || []).map((m) => ({ role: m.role, content: m.content }));
+    sendEaseGPTMessage(api, { mcqId: mcqKey, context, message: text, history })
+      .then((data) => {
+        firstMessageRequestStartedRef.current = false;
+        const fullText = data.reply || '';
+        setMessagesByMcq((prev) => {
+          const list = prev[mcqKey] || [];
+          const newIndex = list.length;
+          queueMicrotask(() => setTypingState({ mcqId: mcqKey, messageIndex: newIndex, fullText, displayedLength: 0 }));
+          return { ...prev, [mcqKey]: [...list, { role: 'model', content: fullText }] };
+        });
+      })
+      .catch((err) => {
+        firstMessageRequestStartedRef.current = false;
+        const status = err.response?.status;
+        const msg = err.response?.data?.message || 'Something went wrong. Try again.';
+        if (status === 429) {
+          setError('AI is temporarily at capacity. Please try again in a few minutes.');
+        } else {
+          setError(msg);
+        }
+        setMessagesByMcq((prev) => ({ ...prev, [mcqKey]: (prev[mcqKey] || []).slice(0, -1) }));
+      })
+      .finally(() => setLoading(false));
+  }, [open, pendingFirstMessage, mcqKey, context, loading]);
+
+  const handleSend = async () => {
+    const text = input.trim().slice(0, MAX_INPUT_LENGTH);
+    if (!text || !mcqKey || !context || !canSend) return;
+
+    setInput('');
+    setError(null);
+
+    const newUserMessage = { role: 'user', content: text };
+    setMessagesByMcq((prev) => ({
+      ...prev,
+      [mcqKey]: [...(prev[mcqKey] || []), newUserMessage],
+    }));
+    setLoading(true);
+
+    try {
+      const history = (messagesByMcq[mcqKey] || []).map((m) => ({ role: m.role, content: m.content }));
+      const data = await sendEaseGPTMessage(api, { mcqId: mcqKey, context, message: text, history });
+
+      const fullText = data.reply || '';
+      setMessagesByMcq((prev) => {
+        const list = prev[mcqKey] || [];
+        const newIndex = list.length;
+        queueMicrotask(() => setTypingState({ mcqId: mcqKey, messageIndex: newIndex, fullText, displayedLength: 0 }));
+        return { ...prev, [mcqKey]: [...list, { role: 'model', content: fullText }] };
+      });
+    } catch (err) {
+      const status = err.response?.status;
+      const msg = err.response?.data?.message || 'Something went wrong. Try again.';
+      if (status === 429) {
+        setError('AI is temporarily at capacity. Please try again in a few minutes.');
+      } else {
+        setError(msg);
+      }
+      setMessagesByMcq((prev) => ({
+        ...prev,
+        [mcqKey]: (prev[mcqKey] || []).slice(0, -1),
+      }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!enabled) return null;
+
+  return (
+    <>
+      {/* FAB */}
+      <motion.button
+        type="button"
+        onClick={handleOpen}
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-5 py-3 rounded-2xl bg-primary text-white font-semibold shadow-lg shadow-primary/30 hover:bg-teal-700 transition-colors"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        aria-label="Open EaseGPT"
+      >
+        <Sparkles className="w-5 h-5" />
+        <span>EaseGPT</span>
+      </motion.button>
+
+      {/* Panel */}
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.div
+              className="fixed inset-0 z-40 bg-black/20"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOpen(false)}
+              aria-hidden
+            />
+            <motion.div
+              className="fixed bottom-6 right-6 z-50 w-[min(380px,95vw)] max-h-[70vh] flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <span className="font-bold text-slate-900 dark:text-white">EaseGPT</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="p-2 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[200px] max-h-[40vh]">
+                {messages.length === 0 && !loading && (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">
+                    Ask about this question: why your answer was wrong, why the correct answer is right, or the underlying concept.
+                  </p>
+                )}
+                {messages.map((m, i) => {
+                  const isTyping = m.role === 'model' && typingState && typingState.mcqId === mcqKey && typingState.messageIndex === i;
+                  const displayContent = isTyping
+                    ? typingState.fullText.slice(0, typingState.displayedLength)
+                    : m.content;
+                  return (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
+                          m.role === 'user'
+                            ? 'bg-primary text-white rounded-br-md'
+                            : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-md'
+                        }`}
+                      >
+                        <p
+                          className="break-words [&_strong]:font-bold [&_em]:italic inline"
+                          dangerouslySetInnerHTML={{ __html: formatMessageContent(displayContent) }}
+                        />
+                        {isTyping && (
+                          <span
+                            className="inline-block w-0.5 h-4 align-middle bg-slate-500 dark:bg-slate-400 ml-0.5 animate-pulse"
+                            aria-hidden
+                          />
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+                {loading && (
+                  <motion.div
+                    key={loadingPhraseIndex}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex justify-start"
+                  >
+                    <div className="rounded-2xl rounded-bl-md px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-sm">
+                      {LOADING_PHRASES[loadingPhraseIndex]}
+                    </div>
+                  </motion.div>
+                )}
+                {error && (
+                  <p className="text-sm text-red-600 dark:text-red-400 text-center">{error}</p>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                <div className="flex gap-2">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value.slice(0, MAX_INPUT_LENGTH))}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                    placeholder="Ask about this question..."
+                    maxLength={MAX_INPUT_LENGTH}
+                    disabled={loading}
+                    className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSend}
+                    disabled={!canSend}
+                    className="p-3 rounded-xl bg-primary text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Send"
+                  >
+                    <Send className="w-5 h-5" />
+                  </button>
+                </div>
+                <p className="text-xs text-slate-400 mt-1.5 text-right">
+                  {input.length}/{MAX_INPUT_LENGTH}
+                </p>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+});
+
+export default EaseGPTChat;

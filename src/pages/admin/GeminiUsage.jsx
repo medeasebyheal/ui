@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/client';
-import { BarChart3, AlertTriangle, RefreshCw } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { BarChart3, AlertTriangle, RefreshCw, MessageCircle } from 'lucide-react';
 
 export default function GeminiUsage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+
   const fetchUsage = () => {
+    if (user?.role !== 'superadmin') return;
     api
       .get('/admin/gemini-usage')
       .then(({ data: res }) => setData(res))
@@ -15,13 +21,19 @@ export default function GeminiUsage() {
   };
 
   useEffect(() => {
+    if (user == null) return;
+    if (user.role !== 'superadmin') {
+      navigate('/admin', { replace: true });
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     fetchUsage();
     const interval = setInterval(() => {
       api.get('/admin/gemini-usage').then(({ data: res }) => setData(res)).catch(() => {});
     }, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user, navigate]);
 
   if (loading && !data) {
     return (
@@ -33,17 +45,22 @@ export default function GeminiUsage() {
 
   const keys = data?.keys ?? [];
   const totals = data?.totals ?? { requestsToday: 0, tokensToday: 0 };
+  const easegpt = data?.easegpt ?? { requestsToday: 0, tokensToday: 0 };
   const anyExhausted = keys.some((k) => k.exhausted);
+
+  if (user && user.role !== 'superadmin') {
+    return null;
+  }
 
   return (
     <div className="space-y-8">
       <div>
         <h2 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
           <BarChart3 className="w-7 h-7 text-primary" />
-          Gemini API Usage
+          API Usage
         </h2>
         <p className="text-slate-500 dark:text-slate-400 mt-1">
-          Usage for bulk MCQ parsing (Gemini 2.5 Flash Lite). Limits per key: 10 requests/min, 250K tokens/min, 20 requests/day. &quot;Today&quot; is UTC.
+          Usage for bulk MCQ parsing and EaseGPT. Limits per key: 10 requests/min, 250K tokens/min, 20 requests/day. Keys rotate (round-robin) so no single key is overused. &quot;Today&quot; is UTC.
         </p>
       </div>
 
@@ -109,7 +126,7 @@ export default function GeminiUsage() {
       </div>
 
       <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Totals (all keys)</h3>
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Totals (all keys) — Bulk parse + EaseGPT</h3>
         <div className="flex flex-wrap gap-8">
           <div>
             <p className="text-sm text-slate-500 dark:text-slate-400">Total requests today</p>
@@ -118,6 +135,26 @@ export default function GeminiUsage() {
           <div>
             <p className="text-sm text-slate-500 dark:text-slate-400">Total tokens today</p>
             <p className="text-2xl font-bold text-slate-800 dark:text-white">{(totals.tokensToday ?? 0).toLocaleString()}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+          <MessageCircle className="w-5 h-5 text-primary" />
+          EaseGPT usage
+        </h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+          Student quiz chat (AI explanations). Same API keys; counts reset daily (UTC).
+        </p>
+        <div className="flex flex-wrap gap-8">
+          <div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Requests today</p>
+            <p className="text-2xl font-bold text-slate-800 dark:text-white">{easegpt.requestsToday ?? 0}</p>
+          </div>
+          <div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Tokens today</p>
+            <p className="text-2xl font-bold text-slate-800 dark:text-white">{(easegpt.tokensToday ?? 0).toLocaleString()}</p>
           </div>
         </div>
       </div>

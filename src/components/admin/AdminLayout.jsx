@@ -27,6 +27,7 @@ const navItems = (isSuperAdmin) => [
     ? [
         { to: '/admin/payments', end: false, label: 'Payments', icon: CreditCard, showPendingDot: true },
         { to: '/admin/admins', end: true, label: 'Admins', icon: ShieldCheck },
+        { to: '/admin/gemini-usage', end: true, label: 'API Usage', icon: BarChart3 },
       ]
     : []),
   {
@@ -54,7 +55,6 @@ const navItems = (isSuperAdmin) => [
   },
   { to: '/admin/packages', end: false, label: 'Packages', icon: Package },
   { to: '/admin/promo-codes', end: false, label: 'Promo Codes', icon: Tag },
-  { to: '/admin/gemini-usage', end: true, label: 'Gemini Usage', icon: BarChart3 },
 ];
 
 export default function AdminLayout() {
