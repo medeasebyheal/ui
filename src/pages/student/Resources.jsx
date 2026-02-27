@@ -159,6 +159,10 @@ export default function StudentResources() {
   const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'Student';
   const yearLabel = user?.academicDetails?.year ? `MS ${user.academicDetails.year}` : 'Student';
   const recentToShow = (recentViews.length > 0 ? recentViews : []).slice(0, 3);
+  // derive study streak from available user fields (fallback to 0)
+  const studyStreakDays = Number(user?.studyStreak ?? user?.streakDays ?? user?.profile?.streak ?? 0) || 0;
+  const studyStreakGoal = 30;
+  const studyStreakPct = Math.max(0, Math.min(100, Math.round((studyStreakDays / studyStreakGoal) * 100)));
 
   const matchSearch = (text) => {
     if (!searchQuery.trim()) return true;
@@ -443,13 +447,13 @@ export default function StudentResources() {
               <h4 className="font-bold text-slate-900 dark:text-white">Study Streak</h4>
             </div>
             <div className="flex items-end gap-1 mb-4">
-              <span className="text-4xl font-bold text-[#0D9488]">—</span>
+              <span className="text-4xl font-bold text-[#0D9488]">{studyStreakDays}</span>
               <span className="text-sm text-slate-500 dark:text-slate-400 font-medium pb-1">Days</span>
             </div>
             <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mb-2 overflow-hidden">
-              <div className="bg-[#0D9488] h-full w-[30%] rounded-full" />
+              <div className="bg-[#0D9488] h-full" style={{ width: `${studyStreakPct}%` }} />
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Keep learning to build your streak.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Keep learning — {studyStreakDays}/{studyStreakGoal} days</p>
           </div>
 
           <div className="space-y-4">
