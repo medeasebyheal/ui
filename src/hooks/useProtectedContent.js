@@ -11,10 +11,10 @@ export function useProtectedContent() {
     const preventSelect = (e) => e.preventDefault();
 
     const preventDevToolsShortcuts = (e) => {
-      // if (e.key === 'F12') {
-      //   e.preventDefault();
-      //   return;
-      // }
+      if (e.key === 'F12') {
+        e.preventDefault();
+        return;
+      }
       if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'U'].includes(e.key)) {
         e.preventDefault();
         return;
