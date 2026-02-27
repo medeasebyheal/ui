@@ -225,9 +225,13 @@ export default function StudentResources() {
         {/* Medical Curriculum by Year */}
         <section className="space-y-10">
           {years.map((year) => {
-            const yearModules = modulesByYear[year._id] || [];
-            const accessibleModules = yearModules.filter((mod) => hasModuleAccess(mod._id));
-            if (yearModules.length > 0 && accessibleModules.length === 0) return null;
+            // differentiate "not loaded yet" (undefined) from "loaded but empty" ([])
+            const yearModules = Object.prototype.hasOwnProperty.call(modulesByYear, year._id)
+              ? modulesByYear[year._id]
+              : undefined;
+            const accessibleModules = (yearModules || []).filter((mod) => hasModuleAccess(mod._id));
+            // hide the year only when modules are loaded and none are accessible to the user
+            if (yearModules !== undefined && accessibleModules.length === 0) return null;
 
             return (
               <div key={year._id}>

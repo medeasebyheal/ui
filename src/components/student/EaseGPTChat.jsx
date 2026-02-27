@@ -48,8 +48,34 @@ function buildFirstMessage(context, maxLength = 500) {
   return raw.slice(0, maxLength).trim() || 'Please explain this question and the correct answer.';
 }
 
-async function sendEaseGPTMessage(apiClient, { mcqId, context, message, history }) {
-  const { data } = await apiClient.post('/mcqs/easegpt', {
+async function sendEaseGPTMessage(apiClient, { mode = 'mcq', mcqId, ospeId, questionIndex, context, message, history }) {
+  const payloadBase = {
+    message,
+    history,
+  };
+  if (mode === 'ospe') {
+    // Always call the OSPE-specific backend endpoint with a normalized context.
+    const payload = {
+      ...payloadBase,
+      ospeId,
+      questionIndex,
+      mode: 'ospe',
+      context: {
+        questionText: context.questionText || context.question,
+        options: context.options,
+        correctIndex: context.correctIndex,
+        selectedIndex: context.selectedIndex,
+        explanation: context.explanation || context.expectedAnswer,
+        studentAnswer: context.studentAnswer,
+        stationNote: context.stationNote,
+      },
+    };
+    const { data } = await apiClient.post('/ospes/easegpt', payload, { skipLoader: true });
+    return data;
+  }
+  // default mcq endpoint
+  const payload = {
+    ...payloadBase,
     mcqId,
     context: {
       question: context.question,
@@ -58,21 +84,24 @@ async function sendEaseGPTMessage(apiClient, { mcqId, context, message, history 
       selectedIndex: context.selectedIndex,
       explanation: context.explanation,
     },
-    message,
-    history,
-  }, { skipLoader: true });
+  };
+  const { data } = await apiClient.post('/mcqs/easegpt', payload, { skipLoader: true });
   return data;
 }
 
-/** Normalize MCQ id to string so state keys are never "[object Object]" (per-question remaining). */
-function toMcqKey(mcqId) {
-  return mcqId != null ? String(mcqId) : null;
+/** Normalize key for messages by mode and identifier. */
+function toKey({ mode = 'mcq', mcqId, ospeId, questionIndex }) {
+  if (mode === 'ospe') return `ospe:${ospeId}:${questionIndex}`;
+  return mcqId != null ? `mcq:${String(mcqId)}` : null;
 }
 
-const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, onOpen }, ref) {
-  const mcqKey = toMcqKey(mcqId);
+const MAX_QUERIES = 5;
+
+const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, mode = 'mcq', ospeId, ospeQuestionIndex, onOpen }, ref) {
+  const mcqKey = toKey({ mode, mcqId, ospeId, questionIndex: ospeQuestionIndex });
   const [open, setOpen] = useState(false);
   const [messagesByMcq, setMessagesByMcq] = useState({});
+  const [queriesUsedByKey, setQueriesUsedByKey] = useState({});
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingPhraseIndex, setLoadingPhraseIndex] = useState(0);
@@ -112,14 +141,21 @@ const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, o
 
   useImperativeHandle(ref, () => ({
     open: () => handleOpen(),
-    openAndSendFirstMessage: () => {
-      if (!enabled || !mcqId || !context) return;
+    openAndSendFirstMessage: (opts = {}) => {
+      // opts: { mode, ospeId, questionIndex, contextOverride }
+      const { mode: oMode, ospeId: oOspeId, questionIndex: oQuestionIndex, contextOverride } = opts;
+      if (!enabled || (!mcqId && !oMode && !oOspeId && oQuestionIndex == null && !contextOverride)) return;
+      // set up context for send
       setOpen(true);
       setError(null);
+      // store pending first message info in pendingFirstMessage ref state
+      pendingFirstMessageRef.current = { mode: oMode || mode, ospeId: oOspeId || ospeId, questionIndex: oQuestionIndex ?? ospeQuestionIndex, contextOverride };
       setPendingFirstMessage(true);
       onOpen?.();
     },
   }), [enabled, mcqId, context, onOpen]);
+
+  const pendingFirstMessageRef = useRef(null);
 
   const messages = messagesByMcq[mcqKey] || [];
   const canSend = enabled && !!mcqKey && input.trim().length > 0 && !loading;
@@ -149,11 +185,23 @@ const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, o
   };
 
   useEffect(() => {
-    if (!open || !pendingFirstMessage || !mcqKey || !context || loading) return;
+    if (!open || !pendingFirstMessage || !mcqKey || loading) return;
     if (firstMessageRequestStartedRef.current) return;
     firstMessageRequestStartedRef.current = true;
     setPendingFirstMessage(false);
-    const text = buildFirstMessage(context, MAX_INPUT_LENGTH);
+    const pending = pendingFirstMessageRef.current || {};
+    const useMode = pending.mode || mode;
+    const useOspeId = pending.ospeId || ospeId;
+    const useQuestionIndex = pending.questionIndex ?? ospeQuestionIndex;
+    const ctx = pending.contextOverride || context || {};
+    // normalize context keys so buildFirstMessage receives expected fields (question, options, correctIndex, explanation)
+    const normCtx = {
+      question: (ctx.question || ctx.questionText || '').trim(),
+      options: Array.isArray(ctx.options) ? ctx.options : [],
+      correctIndex: typeof ctx.correctIndex === 'number' ? ctx.correctIndex : (typeof ctx.correctIdx === 'number' ? ctx.correctIdx : undefined),
+      explanation: (ctx.explanation || ctx.expectedAnswer || '').trim(),
+    };
+    const text = buildFirstMessage(normCtx, MAX_INPUT_LENGTH);
     const newUserMessage = { role: 'user', content: text };
     setMessagesByMcq((prev) => ({
       ...prev,
@@ -163,10 +211,15 @@ const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, o
     setError(null);
 
     const history = (messagesByMcq[mcqKey] || []).map((m) => ({ role: m.role, content: m.content }));
-    sendEaseGPTMessage(api, { mcqId: mcqKey, context, message: text, history })
+    sendEaseGPTMessage(api, { mode: useMode, mcqId: mcqId, ospeId: useOspeId, questionIndex: useQuestionIndex, context: ctx, message: text, history })
       .then((data) => {
         firstMessageRequestStartedRef.current = false;
         const fullText = data.reply || '';
+        // increment queries used
+        setQueriesUsedByKey((prev) => {
+          const cur = prev[mcqKey] || 0;
+          return { ...prev, [mcqKey]: cur + 1 };
+        });
         setMessagesByMcq((prev) => {
           const list = prev[mcqKey] || [];
           const newIndex = list.length;
@@ -186,11 +239,17 @@ const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, o
         setMessagesByMcq((prev) => ({ ...prev, [mcqKey]: (prev[mcqKey] || []).slice(0, -1) }));
       })
       .finally(() => setLoading(false));
-  }, [open, pendingFirstMessage, mcqKey, context, loading]);
+  }, [open, pendingFirstMessage, mcqKey, loading]);
 
   const handleSend = async () => {
     const text = input.trim().slice(0, MAX_INPUT_LENGTH);
     if (!text || !mcqKey || !context || !canSend) return;
+    // check queries used
+    const used = queriesUsedByKey[mcqKey] || 0;
+    if (used >= MAX_QUERIES) {
+      setError(`You have used the maximum ${MAX_QUERIES} queries for this question. Move to the next question to use EaseGPT again.`);
+      return;
+    }
 
     setInput('');
     setError(null);
@@ -204,9 +263,14 @@ const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, o
 
     try {
       const history = (messagesByMcq[mcqKey] || []).map((m) => ({ role: m.role, content: m.content }));
-      const data = await sendEaseGPTMessage(api, { mcqId: mcqKey, context, message: text, history });
+      const data = await sendEaseGPTMessage(api, { mode, mcqId, ospeId, questionIndex: ospeQuestionIndex, context, message: text, history });
 
       const fullText = data.reply || '';
+      // increment queries used
+      setQueriesUsedByKey((prev) => {
+        const cur = prev[mcqKey] || 0;
+        return { ...prev, [mcqKey]: cur + 1 };
+      });
       setMessagesByMcq((prev) => {
         const list = prev[mcqKey] || [];
         const newIndex = list.length;

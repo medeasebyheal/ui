@@ -15,6 +15,7 @@ export default function McqForm({ topicId, mcq, onSave, onClose }) {
   const [explanation, setExplanation] = useState(mcq?.explanation ?? '');
   const [type, setType] = useState(mcq?.type ?? 'text');
   const [imageUrl, setImageUrl] = useState(mcq?.imageUrl ?? '');
+  const [imageDescription, setImageDescription] = useState(mcq?.imageDescription ?? '');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -38,7 +39,15 @@ export default function McqForm({ topicId, mcq, onSave, onClose }) {
     if (correctIndex < 0 || correctIndex >= opts.length) return alert('Select correct option');
     setSaving(true);
     try {
-      const payload = { question, options: opts, correctIndex, explanation, type, imageUrl: type === 'image' ? imageUrl : undefined };
+      const payload = {
+        question,
+        options: opts,
+        correctIndex,
+        explanation,
+        type,
+        imageUrl: type === 'image' ? imageUrl : undefined,
+        imageDescription: type === 'image' ? (imageDescription || undefined) : undefined,
+      };
       if (mcq?._id) await api.put(`/admin/topics/${topicId}/mcqs/${mcq._id}`, payload);
       else await api.post(`/admin/topics/${topicId}/mcqs`, payload);
       onSave?.();
@@ -67,6 +76,15 @@ export default function McqForm({ topicId, mcq, onSave, onClose }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">Question image</label>
             <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} className="w-full text-sm" />
             {imageUrl && <img src={imageUrl} alt="" className="mt-2 max-h-32 rounded object-contain" />}
+            <div className="mt-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Image description (brief)</label>
+              <input
+                value={imageDescription}
+                onChange={(e) => setImageDescription(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg"
+                placeholder="Briefly describe what the image shows (1–2 lines)"
+              />
+            </div>
           </div>
         )}
         <div>

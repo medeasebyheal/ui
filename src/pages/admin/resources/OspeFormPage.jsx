@@ -18,7 +18,7 @@ const emptyQuestion = () => ({
   expectedAnswer: '',
 });
 
-const emptyStation = () => ({ imageUrl: '', questions: [emptyQuestion()] });
+const emptyStation = () => ({ imageUrl: '', imageDescription: '', questions: [emptyQuestion()] });
 
 export default function OspeFormPage() {
   const { yearId, moduleId, ospeId } = useParams();
@@ -28,6 +28,7 @@ export default function OspeFormPage() {
   const [module_, setModule_] = useState(null);
   const [name, setName] = useState('');
   const [stations, setStations] = useState([emptyStation()]);
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
   const [uploading, setUploading] = useState(null);
@@ -44,10 +45,12 @@ export default function OspeFormPage() {
       const ospe = data.find((x) => x._id === ospeId);
       if (ospe) {
         setName(ospe.name ?? '');
+        setThumbnailUrl(ospe.thumbnailUrl ?? '');
         if (ospe.stations?.length) {
           setStations(
             ospe.stations.map((s) => ({
               imageUrl: s.imageUrl ?? '',
+              imageDescription: s.imageDescription ?? '',
               questions: (s.questions || []).map((q) => ({
                 questionText: q.questionText ?? '',
                 type: q.type || 'text_mcq',
@@ -63,6 +66,7 @@ export default function OspeFormPage() {
             setStations(
               legacy.map((q) => ({
                 imageUrl: q.imageUrl ?? '',
+                imageDescription: q.imageDescription ?? '',
                 questions: [
                   {
                     questionText: q.questionText ?? '',
@@ -89,6 +93,19 @@ export default function OspeFormPage() {
   const setQuestion = (si, qi, field, value) => setStations((s) => { const n = [...s]; const qs = [...(n[si].questions || [])]; qs[qi] = { ...qs[qi], [field]: value }; n[si] = { ...n[si], questions: qs }; return n; });
   const setOption = (si, qi, oi, value) => setStations((s) => { const n = [...s]; const qs = [...(n[si].questions || [])]; const opts = [...(qs[qi].options || []), '', '', ''].slice(0, 4); opts[oi] = value; qs[qi] = { ...qs[qi], options: opts }; n[si] = { ...n[si], questions: qs }; return n; });
 
+  const handleThumbnailImage = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading('thumb');
+    try {
+      const form = new FormData();
+      form.append('image', file);
+      const { data } = await api.post('/admin/upload-image', form);
+      setThumbnailUrl(data.url);
+    } catch (_) {}
+    setUploading(null);
+  };
+
   const handleStationImage = async (e, si) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -108,8 +125,10 @@ export default function OspeFormPage() {
     e.preventDefault();
     const payload = {
       name,
+      thumbnailUrl: thumbnailUrl || undefined,
       stations: stations.map((st) => ({
         imageUrl: st.imageUrl || undefined,
+        imageDescription: st.imageDescription || undefined,
         questions: (st.questions || []).map((q) => ({
           questionText: q.questionText,
           type: q.type,
@@ -154,9 +173,34 @@ export default function OspeFormPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-3xl space-y-6">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">OSPE name</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="e.g. Anatomy OSPE 1" />
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">OSPE name</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+              placeholder="e.g. Anatomy OSPE 1"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Thumbnail image (optional)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleThumbnailImage}
+              disabled={uploading === 'thumb'}
+              className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-primary/10 file:text-primary file:font-medium"
+            />
+            {thumbnailUrl && (
+              <img
+                src={thumbnailUrl}
+                alt=""
+                className="mt-2 max-h-32 rounded-lg object-contain border border-gray-200"
+              />
+            )}
+          </div>
         </div>
 
         {stations.map((station, si) => (
@@ -170,6 +214,15 @@ export default function OspeFormPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Picture for this station</label>
                 <input type="file" accept="image/*" onChange={(e) => handleStationImage(e, si)} disabled={uploading === `station-${si}`} className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-primary/10 file:text-primary file:font-medium" />
                 {station.imageUrl && <img src={station.imageUrl} alt="" className="mt-2 max-h-48 rounded-lg object-contain border border-gray-200" />}
+                <div className="mt-2">
+                  <label className="block text-xs text-gray-500 mb-1">Image description (brief)</label>
+                  <input
+                    value={station.imageDescription || ''}
+                    onChange={(e) => setStation(si, 'imageDescription', e.target.value)}
+                    className="w-full px-2 py-1 border rounded text-sm"
+                    placeholder="Shortly describe what the station image shows (1–2 lines)"
+                  />
+                </div>
               </div>
 
               <div>

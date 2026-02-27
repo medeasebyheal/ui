@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -17,8 +17,10 @@ import {
   ZoomIn,
   X,
   Lightbulb,
+  Sparkles,
   BarChart3,
 } from 'lucide-react';
+import EaseGPTChat from '../../components/student/EaseGPTChat';
 
 const MCQ_TYPES = ['text_mcq', 'picture_mcq', 'guess_until_correct'];
 
@@ -49,6 +51,7 @@ function formatTime(seconds) {
 }
 
 export default function StudentOspeAttempt() {
+  const easegptRef = useRef(null);
   const { ospeId } = useParams();
   const navigate = useNavigate();
   const [ospe, setOspe] = useState(null);
@@ -65,6 +68,8 @@ export default function StudentOspeAttempt() {
   const [zoomImageUrl, setZoomImageUrl] = useState(null);
   const [revealedModel, setRevealedModel] = useState(new Set());
   const [expandedReview, setExpandedReview] = useState(null);
+  const [showEaseGPT, setShowEaseGPT] = useState(false);
+  const [easegptOptions, setEasegptOptions] = useState(null);
 
   const stations = useMemo(() => getStations(ospe), [ospe]);
   const flatList = useMemo(() => getFlatQuestions(ospe), [ospe]);
@@ -171,6 +176,20 @@ export default function StudentOspeAttempt() {
       handleSubmitAttempt();
     }
   }, [timerSeconds, submitted, submitting, handleSubmitAttempt]);
+ 
+  // When the EaseGPT modal is opened, trigger the initial message send once the chat mounts
+  useEffect(() => {
+    if (!showEaseGPT) return;
+    // small delay to ensure EaseGPTChat has mounted and ref attached
+    const id = setTimeout(() => {
+      try {
+        easegptRef.current?.openAndSendFirstMessage?.(easegptOptions || {});
+      } catch (e) {
+        // ignore
+      }
+    }, 50);
+    return () => clearTimeout(id);
+  }, [showEaseGPT, easegptOptions]);
 
   const toggleMarkForReview = () => {
     setMarkedForReview((s) => {
@@ -386,6 +405,32 @@ export default function StudentOspeAttempt() {
                                       <p className="text-sm font-medium">{correctAns || '—'}</p>
                                     </div>
                                   </div>
+                              <div className="mt-2">
+                                <button
+                                  type="button"
+                                  className="text-primary font-semibold text-sm inline-flex items-center gap-2"
+                                  onClick={() => {
+                                    setEasegptOptions({
+                                      mode: 'ospe',
+                                      ospeId,
+                                      questionIndex: gi,
+                                      contextOverride: {
+                                        questionText: q.questionText,
+                                        options: isMcq ? (q.options || []) : undefined,
+                                        correctIndex: q.correctIndex,
+                                        selectedIndex: ans?.selectedIndex,
+                                        explanation: q.expectedAnswer,
+                                        studentAnswer: ans?.writtenAnswer,
+                                        imageDescription: (q.imageDescription || s.imageDescription || '').trim(),
+                                      },
+                                    });
+                                    setShowEaseGPT(true);
+                                  }}
+                                >
+                                  <Sparkles className="w-4 h-4 text-primary" />
+                                  Analyze with EaseGPT
+                                </button>
+                              </div>
                                   {q.expectedAnswer && !isMcq && (
                                     <div className="p-4 bg-slate-100 rounded-xl">
                                       <h5 className="font-bold flex items-center gap-2 mb-2 text-slate-700">
@@ -407,6 +452,15 @@ export default function StudentOspeAttempt() {
               })}
             </div>
           </section>
+
+          {/* EaseGPT modal for submitted review (mounted inside submitted view) */}
+          {showEaseGPT && (
+            // Render the chat component only (no modal overlay) so it appears as an inline chat panel.
+            <div onClick={(e) => e.stopPropagation()}>
+              <EaseGPTChat ref={easegptRef} enabled={true} mode="ospe" ospeId={ospeId} />
+            </div>
+          )}
+
         </div>
       </div>
     );
@@ -533,7 +587,8 @@ export default function StudentOspeAttempt() {
                     const isMcq = MCQ_TYPES.includes(q.type);
                     const options = (q.options || []).filter(Boolean);
                     const selected = answers[`q${gi}_opt`];
-                    const showFeedback = practiceMode && selected != null && isMcq;
+                    // show immediate feedback whenever the user has selected an option (or in practice mode)
+                    const showFeedback = isMcq && selected != null;
                     const correct = selected === q.correctIndex;
 
                     if (isMcq && options.length > 0) {
@@ -545,13 +600,9 @@ export default function StudentOspeAttempt() {
                           <div className="grid grid-cols-1 gap-2">
                             {options.map((opt, j) => {
                               const isSelected = selected === j;
-                              const isCorrectOpt = q.correctIndex === j;
-                              const showCor = showFeedback && isCorrectOpt;
-                              const showWrong = showFeedback && isSelected && !correct;
                               const disabled = selected != null && !practiceMode;
                               let btnClass = 'flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ';
-                              if (showCor) btnClass += 'border-emerald-500 bg-emerald-50';
-                              else if (showWrong) btnClass += 'border-rose-400 bg-rose-50';
+                              if (isSelected) btnClass += 'border-primary bg-primary/10';
                               else if (disabled) btnClass += 'border-slate-100 bg-slate-50 opacity-80';
                               else btnClass += 'border-slate-200 hover:border-primary/30 hover:bg-slate-50';
                               return (
@@ -562,17 +613,22 @@ export default function StudentOspeAttempt() {
                                   onClick={() => handleMcqSelect(gi, q, j)}
                                   className={btnClass}
                                 >
-                                  <span className="w-8 h-8 rounded-full border-2 border-slate-200 flex items-center justify-center text-sm font-bold text-slate-500">
-                                    {showCor ? <Check className="w-4 h-4 text-emerald-600" /> : String.fromCharCode(65 + j)}
+                                  <span className={
+                                    isSelected
+                                      ? 'w-8 h-8 rounded-full border-2 border-primary flex items-center justify-center text-sm font-bold text-primary'
+                                      : 'w-8 h-8 rounded-full border-2 border-slate-200 flex items-center justify-center text-sm font-bold text-slate-500'
+                                  }>
+                                    {String.fromCharCode(65 + j)}
                                   </span>
                                   <span className="font-medium text-slate-700">{opt}</span>
-                                  {showCor && <span className="ml-auto text-[10px] font-bold text-emerald-600 uppercase">Correct</span>}
                                 </button>
                               );
                             })}
                           </div>
-                          {showFeedback && !correct && q.expectedAnswer && (
-                            <p className="text-sm text-slate-600 mt-2 p-3 bg-slate-50 rounded-lg">{q.expectedAnswer}</p>
+                          {showFeedback && !correct && q.expectedAnswer && (practiceMode || submitted) && (
+                            <div>
+                              <p className="text-sm text-slate-600 mt-2 p-3 bg-slate-50 rounded-lg">{q.expectedAnswer}</p>
+                            </div>
                           )}
                         </div>
                       );
@@ -590,21 +646,11 @@ export default function StudentOspeAttempt() {
                           onChange={(e) => handleWrittenChange(gi, e.target.value)}
                           className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary focus:border-primary text-slate-900 placeholder-slate-400"
                         />
-                        {(practiceMode || revealedModel.has(gi)) && q.expectedAnswer && (
+                        {(practiceMode || submitted) && q.expectedAnswer && (
                           <div className="mt-2">
-                            <button
-                              type="button"
-                              onClick={() => toggleRevealModel(gi)}
-                              className="text-primary font-semibold text-sm flex items-center gap-1"
-                            >
-                              {revealedModel.has(gi) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                              {revealedModel.has(gi) ? 'Hide' : 'Reveal'} Model Answer
-                            </button>
-                            {revealedModel.has(gi) && (
-                              <div className="mt-2 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-                                <p className="text-sm font-medium text-slate-700">{q.expectedAnswer}</p>
-                              </div>
-                            )}
+                            <div className="mt-2 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                              <p className="text-sm font-medium text-slate-700">{q.expectedAnswer}</p>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -688,6 +734,8 @@ export default function StudentOspeAttempt() {
           </motion.div>
         </div>
       )}
+
+      {/* (EaseGPT modal is mounted inside the submitted/results section only) */}
 
       <ConfirmDialog
         open={showSubmitConfirm}

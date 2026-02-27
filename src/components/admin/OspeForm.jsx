@@ -9,7 +9,30 @@ const OSPE_TYPES = [
 
 export default function OspeForm({ moduleId, ospe, onSave, onClose }) {
   const [name, setName] = useState(ospe?.name ?? '');
-  const [questions, setQuestions] = useState(ospe?.questions?.length ? ospe.questions.map((q) => ({ questionText: q.questionText, imageUrl: q.imageUrl ?? '', type: q.type || 'picture_mcq', options: [...(q.options || []), '', '', ''].slice(0, 4), correctIndex: q.correctIndex ?? 0, expectedAnswer: q.expectedAnswer ?? '' })) : [{ questionText: '', imageUrl: '', type: 'picture_mcq', options: ['', '', '', ''], correctIndex: 0, expectedAnswer: '' }]);
+  const [thumbnailUrl, setThumbnailUrl] = useState(ospe?.thumbnailUrl ?? '');
+  const [questions, setQuestions] = useState(
+    ospe?.questions?.length
+      ? ospe.questions.map((q) => ({
+          questionText: q.questionText,
+          imageUrl: q.imageUrl ?? '',
+          imageDescription: q.imageDescription ?? '',
+          type: q.type || 'picture_mcq',
+          options: [...(q.options || []), '', '', ''].slice(0, 4),
+          correctIndex: q.correctIndex ?? 0,
+          expectedAnswer: q.expectedAnswer ?? '',
+        }))
+      : [
+          {
+            questionText: '',
+            imageUrl: '',
+            imageDescription: '',
+            type: 'picture_mcq',
+            options: ['', '', '', ''],
+            correctIndex: 0,
+            expectedAnswer: '',
+          },
+        ]
+  );
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(null);
 
@@ -17,6 +40,19 @@ export default function OspeForm({ moduleId, ospe, onSave, onClose }) {
   const removeQuestion = (i) => setQuestions((q) => q.filter((_, idx) => idx !== i));
   const updateQuestion = (i, field, value) => setQuestions((q) => { const n = [...q]; n[i] = { ...n[i], [field]: value }; return n; });
   const updateOption = (qi, oi, value) => setQuestions((q) => { const n = [...q]; const opts = [...(n[qi].options || [])]; opts[oi] = value; n[qi] = { ...n[qi], options: opts }; return n; });
+
+  const handleThumbnailFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading('thumb');
+    try {
+      const form = new FormData();
+      form.append('image', file);
+      const { data } = await api.post('/admin/upload-image', form);
+      setThumbnailUrl(data.url);
+    } catch (_) {}
+    setUploading(null);
+  };
 
   const handleFileChange = async (e, qi) => {
     const file = e.target.files?.[0];
@@ -35,9 +71,11 @@ export default function OspeForm({ moduleId, ospe, onSave, onClose }) {
     e.preventDefault();
     const payload = {
       name,
+      thumbnailUrl: thumbnailUrl || undefined,
       questions: questions.map((q) => ({
         questionText: q.questionText,
         imageUrl: q.imageUrl || undefined,
+        imageDescription: q.imageDescription || undefined,
         type: q.type,
         options: q.type === 'picture_mcq' ? (q.options || []).filter(Boolean) : undefined,
         correctIndex: q.type === 'picture_mcq' ? q.correctIndex : undefined,
@@ -62,6 +100,17 @@ export default function OspeForm({ moduleId, ospe, onSave, onClose }) {
           <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" />
         </div>
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Thumbnail image (optional)</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleThumbnailFileChange}
+            disabled={uploading === 'thumb'}
+            className="w-full text-xs"
+          />
+          {thumbnailUrl && <img src={thumbnailUrl} alt="" className="mt-2 max-h-20 rounded object-contain" />}
+        </div>
+        <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-medium text-gray-700">Questions</label>
             <button type="button" onClick={addQuestion} className="text-primary text-sm font-medium">+ Add question</button>
@@ -83,6 +132,15 @@ export default function OspeForm({ moduleId, ospe, onSave, onClose }) {
                   <label className="text-xs text-gray-500">Image (optional)</label>
                   <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, qi)} disabled={uploading === qi} className="w-full text-xs" />
                   {q.imageUrl && <img src={q.imageUrl} alt="" className="mt-1 max-h-20 rounded object-contain" />}
+                  <div className="mt-1">
+                    <label className="text-xs text-gray-500">Image description (brief)</label>
+                    <input
+                      value={q.imageDescription || ''}
+                      onChange={(e) => updateQuestion(qi, 'imageDescription', e.target.value)}
+                      className="w-full px-2 py-1 border rounded text-sm"
+                      placeholder="Describe what the image shows (1–2 lines)"
+                    />
+                  </div>
                 </div>
                 {q.type === 'picture_mcq' && (
                   <div className="text-sm">
