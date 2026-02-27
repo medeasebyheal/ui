@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useProtectedContent } from '../../hooks/useProtectedContent';
 import {
   LayoutDashboard,
   BookOpen,
@@ -41,6 +42,8 @@ export default function StudentLayout() {
   const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'Student';
   const initial = (displayName[0] || 'S').toUpperCase();
   const yearLabel = user?.academicDetails?.year ? `MS ${user.academicDetails.year}` : 'Student';
+
+  useProtectedContent();
 
   return (
     <div className="flex min-h-screen font-display">

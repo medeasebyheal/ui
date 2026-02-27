@@ -201,24 +201,24 @@ export default function ModuleDetailPage() {
                   <Wrapper
                     key={sub._id}
                     {...wrapperProps}
-                    className={`group relative bg-white border border-primary/20 rounded-xl overflow-hidden transition-all duration-300 ${
+                    className={`group relative bg-white border border-slate-200 rounded-2xl overflow-hidden transition-all duration-300 ${
                       accessible
-                        ? 'hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 cursor-pointer hover:border-primary/30'
+                        ? 'hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 cursor-pointer hover:border-primary/30'
                         : 'grayscale opacity-90 cursor-default'
                     }`}
                   >
-                    <div className="h-32 bg-slate-100 relative overflow-hidden">
+                    <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden">
                       <img
                         alt={sub.name}
                         src={imgSrc}
-                        className={`w-full h-full object-cover opacity-80 transition-transform duration-500 ${
+                        className={`w-full h-full object-cover transition-transform duration-500 ${
                           accessible ? 'group-hover:scale-105' : ''
                         }`}
                         onError={(e) => {
                           e.target.src = SUBJECT_PLACEHOLDER_IMAGES[0];
                         }}
                       />
-                      <div className="absolute top-3 right-3 bg-white/90 p-1.5 rounded-full shadow-sm">
+                      <div className="absolute top-3 right-3 bg-white/95 p-1.5 rounded-lg shadow-sm border border-slate-200">
                         {accessible ? (
                           <LockOpen className="w-4 h-4 text-emerald-500" />
                         ) : (
@@ -227,26 +227,18 @@ export default function ModuleDetailPage() {
                       </div>
                     </div>
                     <div className="p-5">
-                      <h3 className="text-lg font-bold mb-1 text-slate-900">{sub.name}</h3>
-                      <p className="text-sm text-slate-500 line-clamp-2">
-                        {sub.description ||
-                          'View topics and practice MCQs for this subject.'}
+                      <h3 className="text-lg font-bold text-slate-900 mb-1">{sub.name}</h3>
+                      <p className="text-xs text-slate-500 mb-4">
+                        {topicCount} {topicCount === 1 ? 'Sub-module' : 'Sub-modules'}
+                        {sub.description ? ` · ${sub.description.slice(0, 50)}${sub.description.length > 50 ? '…' : ''}` : ''}
                       </p>
-                      <div className="mt-4 flex items-center justify-between">
-                        <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">
-                          {topicCount} {topicCount === 1 ? 'Sub-module' : 'Sub-modules'}
+                      {accessible ? (
+                        <span className="text-primary font-semibold text-sm inline-flex items-center gap-1">
+                          Explore <ArrowRight className="w-4 h-4" />
                         </span>
-                        {accessible ? (
-                          <span className="text-primary font-semibold text-sm flex items-center group/btn">
-                            Explore{' '}
-                            <ArrowRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 font-semibold text-sm italic">
-                            Locked
-                          </span>
-                        )}
-                      </div>
+                      ) : (
+                        <span className="text-slate-400 font-medium text-sm">Locked</span>
+                      )}
                     </div>
                   </Wrapper>
                 );

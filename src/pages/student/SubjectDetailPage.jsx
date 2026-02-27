@@ -19,6 +19,7 @@ import {
 import ControlledYouTubePlayer from '../../components/student/ControlledYouTubePlayer';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
+import { useProtectedContent } from '../../hooks/useProtectedContent';
 import { recordRecentView } from '../../utils/recentViews';
 import { getYouTubeThumbnail } from '../../utils/youtube';
 
@@ -50,6 +51,8 @@ export default function SubjectDetailPage() {
   const [error, setError] = useState(null);
   const [selectedLecture, setSelectedLecture] = useState(null);
   const [oneShotVideoPlaying, setOneShotVideoPlaying] = useState(false);
+
+  useProtectedContent();
 
   useEffect(() => {
     let cancelled = false;
@@ -201,9 +204,8 @@ export default function SubjectDetailPage() {
               No topics in this subject yet.
             </div>
           ) : (
-            sortedTopics.map((topic, index) => {
+            sortedTopics.map((topic) => {
               const topicIdShort = String(topic._id).slice(-6).toUpperCase();
-              const { Icon, bg, text } = getTopicIcon(index);
               const progressPercent = topic.progressPercent ?? 0;
               const accessible = hasModuleAccess;
               const topicImageUrl = topic.imageUrl || TOPIC_PLACEHOLDER_IMAGE;
@@ -211,85 +213,79 @@ export default function SubjectDetailPage() {
               return (
                 <div
                   key={topic._id}
-                  className="group bg-white dark:bg-slate-800 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 border border-slate-100 dark:border-slate-700 flex flex-col h-full"
+                  className="group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-slate-200 dark:border-slate-700 flex flex-col h-full"
                 >
-                  <div className="h-24 bg-slate-100 dark:bg-slate-700/50 relative overflow-hidden">
-                    {topic.imageUrl ? (
-                      <img
-                        src={topicImageUrl}
-                        alt=""
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => {
-                          e.target.src = TOPIC_PLACEHOLDER_IMAGE;
-                        }}
-                      />
-                    ) : (
-                      <div className={`w-full h-full ${bg} ${text} flex items-center justify-center group-hover:scale-105 transition-transform duration-300`}>
-                        <Icon className="w-10 h-10" />
-                      </div>
-                    )}
-                    <span className="absolute top-2 right-2 text-xs font-mono text-slate-500 bg-white/90 dark:bg-slate-800/90 px-2 py-0.5 rounded">
+                  <div className="aspect-[4/3] bg-slate-100 dark:bg-slate-700/50 relative overflow-hidden">
+                    <img
+                      src={topicImageUrl}
+                      alt=""
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        e.target.src = TOPIC_PLACEHOLDER_IMAGE;
+                      }}
+                    />
+                    <span className="absolute top-2 right-2 text-xs font-mono text-slate-500 bg-white/90 dark:bg-slate-800/90 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-600">
                       ID: {topicIdShort}
                     </span>
                   </div>
-                  <div className="p-6 flex flex-col flex-1">
-                  <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors font-heading">
-                    {topic.name}
-                  </h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 flex-1 line-clamp-3">
-                    {topic.content?.replace(/<[^>]*>/g, '').slice(0, 140) ||
-                      `Study ${topic.name} with MCQs and explanatory video.`}
-                    {(topic.content?.length || 0) > 140 ? '...' : ''}
-                  </p>
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between text-xs font-semibold mb-2">
-                      <span className="text-slate-500 dark:text-slate-400">Progress</span>
-                      <span className="text-primary">{progressPercent}%</span>
+                  <div className="p-5 flex flex-col flex-1">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1 group-hover:text-primary transition-colors">
+                      {topic.name}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 flex-1 line-clamp-2">
+                      {topic.content?.replace(/<[^>]*>/g, '').slice(0, 100) ||
+                        `Study ${topic.name} with MCQs and explanatory video.`}
+                      {(topic.content?.length || 0) > 100 ? '…' : ''}
+                    </p>
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between text-xs font-semibold mb-1.5">
+                        <span className="text-slate-500 dark:text-slate-400">Progress</span>
+                        <span className="text-primary">{progressPercent}%</span>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="bg-primary h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${progressPercent}%`,
+                            boxShadow: '0 0 10px rgba(6, 146, 133, 0.4)',
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                      <div
-                        className="bg-primary h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${progressPercent}%`,
-                          boxShadow: '0 0 10px rgba(6, 146, 133, 0.4)',
-                        }}
-                      />
+                    <div className="flex gap-3">
+                      <Link
+                        to={
+                          accessible
+                            ? `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}/quiz`
+                            : '#'
+                        }
+                        onClick={(e) => !accessible && e.preventDefault()}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors ${
+                          accessible
+                            ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600'
+                            : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
+                        }`}
+                      >
+                        <HelpCircle className="w-5 h-5" />
+                        MCQs
+                      </Link>
+                      <Link
+                        to={
+                          accessible
+                            ? `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}`
+                            : '#'
+                        }
+                        onClick={(e) => !accessible && e.preventDefault()}
+                        className={`flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all ${
+                          accessible
+                            ? 'bg-primary text-white hover:bg-teal-700 shadow-lg shadow-primary/20'
+                            : 'bg-slate-200 dark:bg-slate-600 text-slate-500 cursor-not-allowed'
+                        }`}
+                      >
+                        <PlayCircle className="w-5 h-5" />
+                        Explanatory Video
+                      </Link>
                     </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <Link
-                      to={
-                        accessible
-                          ? `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}/quiz`
-                          : '#'
-                      }
-                      onClick={(e) => !accessible && e.preventDefault()}
-                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors ${
-                        accessible
-                          ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600'
-                          : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
-                      }`}
-                    >
-                      <HelpCircle className="w-5 h-5" />
-                      MCQs
-                    </Link>
-                    <Link
-                      to={
-                        accessible
-                          ? `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}`
-                          : '#'
-                      }
-                      onClick={(e) => !accessible && e.preventDefault()}
-                      className={`flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all ${
-                        accessible
-                          ? 'bg-primary text-white hover:bg-teal-700 shadow-lg shadow-primary/20'
-                          : 'bg-slate-200 dark:bg-slate-600 text-slate-500 cursor-not-allowed'
-                      }`}
-                    >
-                      <PlayCircle className="w-5 h-5" />
-                      Explanatory Video
-                    </Link>
-                  </div>
                   </div>
                 </div>
               );
@@ -338,7 +334,7 @@ export default function SubjectDetailPage() {
             <>
               {/* Inline embedded player - same style as topic page */}
               <div
-                className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group"
+                className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group select-none"
                 onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
               >
                 {oneShotVideoPlaying && selectedLecture ? (

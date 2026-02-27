@@ -2,10 +2,15 @@ import { useEffect, useState, useRef } from 'react';
 import { Play, Pause, Maximize, Minimize } from 'lucide-react';
 import { getYouTubeVideoId } from '../../utils/youtube';
 
+const YT_PLAYING = 1;
+const YT_PAUSED = 2;
+
 export default function ControlledYouTubePlayer({ youtubeUrl, videoId: videoIdProp, title, className = '' }) {
   const videoId = videoIdProp || (youtubeUrl ? getYouTubeVideoId(youtubeUrl) : null);
   const [ytApiReady, setYtApiReady] = useState(!!(typeof window !== 'undefined' && window.YT?.Player));
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const wrapperRef = useRef(null);
   const containerRef = useRef(null);
   const playerRef = useRef(null);
 
@@ -37,10 +42,19 @@ export default function ControlledYouTubePlayer({ youtubeUrl, videoId: videoIdPr
         iv_load_policy: 3,
       },
       events: {
-        onReady: (e) => { e.target.playVideo(); },
+        onReady: (e) => {
+          e.target.playVideo();
+          setIsPlaying(true);
+        },
+        onStateChange: (e) => {
+          const state = e.data;
+          if (state === YT_PLAYING) setIsPlaying(true);
+          if (state === YT_PAUSED) setIsPlaying(false);
+        },
       },
     };
-    playerRef.current = new window.YT.Player(containerRef.current, opts);
+    const player = new window.YT.Player(containerRef.current, opts);
+    playerRef.current = player;
     return () => {
       if (playerRef.current?.destroy) {
         playerRef.current.destroy();
@@ -50,24 +64,46 @@ export default function ControlledYouTubePlayer({ youtubeUrl, videoId: videoIdPr
   }, [ytApiReady, videoId]);
 
   useEffect(() => {
-    const onFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+    const onFullscreenChange = () => {
+      const full = !!document.fullscreenElement;
+      setIsFullscreen(full);
+    };
     document.addEventListener('fullscreenchange', onFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
   }, []);
 
-  const handlePlay = () => playerRef.current?.playVideo?.();
-  const handlePause = () => playerRef.current?.pauseVideo?.();
+  const handlePlayPause = () => {
+    const player = playerRef.current;
+    if (!player?.getPlayerState) return;
+    const state = player.getPlayerState();
+    if (state === YT_PLAYING) {
+      player.pauseVideo();
+      setIsPlaying(false);
+    } else {
+      player.playVideo();
+      setIsPlaying(true);
+    }
+  };
+
   const handleFullscreen = () => {
-    const el = containerRef.current?.closest('.aspect-video');
+    const el = wrapperRef.current;
     if (!el) return;
-    if (document.fullscreenElement) document.exitFullscreen?.();
-    else el.requestFullscreen?.();
+    try {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        el.requestFullscreen();
+      }
+    } catch (err) {
+      console.warn('Fullscreen not supported', err);
+    }
   };
 
   if (!videoId) return null;
 
   return (
     <div
+      ref={wrapperRef}
       className={`aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative ${className}`}
       onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
     >
@@ -81,19 +117,11 @@ export default function ControlledYouTubePlayer({ youtubeUrl, videoId: videoIdPr
       <div className="absolute left-0 right-0 bottom-0 h-14 z-20 flex items-center justify-center gap-2 bg-gradient-to-t from-black/80 to-transparent pointer-events-auto">
         <button
           type="button"
-          onClick={handlePlay}
+          onClick={handlePlayPause}
           className="p-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
-          aria-label="Play"
+          aria-label={isPlaying ? 'Pause' : 'Play'}
         >
-          <Play className="w-6 h-6" />
-        </button>
-        <button
-          type="button"
-          onClick={handlePause}
-          className="p-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
-          aria-label="Pause"
-        >
-          <Pause className="w-6 h-6" />
+          {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
         </button>
         <button
           type="button"

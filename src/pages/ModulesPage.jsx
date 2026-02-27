@@ -4,17 +4,6 @@ import { BookOpen, Lock, LockOpen, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 
-const CARD_BG_CLASSES = [
-  'bg-teal-50',
-  'bg-slate-50',
-  'bg-red-50',
-  'bg-blue-50',
-  'bg-pink-50',
-  'bg-indigo-50',
-  'bg-orange-50',
-  'bg-purple-50',
-];
-
 export default function ModulesPage() {
   const { user } = useAuth();
   const [years, setYears] = useState([]);
@@ -51,8 +40,15 @@ export default function ModulesPage() {
       const q = searchQuery.trim().toLowerCase();
       list = list.filter((m) => m.name?.toLowerCase().includes(q) || m.yearName?.toLowerCase().includes(q));
     }
+    // In student panel: show only modules the student has access to
+    if (user && allowedModuleIds.size > 0) {
+      list = list.filter((m) => {
+        const idStr = m._id != null ? String(m._id) : (m.id != null ? String(m.id) : '');
+        return idStr && allowedModuleIds.has(idStr);
+      });
+    }
     return list;
-  }, [allModules, yearFilter, searchQuery]);
+  }, [allModules, yearFilter, searchQuery, user, allowedModuleIds]);
 
   // Module IDs the user has access to (from their registered packages only)
   const allowedModuleIds = useMemo(() => {
@@ -129,41 +125,55 @@ export default function ModulesPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredModules.map((mod, idx) => {
-              const cardBg = CARD_BG_CLASSES[idx % CARD_BG_CLASSES.length];
               const modIdStr = mod._id != null ? String(mod._id) : (mod.id != null ? String(mod.id) : '');
               const moduleHasAccess = modIdStr && allowedModuleIds.has(modIdStr);
+              const imgSrc = mod.imageUrl || null;
               return (
                 <div
                   key={mod._id}
-                  className="group module-card relative bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-2"
+                  className="group module-card relative bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
                 >
-                  <div className={`h-48 ${cardBg} flex items-center justify-center p-8 relative overflow-hidden`}>
-                    {mod.imageUrl ? (
+                  <div className="aspect-[4/3] bg-slate-100 flex items-center justify-center relative overflow-hidden">
+                    {imgSrc ? (
                       <img
-                        src={mod.imageUrl}
+                        src={imgSrc}
                         alt=""
-                        className="w-full h-full object-cover rounded-lg opacity-80 group-hover:opacity-100 transition-opacity"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <BookOpen className="w-16 h-16 text-primary/40" />
+                      <BookOpen className="w-16 h-16 text-slate-300" />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-white to-transparent opacity-60 pointer-events-none" />
-                  </div>
-                  <div className="p-6">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-xs font-bold text-primary bg-teal-50 px-2 py-1 rounded">
-                        {mod.yearName || '—'}
-                      </span>
+                    <div className="absolute top-3 right-3 bg-white/95 p-1.5 rounded-lg shadow border border-slate-200">
                       {moduleHasAccess ? (
-                        <LockOpen className="w-5 h-5 text-slate-400" />
+                        <LockOpen className="w-4 h-4 text-emerald-500" />
                       ) : (
-                        <Lock className="w-5 h-5 text-slate-400" />
+                        <Lock className="w-4 h-4 text-slate-400" />
                       )}
                     </div>
-                    <h3 className="text-xl font-bold text-slate-800 mb-2 line-clamp-1">{mod.name}</h3>
-                    <p className="text-sm text-slate-500 line-clamp-2">
+                  </div>
+                  <div className="p-5">
+                    {mod.yearName && (
+                      <p className="text-xs font-semibold text-primary mb-1">{mod.yearName}</p>
+                    )}
+                    <h3 className="text-lg font-bold text-slate-900 mb-1 line-clamp-1">{mod.name}</h3>
+                    <p className="text-xs text-slate-500 mb-4 line-clamp-2">
                       {mod.description || 'Subjects and topics for this module.'}
                     </p>
+                    {moduleHasAccess ? (
+                      <Link
+                        to={`/student/modules/${mod._id}`}
+                        className="text-primary font-semibold text-sm inline-flex items-center gap-1 hover:underline"
+                      >
+                        View Sub-modules <span aria-hidden>→</span>
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/packages"
+                        className="text-slate-500 font-medium text-sm hover:text-primary transition-colors"
+                      >
+                        Unlock to access
+                      </Link>
+                    )}
                   </div>
                   <div
                     className={`absolute inset-0 transition-opacity duration-300 flex flex-col items-center justify-center p-6 text-center backdrop-blur-sm pointer-events-none group-hover:pointer-events-auto ${
@@ -204,7 +214,17 @@ export default function ModulesPage() {
 
         {!loading && filteredModules.length === 0 && (
           <div className="text-center py-16 text-slate-500">
-            {allModules.length === 0 ? 'No modules configured yet.' : 'No modules match your search or filter.'}
+            {allModules.length === 0
+              ? 'No modules configured yet.'
+              : user && allowedModuleIds.size === 0
+                ? (
+                    <>
+                      You don’t have access to any modules yet.{' '}
+                      <Link to="/packages" className="text-primary font-medium hover:underline">Purchase a package</Link>
+                      {' '}to unlock content.
+                    </>
+                  )
+                : 'No modules match your search or filter.'}
           </div>
         )}
       </div>

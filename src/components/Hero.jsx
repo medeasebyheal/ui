@@ -24,7 +24,7 @@ function Hero() {
             Trusted by Medical Students
           </span>
         </div>
-        
+          
         {/* Gradient Glow Background */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[600px] h-[300px] sm:w-[800px] sm:h-[500px] md:w-[1000px] md:h-[600px] opacity-30 pointer-events-none">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/40 via-primary/60 to-primary/40 rounded-full blur-[80px] sm:blur-[120px] md:blur-[150px]"></div>

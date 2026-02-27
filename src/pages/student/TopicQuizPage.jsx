@@ -6,6 +6,7 @@ import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
 import EaseGPTChat from '../../components/student/EaseGPTChat';
+import { useProtectedContent } from '../../hooks/useProtectedContent';
 import { Check, ChevronDown, ChevronRight, ChevronLeft, Info, Timer, TrendingUp, ClipboardCheck, CheckCircle, XCircle, Lightbulb, ArrowLeft, RefreshCw, ArrowRight, Send, Flag, Sparkles } from 'lucide-react';
 
 export default function TopicQuizPage() {
@@ -33,34 +34,7 @@ export default function TopicQuizPage() {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const easegptRef = useRef(null);
 
-  // Deter dev tools access: disable context menu and dev-tools shortcuts on quiz
-  useEffect(() => {
-    const preventContextMenu = (e) => e.preventDefault();
-    const preventDevToolsShortcuts = (e) => {
-      if (e.key === 'F12') {
-        e.preventDefault();
-        return;
-      }
-      if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'U'].includes(e.key)) {
-        e.preventDefault();
-        return;
-      }
-      if (e.metaKey && e.altKey && ['i', 'j', 'I', 'J', 'c', 'C'].includes(e.key)) {
-        e.preventDefault();
-        return;
-      }
-      if (e.ctrlKey && e.key === 'u') {
-        e.preventDefault();
-        return;
-      }
-    };
-    document.addEventListener('contextmenu', preventContextMenu);
-    document.addEventListener('keydown', preventDevToolsShortcuts);
-    return () => {
-      document.removeEventListener('contextmenu', preventContextMenu);
-      document.removeEventListener('keydown', preventDevToolsShortcuts);
-    };
-  }, []);
+  useProtectedContent();
 
   useEffect(() => {
     const interval = setInterval(() => setElapsedSeconds(Math.floor((Date.now() - quizStartTime) / 1000)), 1000);
@@ -469,8 +443,8 @@ export default function TopicQuizPage() {
                   const flagged = flaggedQuestions.has(idx);
                   let btnClass = 'w-10 h-10 flex items-center justify-center rounded-lg font-bold text-sm transition-colors ';
                   if (isCurrent) btnClass += 'border-2 border-primary bg-primary/5 text-primary ';
-                  else if (answered) btnClass += 'bg-primary text-white ';
                   else if (flagged) btnClass += 'bg-amber-100 text-amber-600 ';
+                  else if (answered) btnClass += 'bg-primary text-white ';
                   else btnClass += 'bg-slate-100 text-slate-500 ';
                   return (
                     <button key={idx} type="button" onClick={() => goToQuestion(idx)} className={btnClass}>
@@ -518,7 +492,7 @@ export default function TopicQuizPage() {
                 transition={{ duration: 0.2 }}
                 className="bg-white rounded-3xl shadow-sm border border-primary/10 shadow-primary/5 overflow-hidden"
               >
-                <div className="p-8 md:p-12">
+                <div className="p-8 md:p-12 select-none">
                   <div className="flex items-center justify-between mb-6">
                     <span
                       className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${

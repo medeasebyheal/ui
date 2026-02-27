@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useProtectedContent } from '../../hooks/useProtectedContent';
 import { Check, ChevronDown, ChevronRight, ArrowRight, BookOpen, Info } from 'lucide-react';
 
 export default function StudentTopic() {
@@ -22,6 +23,8 @@ export default function StudentTopic() {
   const [submitting, setSubmitting] = useState(false);
   const [explanationOpen, setExplanationOpen] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
+
+  useProtectedContent();
 
   useEffect(() => {
     let cancelled = false;
@@ -202,7 +205,7 @@ export default function StudentTopic() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25 }}
-              className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-slate-100 overflow-hidden"
+              className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-slate-100 overflow-hidden select-none"
             >
               {/* Question indicator */}
               <div className="px-6 pt-6 pb-2 flex justify-between items-center flex-wrap gap-2">

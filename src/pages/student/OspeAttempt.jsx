@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import api from '../../api/client';
 import { recordRecentView } from '../../utils/recentViews';
+import { useProtectedContent } from '../../hooks/useProtectedContent';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
 import {
   Check,
@@ -68,6 +69,8 @@ export default function StudentOspeAttempt() {
   const stations = useMemo(() => getStations(ospe), [ospe]);
   const flatList = useMemo(() => getFlatQuestions(ospe), [ospe]);
   const totalQuestions = flatList.length;
+
+  useProtectedContent();
 
   useEffect(() => {
     api
@@ -243,7 +246,7 @@ export default function StudentOspeAttempt() {
 
     return (
       <div className="min-h-screen bg-primary/5">
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-4 py-8 select-none">
           <header className="flex flex-col md:flex-row gap-6 mb-10">
             <div className="flex-1 bg-white p-8 rounded-2xl shadow-sm border border-primary/20 flex flex-col md:flex-row items-center gap-8">
               <div className="relative w-32 h-32 flex items-center justify-center rounded-full bg-slate-100">
@@ -301,7 +304,7 @@ export default function StudentOspeAttempt() {
             </div>
           </header>
 
-          <section>
+          <section className="select-none">
             <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
               <BookOpen className="w-5 h-5 text-primary" />
               Station Review
@@ -499,7 +502,7 @@ export default function StudentOspeAttempt() {
                 )}
               </div>
 
-              <div className="p-6 md:p-8 grid md:grid-cols-2 gap-8">
+              <div className="p-6 md:p-8 grid md:grid-cols-2 gap-8 select-none">
                 {station.imageUrl && (
                   <div className="space-y-4">
                     <div
@@ -524,7 +527,7 @@ export default function StudentOspeAttempt() {
                   </div>
                 )}
 
-                <div className={`space-y-6 ${!station.imageUrl ? 'md:col-span-2' : ''} max-h-[600px] overflow-y-auto pr-2`}>
+                <div className={`space-y-6 ${!station.imageUrl ? 'md:col-span-2' : ''} max-h-[600px] overflow-y-auto pr-2 select-none`}>
                   {(station.questions || []).map((q, qi) => {
                     const gi = globalIdx++;
                     const isMcq = MCQ_TYPES.includes(q.type);

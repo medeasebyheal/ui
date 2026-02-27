@@ -4,6 +4,7 @@ import { ChevronRight, HelpCircle, PlayCircle, Play, Pause, Share2, CheckCircle,
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { recordRecentView } from '../../utils/recentViews';
+import { useProtectedContent } from '../../hooks/useProtectedContent';
 import { getYouTubeVideoId, getYouTubeEmbedUrl, getYouTubeThumbnail } from '../../utils/youtube';
 
 const LECTURE_PREVIEW_FALLBACK = 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1280&h=720&fit=crop';
@@ -141,12 +142,7 @@ export default function TopicDetailPage() {
     return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
   }, []);
 
-  // Disable right-click on the whole topic page
-  useEffect(() => {
-    const preventContextMenu = (e) => e.preventDefault();
-    document.addEventListener('contextmenu', preventContextMenu);
-    return () => document.removeEventListener('contextmenu', preventContextMenu);
-  }, []);
+  useProtectedContent();
 
   const handleVideoPlay = () => {
     if (ytPlayerRef.current?.playVideo) ytPlayerRef.current.playVideo();
@@ -248,7 +244,7 @@ export default function TopicDetailPage() {
 
             {/* Video Player - Second */}
             <div
-              className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group"
+              className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group select-none"
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
             >
               {videoPlaying && oneShotEmbedUrl ? (
@@ -341,7 +337,7 @@ export default function TopicDetailPage() {
             <hr className="my-8 border-slate-200" />
 
             {/* About Section */}
-            <div className="prose prose-slate max-w-none">
+            <div className="prose prose-slate max-w-none select-none">
               <h3 className="text-lg font-bold mb-4">About this topic</h3>
               {topic.content ? (
                 <div dangerouslySetInnerHTML={{ __html: topic.content }} className="text-slate-600 text-sm leading-relaxed" />

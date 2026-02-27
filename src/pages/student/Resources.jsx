@@ -1,42 +1,63 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { GraduationCap, Droplet, Wind, Heart, Brain, Dna, Accessibility, Activity, FlaskConical, Syringe, BarChart3, BookOpen, ChevronRight, ChevronDown, ChevronUp, Lock, FileText } from 'lucide-react';
+import {
+  Search,
+  History,
+  School,
+  ArrowRight,
+  BookOpen,
+  FileText,
+  Flame,
+  Lightbulb,
+  ClipboardList,
+  ClipboardCheck,
+  Accessibility,
+  Activity,
+  FlaskConical,
+  Dna,
+  Syringe,
+  BarChart3,
+  ChevronRight,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import { getRecentViews } from '../../utils/recentViews';
 
-const MODULE_ICONS = [
-  { Icon: GraduationCap, bg: 'bg-primary/10', text: 'text-primary' },
-  { Icon: Droplet, bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-500' },
-  { Icon: Wind, bg: 'bg-indigo-50 dark:bg-indigo-900/20', text: 'text-indigo-500' },
-  { Icon: Heart, bg: 'bg-rose-50 dark:bg-rose-900/20', text: 'text-rose-500' },
-  { Icon: Brain, bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-500' },
-  { Icon: Dna, bg: 'bg-violet-50 dark:bg-violet-900/20', text: 'text-violet-500' },
-];
-
 const SUBJECT_ICONS = [Accessibility, Activity, FlaskConical, Dna, Syringe, BarChart3];
-
-const RECENT_ICONS = ['book', 'file-text', 'book-open'];
-
-function getSubjectIconComponent(idx) {
-  return SUBJECT_ICONS[idx % SUBJECT_ICONS.length];
-}
+const SUBJECT_COLORS = [
+  { ring: 'ring-teal-500/20', accent: 'text-primary', hover: 'hover:border-primary' },
+  { ring: 'ring-rose-500/20', accent: 'text-rose-600', hover: 'hover:border-rose-500' },
+  { ring: 'ring-indigo-500/20', accent: 'text-indigo-600', hover: 'hover:border-indigo-500' },
+  { ring: 'ring-amber-500/20', accent: 'text-amber-600', hover: 'hover:border-amber-500' },
+];
 
 const MBBS_STUDY_TIPS = [
   'Read one topic from theory, then solve 10–15 MCQs on the same topic the same day. Application cements memory.',
   'Before bed, mentally recall the day’s topics (no notes). Sleep consolidates what you actively retrieve.',
-  'Use the “see one, do one, teach one” approach: watch a procedure, practice it, then explain it to a peer.',
+  'Use the "see one, do one, teach one" approach: watch a procedure, practice it, then explain it to a peer.',
   'Stick to one standard book per subject for first reading. Multiple sources too early cause confusion.',
-  'Clinical postings: write 2–3 case summaries daily. History, examination, and differentials improve with practice.',
-  'Revise anatomy with diagrams and cadaver correlation. Spatial memory is stronger than text-only learning.',
-  'Group study works best for viva: one asks, others answer. Rotate subjects so everyone gets questioned.',
   'Time your revision: 1st repeat in 24–48 hours, 2nd in a week, 3rd before exams. Spacing beats cramming.',
-  'For pharmacology, learn one drug per class (prototype), then compare others. Reduces overload.',
   'Practice writing answers under time limits. Exam speed comes from habit, not last-minute practice.',
 ];
 
-function getModuleStyle(idx) {
-  return MODULE_ICONS[idx % MODULE_ICONS.length];
+const PLACEHOLDER_IMAGES = {
+  module: 'https://placehold.co/800x400/0D9488/white?text=Module',
+};
+
+function getSubjectStyle(idx) {
+  const icon = SUBJECT_ICONS[idx % SUBJECT_ICONS.length];
+  const color = SUBJECT_COLORS[idx % SUBJECT_COLORS.length];
+  return { Icon: icon, ...color };
+}
+
+function timeAgo(ms) {
+  if (!ms) return '';
+  const sec = Math.floor((Date.now() - ms) / 1000);
+  if (sec < 60) return 'Just now';
+  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
+  if (sec < 604800) return `${Math.floor(sec / 86400)}d ago`;
+  return 'Earlier';
 }
 
 export default function StudentResources() {
@@ -46,24 +67,11 @@ export default function StudentResources() {
   const [subjectsByModule, setSubjectsByModule] = useState({});
   const [topicsBySubject, setTopicsBySubject] = useState({});
   const [ospesByModule, setOspesByModule] = useState({});
-  const [expanded, setExpanded] = useState({});
   const [loadingSubjects, setLoadingSubjects] = useState({});
   const [recentViews, setRecentViews] = useState([]);
-  const [studyTipIndex, setStudyTipIndex] = useState(() =>
-    Math.floor(Math.random() * MBBS_STUDY_TIPS.length)
-  );
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      setStudyTipIndex((prev) => {
-        if (MBBS_STUDY_TIPS.length <= 1) return prev;
-        let next = Math.floor(Math.random() * MBBS_STUDY_TIPS.length);
-        while (next === prev) next = Math.floor(Math.random() * MBBS_STUDY_TIPS.length);
-        return next;
-      });
-    }, 6000);
-    return () => clearInterval(t);
-  }, []);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [studyTipIndex, setStudyTipIndex] = useState(() => Math.floor(Math.random() * MBBS_STUDY_TIPS.length));
+  const [expandedModules, setExpandedModules] = useState({});
 
   const enrolledModuleIds = useMemo(() => {
     const ids = new Set();
@@ -83,11 +91,18 @@ export default function StudentResources() {
   const hasModuleAccess = (moduleId) => enrolledModuleIds.has(String(moduleId));
 
   useEffect(() => {
+    const t = setInterval(() => {
+      setStudyTipIndex((i) => (i + 1) % MBBS_STUDY_TIPS.length);
+    }, 6000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
     api.get('/content/years').then(({ data }) => setYears(data)).catch(() => setYears([]));
   }, []);
 
   useEffect(() => {
-    if (years.length === 0) return;
+    if (!years.length) return;
     years.forEach((year) => {
       api.get(`/content/years/${year._id}/modules`)
         .then(({ data }) => setModulesByYear((prev) => ({ ...prev, [year._id]: data })))
@@ -101,12 +116,6 @@ export default function StudentResources() {
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
   }, []);
-
-  const loadModules = async (yearId) => {
-    if (modulesByYear[yearId]) return;
-    const { data } = await api.get(`/content/years/${yearId}/modules`);
-    setModulesByYear((p) => ({ ...p, [yearId]: data }));
-  };
 
   const loadSubjects = async (moduleId) => {
     const id = String(moduleId);
@@ -142,326 +151,361 @@ export default function StudentResources() {
     }
   };
 
-  const toggle = (key) => setExpanded((e) => ({ ...e, [key]: !e[key] }));
+  const toggleModule = (modId) => {
+    setExpandedModules((prev) => ({ ...prev, [modId]: !prev[modId] }));
+    loadSubjects(modId);
+  };
 
-  const fallbackRecentItems = useMemo(() => {
-    const items = [];
-    for (const year of years) {
-      const mods = modulesByYear[year._id] || [];
-      for (const mod of mods) {
-        const subs = subjectsByModule[mod._id] || [];
-        for (const sub of subs) {
-          const tops = topicsBySubject[sub._id] || [];
-          for (const t of tops.slice(0, 1)) {
-            items.push({
-              type: 'topic',
-              id: t._id,
-              name: t.name,
-              url: `/student/modules/${mod._id}/subjects/${sub._id}/topics/${t._id}`,
-              meta: sub.name,
-              icon: RECENT_ICONS[items.length % RECENT_ICONS.length],
-              iconBg: 'bg-teal-50 dark:bg-teal-900/30',
-              iconColor: 'text-primary',
-            });
-            if (items.length >= 3) return items;
-          }
-        }
-        const ospes = ospesByModule[mod._id] || [];
-        for (const o of ospes.slice(0, 1)) {
-          items.push({
-            type: 'ospe',
-            id: o._id,
-            name: o.name,
-            url: `/student/ospes/${o._id}`,
-            meta: 'Practice Exam',
-            icon: 'receipt_long',
-            iconBg: 'bg-blue-50 dark:bg-blue-900/30',
-            iconColor: 'text-blue-600',
-          });
-          if (items.length >= 3) return items;
-        }
-      }
-    }
-    return items;
-  }, [years, modulesByYear, subjectsByModule, topicsBySubject, ospesByModule]);
+  const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'Student';
+  const yearLabel = user?.academicDetails?.year ? `MS ${user.academicDetails.year}` : 'Student';
+  const recentToShow = (recentViews.length > 0 ? recentViews : []).slice(0, 3);
 
-  const displayRecent = recentViews.length > 0 ? recentViews : fallbackRecentItems;
-  const recentToShow = displayRecent.slice(0, 3);
+  const matchSearch = (text) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.trim().toLowerCase();
+    return (text || '').toLowerCase().includes(q);
+  };
 
   return (
-    <div className="flex flex-1 min-w-0 w-full">
-      <div className="flex-1 min-w-0 max-w-6xl mx-auto w-full">
-        <div className="mb-8 rounded-2xl p-8 shadow-lg border border-white/30 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #26D0CE 0%, #1A938F 50%, #0D5C58 100%)' }}>
-          <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
-          <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white mb-2">My Resources</h1>
-              <p className="text-white/90 text-lg">Explore your medical curriculum modules and materials.</p>
-            </div>
-            <img src="/stato.png" alt="" className="w-24 h-auto sm:w-28 flex-shrink-0 opacity-95 drop-shadow-lg" aria-hidden />
+    <div className="flex flex-1 min-w-0 w-full bg-[#F8FAFC] dark:bg-[#0F172A]">
+      <div className="flex-1 min-w-0 p-6 lg:p-8 overflow-y-auto custom-scrollbar">
+        {/* Header */}
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">My Resources</h2>
+            <p className="text-slate-500 dark:text-slate-400">Welcome back, {displayName}. Explore your visual curriculum.</p>
           </div>
-        </div>
+          <div className="relative w-full sm:w-auto">
+            <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search topics..."
+              className="pl-10 pr-4 py-2.5 rounded-full border-0 bg-white dark:bg-[#1E293B] shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#0D9488] w-full sm:w-64 outline-none transition-all text-slate-900 dark:text-slate-100 placeholder-slate-400"
+            />
+          </div>
+        </header>
 
+        {/* Recently Viewed */}
         {recentToShow.length > 0 && (
           <section className="mb-10">
-            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Recently Viewed</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white mb-4">
+              <History className="w-5 h-5 text-[#0D9488]" />
+              Recently Viewed
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {recentToShow.map((item, idx) => (
                 <Link
                   key={`${item.type}-${item.id}-${idx}`}
                   to={item.url}
-                  className="bg-primary/5 dark:bg-slate-800 p-4 rounded-xl border border-primary/20 dark:border-slate-700 shadow-sm flex items-center gap-4 hover:bg-primary/5 hover:border-primary/30 transition-all cursor-pointer group"
+                  className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden group cursor-pointer hover:shadow-md transition-all"
                 >
-                  <div
-                    className={`w-12 h-12 ${item.iconBg || 'bg-teal-50 dark:bg-teal-900/30'} rounded-lg flex items-center justify-center ${item.iconColor || 'text-primary'}`}
-                  >
-                    <BookOpen className="w-6 h-6" />
+                  <div className="h-24 w-full relative overflow-hidden bg-gradient-to-br from-[#0D9488]/20 to-[#0D9488]/5">
+                    <div className="absolute inset-0 card-image-overlay" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <BookOpen className="w-12 h-12 text-[#0D9488]/40" />
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold group-hover:text-primary transition-colors truncate">{item.name}</h3>
-                    <p className="text-xs text-slate-500 truncate">{item.meta || 'Resource'}</p>
+                  <div className="p-4 flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">{item.name}</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {item.meta || 'Resource'} {item.viewedAt ? `• ${timeAgo(item.viewedAt)}` : ''}
+                      </p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-[#0D9488] transition-colors shrink-0 ml-2" />
                   </div>
-                  <ChevronRight className="w-5 h-5 text-slate-300 flex-shrink-0" />
                 </Link>
               ))}
             </div>
           </section>
         )}
 
-        <section className="space-y-4">
-          {years.map((year) => (
-            <div key={year._id}>
-              <div className="flex items-center justify-between mb-2" onClick={() => loadModules(year._id)}>
-                <h2 className="text-base font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">
+        {/* Medical Curriculum by Year */}
+        <section className="space-y-10">
+          {years.map((year) => {
+            const yearModules = modulesByYear[year._id] || [];
+            const accessibleModules = yearModules.filter((mod) => hasModuleAccess(mod._id));
+            if (yearModules.length > 0 && accessibleModules.length === 0) return null;
+
+            return (
+              <div key={year._id}>
+                <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
+                  <School className="w-5 h-5 text-[#0D9488]" />
                   Medical Curriculum {year.name}
-                </h2>
-              </div>
-              {modulesByYear[year._id] ? (
-                (modulesByYear[year._id] || []).map((mod, modIdx) => {
-                  const modId = String(mod._id);
-                  const isExpanded = expanded[`m-${modId}`];
-                  const hasAccess = hasModuleAccess(mod._id);
-                  const subjects = subjectsByModule[modId] || [];
-                  const ospes = ospesByModule[modId] || [];
-                  const loading = loadingSubjects[modId];
-                  const style = getModuleStyle(modIdx);
-                  const ModuleIcon = style.Icon;
-                  const totalTopics = subjects.reduce((acc, s) => acc + (topicsBySubject[String(s._id)]?.length || 0), 0);
+                </h3>
 
-                  return (
-                    <div
-                      key={mod._id}
-                      className={`bg-white dark:bg-slate-900 border rounded-2xl overflow-hidden shadow-sm mb-4 ${isExpanded ? 'border-primary/20 border-t-4 border-t-primary' : 'border-primary/20 dark:border-slate-800'}`}
-                    >
-                      <div
-                        className={`p-6 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b ${isExpanded ? 'border-primary/20' : 'border-slate-200 dark:border-slate-800'}`}
-                        onClick={() => {
-                          toggle(`m-${modId}`);
-                          loadSubjects(modId);
-                        }}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 ${style.bg} rounded-xl flex items-center justify-center ${style.text}`}>
-                            <ModuleIcon className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-lg text-slate-900 dark:text-white">{mod.name}</h3>
-                            <div className="flex items-center gap-4 mt-1 flex-wrap">
-                              <span className="text-[11px] text-slate-400">• {totalTopics} Lessons</span>
-                              <span className="text-[11px] text-slate-400">• {ospes.length} Resource{ospes.length !== 1 ? 's' : ''}</span>
-                            </div>
-                          </div>
-                        </div>
-                        {isExpanded ? (
-                          <ChevronUp className="w-5 h-5 text-slate-400" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-slate-400" />
-                        )}
-                      </div>
+                {!modulesByYear[year._id] ? (
+                  <div className="bg-white dark:bg-[#1E293B] rounded-3xl border border-slate-100 dark:border-slate-800 p-12 text-center">
+                    <p className="text-slate-500 dark:text-slate-400 animate-pulse">Loading modules…</p>
+                  </div>
+                ) : (
+                  accessibleModules
+                    .filter((mod) => matchSearch(mod.name) || matchSearch(mod.description))
+                    .map((mod, modIdx) => {
+                      const modId = String(mod._id);
+                      const isExpanded = expandedModules[modId];
+                      const subjects = subjectsByModule[modId] || [];
+                      const loading = loadingSubjects[modId];
+                      const ospes = ospesByModule[modId] || [];
+                      const moduleImage = mod.imageUrl || PLACEHOLDER_IMAGES.module;
 
-                      {isExpanded && (
-                        <div className="p-6 space-y-8 bg-primary/5 dark:bg-slate-800/30">
-                          {loading && (
-                            <p className="text-slate-500 dark:text-slate-400 text-sm py-4 text-center">Loading subjects and topics…</p>
-                          )}
-                          {!loading && subjects.length === 0 && (
-                            <p className="text-slate-500 dark:text-slate-400 text-sm py-4">No subjects in this module yet.</p>
-                          )}
-                          {!loading && subjects.length > 0 && subjects.map((sub, subIdx) => {
-                            const topics = (topicsBySubject[String(sub._id)] || []).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-                            const SubIcon = getSubjectIconComponent(subIdx);
-                            const subjectUrl = `/student/modules/${mod._id}/subjects/${sub._id}`;
-
-                            return (
-                              <div key={sub._id} className="mb-8 last:mb-0">
-                                <Link
-                                  to={subjectUrl}
-                                  className="flex items-center justify-between rounded-xl px-4 py-3 mb-4 bg-white dark:bg-slate-800/50 border border-primary/20 shadow-sm group/subject cursor-pointer hover:border-primary/40 hover:shadow-md transition-all"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                                      <SubIcon className="w-5 h-5 text-primary" />
-                                    </div>
-                                    <div>
-                                      <h4 className="font-bold text-slate-900 dark:text-white group-hover/subject:text-primary transition-colors">{sub.name}</h4>
-                                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                        {topics.length} Topic{topics.length !== 1 ? 's' : ''} · View all
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <ChevronRight className="w-5 h-5 text-slate-400 group-hover/subject:text-primary transition-colors shrink-0" />
-                                </Link>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pl-2">
-                                  {topics.map((topic, topicIdx) => {
-                                    const accessible = hasAccess;
-                                    const Wrapper = accessible ? Link : 'div';
-                                    const wrapperProps = accessible
-                                      ? { to: `/student/modules/${mod._id}/subjects/${sub._id}/topics/${topic._id}` }
-                                      : {};
-
-                                    return (
-                                      <Wrapper
-                                        key={topic._id}
-                                        {...wrapperProps}
-                                        className={`flex items-start gap-3 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-primary/40 hover:shadow-md hover:bg-primary/5 dark:hover:bg-primary/10 transition-all group cursor-pointer ${!accessible ? 'opacity-70' : ''}`}
-                                      >
-                                        <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
-                                          {accessible ? (
-                                            <BookOpen className="w-5 h-5 text-primary" />
-                                          ) : (
-                                            <Lock className="w-5 h-5 text-slate-400" />
-                                          )}
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                          <h5 className={`text-sm font-bold text-slate-900 dark:text-white mb-1 line-clamp-2 ${accessible ? 'group-hover:text-primary transition-colors' : ''}`}>
-                                            {topic.name}
-                                          </h5>
-                                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-2">
-                                            {topic.description || 'Study material for this topic.'}
-                                          </p>
-                                          <span className={`inline-flex items-center text-[11px] font-bold uppercase tracking-wide gap-1 ${accessible ? 'text-primary' : 'text-slate-400'}`}>
-                                            {accessible ? (
-                                              <>
-                                                Open
-                                                <ChevronRight className="w-3.5 h-3.5" />
-                                              </>
-                                            ) : (
-                                              'Locked'
-                                            )}
-                                          </span>
-                                        </div>
-                                      </Wrapper>
-                                    );
-                                  })}
+                      return (
+                        <div
+                          key={mod._id}
+                          className="bg-white dark:bg-[#1E293B] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden mb-10"
+                        >
+                          {/* Module hero */}
+                          <div className="relative h-48 group">
+                            <img
+                              src={moduleImage}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.src = PLACEHOLDER_IMAGES.module;
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 to-transparent flex flex-col justify-end p-6 lg:p-8">
+                              <div className="flex justify-between items-end w-full gap-4">
+                                <div>
+                                  <span className="bg-[#0D9488]/90 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-2 inline-block">
+                                    {year.name}
+                                  </span>
+                                  <h4 className="text-2xl lg:text-3xl font-bold text-white">{mod.name}</h4>
+                                  <p className="text-slate-200 text-sm mt-1 line-clamp-1">
+                                    {mod.description || 'Subjects and topics'}
+                                  </p>
                                 </div>
                               </div>
-                            );
-                          })}
+                            </div>
+                          </div>
 
-                          {!loading && ospes.length > 0 && (
-                            <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
-                              {ospes.map((ospe) => (
-                                <div
-                                  key={ospe._id}
-                                  className="flex items-center justify-between py-4 first:pt-0"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-blue-600">
-                                      <FileText className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                      <h5 className="text-sm font-semibold text-slate-900 dark:text-white">{ospe.name}</h5>
-                                      <p className="text-xs text-slate-500">
-                                        {ospe.description || 'Objective Structured Practical Examination'}
-                                      </p>
+                          <div className="p-6 lg:p-8">
+                            <button
+                              type="button"
+                              onClick={() => toggleModule(modId)}
+                              className="flex items-center gap-2 text-[#0D9488] font-semibold hover:underline mb-6"
+                            >
+                              {isExpanded ? 'Hide subjects' : 'Browse subjects & topics'}
+                              <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                            </button>
+
+                            {isExpanded && (
+                              <div className="space-y-10">
+                                {loading && (
+                                  <p className="text-slate-500 dark:text-slate-400 text-sm py-8 text-center">Loading subjects and topics…</p>
+                                )}
+                                {!loading && subjects.length === 0 && (
+                                  <p className="text-slate-500 dark:text-slate-400 text-sm py-8 text-center">No subjects in this module yet.</p>
+                                )}
+                                {!loading &&
+                                  subjects.map((sub, subIdx) => {
+                                    const topics = (topicsBySubject[String(sub._id)] || []).sort((a, b) =>
+                                      (a.name || '').localeCompare(b.name || '')
+                                    );
+                                    const subjectStyle = getSubjectStyle(subIdx);
+                                    const SubIcon = subjectStyle.Icon;
+                                    const subjectUrl = `/student/modules/${mod._id}/subjects/${sub._id}`;
+
+                                    return (
+                                      <div
+                                        key={sub._id}
+                                        className={subIdx > 0 ? 'pt-8 border-t border-slate-100 dark:border-slate-800' : ''}
+                                      >
+                                        <div className="flex justify-between items-center mb-6">
+                                          <div className="flex items-center gap-4">
+                                            <div className={`w-10 h-10 rounded-lg overflow-hidden ring-2 ${subjectStyle.ring} bg-white dark:bg-slate-800 flex items-center justify-center`}>
+                                              <SubIcon className={`w-5 h-5 ${subjectStyle.accent}`} />
+                                            </div>
+                                            <div>
+                                              <h5 className="text-xl font-bold text-slate-900 dark:text-white">{sub.name}</h5>
+                                              <p className="text-xs text-slate-400">
+                                                {topics.length} topic{topics.length !== 1 ? 's' : ''}
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <Link
+                                            to={subjectUrl}
+                                            className="text-sm font-semibold text-[#0D9488] hover:underline flex items-center gap-1"
+                                          >
+                                            View all <ArrowRight className="w-4 h-4" />
+                                          </Link>
+                                        </div>
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                          {topics.slice(0, 6).map((topic) => (
+                                            <Link
+                                              key={topic._id}
+                                              to={`/student/modules/${mod._id}/subjects/${sub._id}/topics/${topic._id}`}
+                                              className={`group relative bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden ${subjectStyle.hover} transition-all flex flex-col`}
+                                            >
+                                              <div className="h-32 relative bg-slate-100 dark:bg-slate-800">
+                                                <div className="absolute inset-0 bg-gradient-to-br from-[#0D9488]/10 to-transparent group-hover:from-transparent transition-all" />
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                  <BookOpen className="w-12 h-12 text-slate-300 dark:text-slate-600" />
+                                                </div>
+                                              </div>
+                                              <div className="p-5 flex-1 flex flex-col">
+                                                <h6 className="font-bold text-slate-900 dark:text-white mb-1 line-clamp-1">{topic.name}</h6>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 flex-1">
+                                                  {topic.description || 'Study material for this topic.'}
+                                                </p>
+                                                <span className="text-[#0D9488] text-xs font-bold flex items-center gap-1 uppercase tracking-wider group-hover:gap-2 transition-all">
+                                                  Open module <ChevronRight className="w-3.5 h-3.5" />
+                                                </span>
+                                              </div>
+                                            </Link>
+                                          ))}
+                                        </div>
+                                        {topics.length > 6 && (
+                                          <div className="mt-4">
+                                            <Link
+                                              to={subjectUrl}
+                                              className="text-sm font-semibold text-[#0D9488] hover:underline"
+                                            >
+                                              +{topics.length - 6} more in {sub.name}
+                                            </Link>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+
+                                {/* OSPE block: once per module */}
+                                {!loading && ospes.length > 0 && (
+                                  <div className="pt-8 mt-8 border-t border-slate-100 dark:border-slate-800">
+                                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">OSPE Practice</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                      {ospes.map((ospe) => (
+                                        <Link
+                                          key={ospe._id}
+                                          to={`/student/ospes/${ospe._id}`}
+                                          className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/40 hover:border-[#0D9488] transition-all"
+                                        >
+                                          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+                                            <FileText className="w-5 h-5" />
+                                          </div>
+                                          <div className="min-w-0 flex-1">
+                                            <h6 className="font-semibold text-slate-900 dark:text-white truncate">{ospe.name}</h6>
+                                            <p className="text-xs text-slate-500 truncate">{ospe.description || 'Practice exam'}</p>
+                                          </div>
+                                          <span className="text-xs font-bold text-[#0D9488] shrink-0">Start</span>
+                                        </Link>
+                                      ))}
                                     </div>
                                   </div>
-                                  {hasAccess ? (
-                                    <Link
-                                      to={`/student/ospes/${ospe._id}`}
-                                      className="px-4 py-2 text-xs font-bold border border-blue-200 dark:border-blue-900 text-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                                    >
-                                      START PRACTICE
-                                    </Link>
-                                  ) : (
-                                    <span className="text-xs text-slate-400 font-medium">Locked</span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="bg-white dark:bg-slate-900 border border-primary/20 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm p-8">
-                  <p className="text-slate-500 text-center animate-pulse">Loading modules for {year.name}...</p>
-                </div>
-              )}
-            </div>
-          ))}
+                      );
+                    })
+                )}
+              </div>
+            );
+          })}
         </section>
 
         {years.length === 0 && (
           <div className="py-16 text-center">
-            <p className="text-slate-500">No resources available.</p>
+            <p className="text-slate-500 dark:text-slate-400">No resources available.</p>
           </div>
         )}
       </div>
 
-      <aside className="hidden xl:flex w-72 flex-shrink-0 flex-col p-6 border-l border-primary/10 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-y-auto">
-        <h2 className="text-sm font-bold text-slate-900 dark:text-white mb-6">Upcoming Milestones</h2>
-        <div className="space-y-6">
-          <div className="relative pl-6 pb-6 border-l-2 border-slate-100 dark:border-slate-800">
-            <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-primary border-4 border-white dark:border-slate-900" />
-            <p className="text-[10px] font-bold text-primary uppercase mb-1">Next up</p>
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Continue Learning</h4>
-            <p className="text-xs text-slate-500 mt-1">Pick up where you left off from your curriculum.</p>
-          </div>
-          <div className="relative pl-6 pb-6 border-l-2 border-slate-100 dark:border-slate-800">
-            <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-300 border-4 border-white dark:border-slate-900" />
-            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">OSPE Practice</p>
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Practice Exams</h4>
-            <p className="text-xs text-slate-500 mt-1">Complete OSPE modules to prepare for assessments.</p>
-          </div>
-          <div className="relative pl-6 pb-2 border-l-2 border-slate-100 dark:border-slate-800">
-            <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-300 border-4 border-white dark:border-slate-900" />
-            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Stay consistent</p>
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Study Streak</h4>
-            <p className="text-xs text-slate-500 mt-1">Review topics regularly for better retention.</p>
-          </div>
-        </div>
-
-        <div className="mt-10 p-4 bg-primary/10 dark:bg-teal-900/20 rounded-xl border border-primary/20 dark:border-teal-900/30 overflow-hidden">
-          <h4 className="text-sm font-bold text-primary mb-2">Study Tip</h4>
-          <p
-            key={studyTipIndex}
-            className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed min-h-[3.5rem] study-tip-animate"
-          >
-            {MBBS_STUDY_TIPS[studyTipIndex]}
-          </p>
-        </div>
-
-        {!user?.packages?.length && (
-          <div className="mt-auto pt-10">
-            <div className="bg-slate-900 text-white p-5 rounded-2xl relative overflow-hidden">
-              <div className="relative z-10">
-                <h4 className="text-sm font-bold mb-1">Pro Subscription</h4>
-                <p className="text-[11px] text-slate-400 mb-4">Get full access to all modules, OSPE practice, and premium content with a Pro plan.</p>
-                <Link
-                  to="/packages"
-                  className="block w-full py-2 bg-white text-slate-900 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors text-center"
-                >
-                  SUBSCRIBE
-                </Link>
+      {/* Right sidebar */}
+      <aside className="hidden xl:flex w-80 flex-shrink-0 flex-col border-l border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-8 overflow-y-auto custom-scrollbar">
+        <div className="space-y-8">
+          <div className="text-center pb-8 border-b border-slate-100 dark:border-slate-800">
+            <div className="relative inline-block mb-4">
+              <div className="w-24 h-24 rounded-full border-4 border-[#0D9488]/20 p-1 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-2xl font-bold text-[#0D9488] overflow-hidden">
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  (displayName[0] || 'S').toUpperCase()
+                )}
               </div>
-              <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-primary/20 rounded-full blur-2xl" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{displayName}</h3>
+            <p className="text-slate-500 dark:text-slate-400">Medical Student • {yearLabel}</p>
+          </div>
+
+          <div className="bg-[#0D9488]/5 dark:bg-[#0D9488]/10 p-6 rounded-3xl border border-[#0D9488]/10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-[#0D9488] p-2 rounded-lg text-white">
+                <Flame className="w-5 h-5" />
+              </div>
+              <h4 className="font-bold text-slate-900 dark:text-white">Study Streak</h4>
+            </div>
+            <div className="flex items-end gap-1 mb-4">
+              <span className="text-4xl font-bold text-[#0D9488]">—</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400 font-medium pb-1">Days</span>
+            </div>
+            <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mb-2 overflow-hidden">
+              <div className="bg-[#0D9488] h-full w-[30%] rounded-full" />
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Keep learning to build your streak.</p>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="font-bold text-slate-900 dark:text-white flex items-center justify-between">
+              Upcoming
+              <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500 uppercase tracking-widest font-bold">
+                2
+              </span>
+            </h4>
+            <div className="space-y-3">
+              <Link
+                to="/student/resources"
+                className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center shrink-0">
+                  <ClipboardList className="w-5 h-5" />
+                </div>
+                <div className="overflow-hidden min-w-0">
+                  <p className="text-sm font-bold truncate">OSPE Practice</p>
+                  <p className="text-xs text-slate-500">Complete a module</p>
+                </div>
+              </Link>
+              <Link
+                to="/student/resources"
+                className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center shrink-0">
+                  <ClipboardCheck className="w-5 h-5" />
+                </div>
+                <div className="overflow-hidden min-w-0">
+                  <p className="text-sm font-bold truncate">Topic Quiz</p>
+                  <p className="text-xs text-slate-500">From your subjects</p>
+                </div>
+              </Link>
             </div>
           </div>
-        )}
+
+          <div className="bg-amber-50 dark:bg-amber-900/20 p-6 rounded-3xl border border-amber-100 dark:border-amber-900/30">
+            <div className="flex items-center gap-2 mb-3 text-amber-700 dark:text-amber-500">
+              <Lightbulb className="w-5 h-5" />
+              <h4 className="font-bold">Study Tip</h4>
+            </div>
+            <p className="text-sm text-amber-800/90 dark:text-amber-200/90 leading-relaxed italic">
+              &ldquo;{MBBS_STUDY_TIPS[studyTipIndex]}&rdquo;
+            </p>
+          </div>
+
+          {!user?.packages?.length && (
+            <div className="bg-slate-900 text-white p-5 rounded-2xl">
+              <h4 className="text-sm font-bold mb-1">Pro Subscription</h4>
+              <p className="text-xs text-slate-400 mb-4">Get full access to all modules and OSPE practice.</p>
+              <Link
+                to="/packages"
+                className="block w-full py-2.5 bg-white text-slate-900 rounded-lg text-sm font-bold hover:bg-slate-100 transition-colors text-center"
+              >
+                SUBSCRIBE
+              </Link>
+            </div>
+          )}
+        </div>
       </aside>
     </div>
   );

@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, Send } from 'lucide-react';
+import api from '../../api/client';
+import { useProtectedContent } from '../../hooks/useProtectedContent';
 
 const LOADING_PHRASES = [
   'EaseGPT is thinking... 🤔',
@@ -10,7 +12,6 @@ const LOADING_PHRASES = [
   'Putting it in simple words... 💡',
   'One moment, polishing the answer... 🌟',
 ];
-import api from '../../api/client';
 
 const MAX_INPUT_LENGTH = 500;
 
@@ -81,6 +82,8 @@ const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, o
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const firstMessageRequestStartedRef = useRef(false);
+
+  useProtectedContent();
 
   useEffect(() => {
     if (!loading) {
@@ -285,7 +288,7 @@ const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, o
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[200px] max-h-[40vh]">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[200px] max-h-[40vh] select-none">
                 {messages.length === 0 && !loading && (
                   <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">
                     Ask about this question: why your answer was wrong, why the correct answer is right, or the underlying concept.

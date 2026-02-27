@@ -95,7 +95,26 @@ export function YearForm({ year, onSave, onClose, programId: programIdProp }) {
 export function ModuleForm({ yearId, module, onSave, onClose }) {
   const [name, setName] = useState(module?.name ?? '');
   const [imageUrl, setImageUrl] = useState(module?.imageUrl ?? '');
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const handleFileChange = async (e) => {
+    const file = e.target?.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      return;
+    }
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('image', file);
+      const { data } = await api.post('/admin/upload-image', form);
+      setImageUrl(data.url);
+    } catch (_) {}
+    setUploading(false);
+    e.target.value = '';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -116,9 +135,18 @@ export function ModuleForm({ yearId, module, onSave, onClose }) {
           <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" placeholder="e.g. Foundation Module" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-          <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="https://..." />
-          <p className="text-xs text-gray-500 mt-1">Optional. Used on the public Modules page.</p>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+          <p className="text-xs text-gray-500 mb-1">Optional. Used on the public Modules page.</p>
+          <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} className="w-full px-3 py-2 border rounded-lg text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-primary/10 file:text-primary file:font-medium" />
+          {uploading && <p className="text-xs text-gray-500 mt-1">Uploading…</p>}
+          {imageUrl && (
+            <div className="mt-2 flex items-center gap-2">
+              <img src={imageUrl} alt="" className="max-h-32 rounded object-contain border border-gray-200" />
+              <button type="button" onClick={() => setImageUrl('')} className="text-sm text-red-600 hover:underline">
+                Remove
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
