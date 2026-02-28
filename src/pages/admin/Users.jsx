@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { UserPlus, Search, Eye, Pencil, BadgeCheck, Trash2 } from 'lucide-react';
+import { UserPlus, Search, Eye, Pencil, BadgeCheck, Trash2, Ban, Unlock } from 'lucide-react';
 import api from '../../api/client';
 import Modal from '../../components/admin/Modal';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
@@ -34,6 +34,7 @@ export default function AdminUsers() {
   const [viewUser, setViewUser] = useState(null);
   const [editUser, setEditUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [actionConfirm, setActionConfirm] = useState(null);
   const [saving, setSaving] = useState(false);
   const [verifyError, setVerifyError] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', contact: '' });
@@ -98,6 +99,24 @@ export default function AdminUsers() {
       setTotal((t) => Math.max(0, t - 1));
       setDeleteConfirm(null);
     } catch (_) {}
+  };
+
+  const handleBlock = async (id) => {
+    try {
+      const { data } = await api.patch(`/users/${id}/block`);
+      setUsers((prev) => prev.map((u) => (u._id === data._id ? data : u)));
+      if (viewUser?._id === data._id) setViewUser(data);
+    } catch (_) {}
+    setActionConfirm(null);
+  };
+
+  const handleUnblock = async (id) => {
+    try {
+      const { data } = await api.patch(`/users/${id}/unblock`);
+      setUsers((prev) => prev.map((u) => (u._id === data._id ? data : u)));
+      if (viewUser?._id === data._id) setViewUser(data);
+    } catch (_) {}
+    setActionConfirm(null);
   };
 
   const openEdit = (u) => {
@@ -224,7 +243,26 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">{formatDate(u.createdAt)}</td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1">
+                        {!u.isBlocked ? (
+                          <button
+                            type="button"
+                            onClick={() => setActionConfirm({ type: 'block', user: u })}
+                            className="p-2 text-slate-400 hover:text-slate-700 transition-colors rounded-lg hover:bg-slate-100"
+                            title="Block"
+                          >
+                            <Ban className="w-5 h-5" />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setActionConfirm({ type: 'unblock', user: u })}
+                            className="p-2 text-slate-400 hover:text-emerald-600 transition-colors rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/10"
+                            title="Unblock"
+                          >
+                            <Unlock className="w-5 h-5" />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => setViewUser(u)}
@@ -412,6 +450,25 @@ export default function AdminUsers() {
         confirmLabel="Delete"
         onConfirm={handleDelete}
         danger
+      />
+      <ConfirmDialog
+        open={!!actionConfirm}
+        onClose={() => setActionConfirm(null)}
+        title={actionConfirm?.type === 'block' ? 'Block user' : 'Unblock user'}
+        message={
+          actionConfirm
+            ? actionConfirm.type === 'block'
+              ? `Block ${actionConfirm.user?.name || actionConfirm.user?.email}? The user will be unable to log in.`
+              : `Unblock ${actionConfirm.user?.name || actionConfirm.user?.email}?`
+            : ''
+        }
+        confirmLabel={actionConfirm?.type === 'block' ? 'Block' : 'Unblock'}
+        onConfirm={() => {
+          if (!actionConfirm) return;
+          if (actionConfirm.type === 'block') handleBlock(actionConfirm.user._id);
+          else handleUnblock(actionConfirm.user._id);
+        }}
+        danger={actionConfirm?.type === 'block'}
       />
     </div>
   );

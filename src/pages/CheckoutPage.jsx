@@ -61,10 +61,6 @@ export default function CheckoutPage() {
       navigate('/packages');
       return;
     }
-    if (user?.packages?.length > 0) {
-      navigate('/student', { replace: true, state: { message: 'You already have an active package.' } });
-      return;
-    }
     api.get('/packages').then(({ data }) => setPackages(data)).catch(() => setPackages([])).finally(() => setLoading(false));
   }, [user, planKey, navigate]);
 
@@ -133,6 +129,30 @@ export default function CheckoutPage() {
     if (!pkg) {
       setError('Package not available for selected year/part. Contact admin.');
       return;
+    }
+    // Client-side guard: check user's active packages to prevent duplicate/upgrade purchases
+    try {
+      const userPackages = user?.packages || [];
+      const pkgYear = pkg.year;
+      const pkgType = pkg.type;
+
+      // Duplicate exact package
+      if (userPackages.some((up) => up.package && up.package.year === pkgYear && up.package.type === pkgType)) {
+        setError('You already have this package active.');
+        return;
+      }
+      // If trying to buy full-year but user has a half for same year -> block
+      if (pkgType === 'year_full' && userPackages.some((up) => up.package && up.package.year === pkgYear && (up.package.type === 'year_half_part1' || up.package.type === 'year_half_part2'))) {
+        setError('Cannot upgrade to full-year when a half-year package is active.');
+        return;
+      }
+      // If trying to buy a half but user already has full-year for same year -> block
+      if ((pkgType === 'year_half_part1' || pkgType === 'year_half_part2') && userPackages.some((up) => up.package && up.package.year === pkgYear && up.package.type === 'year_full')) {
+        setError('You already have the full-year package for this year.');
+        return;
+      }
+    } catch (err) {
+      // if anything goes wrong reading user packages, allow server to enforce rules
     }
     setSubmitting(true);
     try {

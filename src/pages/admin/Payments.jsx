@@ -61,6 +61,13 @@ export default function AdminPayments() {
       setMenuOpen(null);
     } catch (_) {}
   };
+ 
+  // Show a confirmation dialog before approving a payment
+  const handleApproveWithConfirm = async (id) => {
+    const confirmed = window.confirm('Are you sure you want to approve this payment? This action cannot be undone.');
+    if (!confirmed) return;
+    await handleVerify(id, 'approved');
+  };
 
   const handleRejectClick = (paymentId) => {
     setRejectModal({ paymentId, reason: '' });
@@ -262,7 +269,7 @@ export default function AdminPayments() {
                             <>
                               <button
                                 type="button"
-                                onClick={() => handleVerify(p._id, 'approved')}
+                                onClick={() => handleApproveWithConfirm(p._id)}
                                 className="w-full px-4 py-2 text-left text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                               >
                                 Approve

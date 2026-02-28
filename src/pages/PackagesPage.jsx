@@ -17,10 +17,6 @@ export default function PackagesPage() {
       return;
     }
     if (user) {
-      if (user.packages?.length > 0) {
-        navigate('/student', { state: { message: 'You already have an active package.' } });
-        return;
-      }
       navigate(`/checkout?plan=${plan.planKey}`);
     } else {
       setAuthModalPlanKey(plan.planKey);
