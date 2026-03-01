@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, HelpCircle, PlayCircle, Play, Pause, Share2, CheckCircle, FileText, Link as LinkIcon, Download, Loader2, Maximize, Minimize } from 'lucide-react';
+import { ChevronRight, HelpCircle, PlayCircle, Play, Share2, CheckCircle, FileText, Link as LinkIcon, Download, Loader2 } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { recordRecentView } from '../../utils/recentViews';
 import { useProtectedContent } from '../../hooks/useProtectedContent';
-import { getYouTubeVideoId, getYouTubeEmbedUrl, getYouTubeThumbnail } from '../../utils/youtube';
+import ControlledYouTubePlayer from '../../components/student/ControlledYouTubePlayer';
+import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '../../utils/youtube';
 
 const LECTURE_PREVIEW_FALLBACK = 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1280&h=720&fit=crop';
 
@@ -18,14 +19,11 @@ export default function TopicDetailPage() {
   const [canUseFreeTrialForThisTopic, setCanUseFreeTrialForThisTopic] = useState(false);
   const [useFreeTrial, setUseFreeTrial] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
-  const [videoPaused, setVideoPaused] = useState(false);
-  const [ytApiReady, setYtApiReady] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+ 
   const [loading, setLoading] = useState(true);
   const [resources, setResources] = useState([]);
   const [downloadingPdf, setDownloadingPdf] = useState(null);
-  const videoContainerRef = useRef(null);
-  const ytPlayerRef = useRef(null);
+  // video player is handled by ControlledYouTubePlayer
 
   const handleResourceClick = async (e, res) => {
     if (res.type !== 'pdf') return;
@@ -92,75 +90,11 @@ export default function TopicDetailPage() {
       .catch(() => setResources([]));
   }, [topicId]);
 
-  // Load YouTube IFrame API once
-  useEffect(() => {
-    if (window.YT && window.YT.Player) {
-      setYtApiReady(true);
-      return;
-    }
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    const firstScript = document.getElementsByTagName('script')[0];
-    firstScript?.parentNode?.insertBefore(tag, firstScript);
-    window.onYouTubeIframeAPIReady = () => setYtApiReady(true);
-    return () => { window.onYouTubeIframeAPIReady = null; };
-  }, []);
+  // ControlledYouTubePlayer will load the YouTube IFrame API when needed
 
-  const videoId = topic?.videoUrl ? getYouTubeVideoId(topic.videoUrl) : null;
-
-  // Create/destroy YouTube player when video is shown/hidden
-  useEffect(() => {
-    if (!ytApiReady || !videoId || !videoPlaying || !videoContainerRef.current) return;
-    const opts = {
-      videoId,
-      playerVars: {
-        autoplay: 1,
-        controls: 0,
-        disablekb: 1,
-        fs: 0,
-        modestbranding: 1,
-        rel: 0,
-        iv_load_policy: 3,
-      },
-      events: {
-        onReady: (e) => { e.target.playVideo(); setVideoPaused(false); },
-      },
-    };
-    ytPlayerRef.current = new window.YT.Player(videoContainerRef.current, opts);
-    return () => {
-      if (ytPlayerRef.current && ytPlayerRef.current.destroy) {
-        ytPlayerRef.current.destroy();
-        ytPlayerRef.current = null;
-      }
-    };
-  }, [ytApiReady, videoId, videoPlaying]);
-
-  // Fullscreen change listener
-  useEffect(() => {
-    const onFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', onFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
-  }, []);
+  // Video player creation managed by ControlledYouTubePlayer component
 
   useProtectedContent();
-
-  const handleVideoPlay = () => {
-    if (ytPlayerRef.current?.playVideo) ytPlayerRef.current.playVideo();
-    setVideoPaused(false);
-  };
-  const handleVideoPause = () => {
-    if (ytPlayerRef.current?.pauseVideo) ytPlayerRef.current.pauseVideo();
-    setVideoPaused(true);
-  };
-  const handleFullscreen = () => {
-    const el = videoContainerRef.current?.closest('.aspect-video');
-    if (!el) return;
-    if (document.fullscreenElement) {
-      document.exitFullscreen?.();
-    } else {
-      el.requestFullscreen?.();
-    }
-  };
 
   const handleUseFreeTrial = () => {
     setUseFreeTrial(true);
@@ -248,47 +182,11 @@ export default function TopicDetailPage() {
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
             >
               {videoPlaying && oneShotEmbedUrl ? (
-                <>
-                  <div
-                    ref={videoContainerRef}
-                    className="absolute inset-0 w-full h-full"
-                    title="Topic Explanatory Video"
-                  />
-                  {/* Full overlay: captures all pointer events so right-click never reaches iframe (prevents Copy video URL / embed) */}
-                  <div
-                    className="absolute inset-0 z-10"
-                    style={{ pointerEvents: 'auto' }}
-                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    aria-hidden
-                  />
-                  {/* Custom controls: play, pause, fullscreen (above overlay so they stay clickable) */}
-                  <div className="absolute left-0 right-0 bottom-0 h-14 z-20 flex items-center justify-center gap-2 bg-gradient-to-t from-black/80 to-transparent pointer-events-auto">
-                    <button
-                      type="button"
-                      onClick={handleVideoPlay}
-                      className="p-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
-                      aria-label="Play"
-                    >
-                      <Play className="w-6 h-6" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleVideoPause}
-                      className="p-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
-                      aria-label="Pause"
-                    >
-                      <Pause className="w-6 h-6" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleFullscreen}
-                      className="p-2.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
-                      aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-                    >
-                      {isFullscreen ? <Minimize className="w-6 h-6" /> : <Maximize className="w-6 h-6" />}
-                    </button>
-                  </div>
-                </>
+                <ControlledYouTubePlayer
+                  youtubeUrl={topic.videoUrl}
+                  title={topic.name}
+                  className="absolute inset-0 w-full h-full rounded-2xl"
+                />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <img

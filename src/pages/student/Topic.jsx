@@ -19,6 +19,7 @@ export default function StudentTopic() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [result, setResult] = useState(null);
+  const [answerResults, setAnswerResults] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [explanationOpen, setExplanationOpen] = useState(false);
@@ -84,12 +85,19 @@ export default function StudentTopic() {
     setSubmitting(true);
     setExplanationOpen(false);
     try {
-      const { data } = await api.post('/mcqs/attempts', {
-        mcqId: mcqs[currentIndex]._id,
+      const mcq = mcqs[currentIndex];
+      const localResult = {
+        correct: Number(index) === Number(mcq.correctIndex),
+        correctIndex: mcq.correctIndex,
+        explanation: mcq.explanation || undefined,
         selectedIndex: index,
-      });
-      setResult(data);
-    } catch (_) {}
+        mcqId: mcq._id,
+      };
+      setResult(localResult);
+      setAnswerResults((prev) => ({ ...prev, [currentIndex]: localResult }));
+    } catch (_) {
+      // ignore
+    }
     setSubmitting(false);
   };
 
@@ -108,7 +116,25 @@ export default function StudentTopic() {
   };
 
   const handleFinish = () => {
+    // submit attempts in background (do not block navigation)
+    submitAllAttempts().catch(() => {});
     navigate('/student/resources');
+  };
+
+  // Send collected attempts to server in parallel.
+  const submitAllAttempts = async () => {
+    const attempts = Object.values(answerResults || {}).map((r) => ({
+      mcqId: r.mcqId,
+      selectedIndex: r.selectedIndex,
+    }));
+    if (!attempts.length) return;
+    try {
+      await Promise.all(
+        attempts.map((a) => api.post('/mcqs/attempts', { mcqId: a.mcqId, selectedIndex: a.selectedIndex }))
+      );
+    } catch (_) {
+      // swallow errors so UX isn't blocked
+    }
   };
 
   if (loading) {

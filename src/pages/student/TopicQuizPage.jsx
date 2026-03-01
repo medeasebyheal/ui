@@ -86,14 +86,21 @@ export default function TopicQuizPage() {
     setSelected(index);
     setSubmitting(true);
     setExplanationOpen(false);
+
     try {
-      const { data } = await api.post('/mcqs/attempts', {
-        mcqId: mcqs[currentIndex]._id,
+      const mcq = mcqs[currentIndex];
+      const localResult = {
+        correct: Number(index) === Number(mcq.correctIndex),
+        correctIndex: mcq.correctIndex,
+        explanation: mcq.explanation || undefined,
         selectedIndex: index,
-      }, { skipLoader: true });
-      setResult(data);
-      setAnswerResults((prev) => ({ ...prev, [currentIndex]: { ...data, selectedIndex: index } }));
-    } catch (_) {}
+        mcqId: mcq._id,
+      };
+      setResult(localResult);
+      setAnswerResults((prev) => ({ ...prev, [currentIndex]: localResult }));
+    } catch (_) {
+      // ignore
+    }
     setSubmitting(false);
   };
 
@@ -144,7 +151,25 @@ export default function TopicQuizPage() {
   const backToSubject = () => navigate(`/student/modules/${moduleId}/subjects/${subjectId}`);
   const handleFinish = () => {
     setSubmittedAtSeconds(elapsedSeconds);
+    // submit attempts in background (do not block showing results)
+    submitAllAttempts().catch(() => {});
     setShowResults(true);
+  };
+
+  // Send collected attempts to server in parallel.
+  const submitAllAttempts = async () => {
+    const attempts = Object.values(answerResults || {}).map((r) => ({
+      mcqId: r.mcqId,
+      selectedIndex: r.selectedIndex,
+    }));
+    if (!attempts.length) return;
+    try {
+      await Promise.all(
+        attempts.map((a) => api.post('/mcqs/attempts', { mcqId: a.mcqId, selectedIndex: a.selectedIndex }, { skipLoader: true }))
+      );
+    } catch (_) {
+      // swallow errors so UX isn't blocked
+    }
   };
   const answeredCount = Object.keys(answerResults).length;
   const unansweredCount = mcqs.length - answeredCount;
