@@ -22,7 +22,7 @@ export function AuthProvider({ children }) {
       return;
     }
     try {
-      const { data } = await api.get('/auth/me');
+      const { data } = await api.get('/auth/me', { skipLoader: true });
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
     } catch {

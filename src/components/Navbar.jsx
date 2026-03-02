@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ChevronDown, LayoutDashboard, LogOut, Lock, LockOpen } from 'lucide-react';
 import api from '../api/client';
@@ -16,8 +16,9 @@ function Navbar() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const isHome = location.pathname === '/';
     api
-      .get('/content/years')
+      .get('/content/years', { skipLoader: isHome })
       .then(({ data }) => setYears(Array.isArray(data) ? data : []))
       .catch(() => setYears([]));
   }, []);
@@ -26,7 +27,7 @@ function Navbar() {
     if (!Array.isArray(years) || !years.length) return;
     Promise.all(
       years.map((y) =>
-        api.get(`/content/years/${y._id}/modules`).then((r) => ({ yearId: y._id, yearName: y.name, modules: r.data }))
+        api.get(`/content/years/${y._id}/modules`, { skipLoader: location.pathname === '/' }).then((r) => ({ yearId: y._id, yearName: y.name, modules: r.data }))
       )
     ).then((results) => {
       const next = {};
