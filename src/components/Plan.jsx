@@ -47,7 +47,7 @@ export const PLAN_DATA = [
       planKey: 'full-year',
       name: "Full Year",
       price: "3750",
-      originalPrice: "4500",
+      originalPrice: "4000",
       duration: "12 Months",
       description: "Complete year coverage",
       badge: "BEST VALUE",
