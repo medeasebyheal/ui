@@ -142,7 +142,7 @@ export default function SubjectDetailPage() {
       <div className="p-8 max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-6 flex-wrap">
-          <Link to="/student" className="hover:text-primary transition-colors">Modules</Link>
+          <Link to="/student/resources" className="hover:text-primary transition-colors">Modules</Link>
           <ChevronRight className="w-4 h-4 flex-shrink-0" />
           <Link to={`/student/modules/${moduleId}`} className="hover:text-primary transition-colors">
             {moduleName}
@@ -152,7 +152,7 @@ export default function SubjectDetailPage() {
         </nav>
 
         {/* Hero card - same background & layout as Dashboard "Welcome back" */}
-        <div className="mb-10 rounded-2xl p-8 shadow-lg border border-white/30 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #26D0CE 0%, #1A938F 50%, #0D5C58 100%)' }}>
+        <div className="mb-10 rounded-2xl p-8 shadow-lg border border-white/30 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0D5C58 0%, #1A938F 50%, #26D0CE 100%)' }}>
           <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" aria-hidden />
           <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-white/5 rounded-full blur-2xl" aria-hidden />
           <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">

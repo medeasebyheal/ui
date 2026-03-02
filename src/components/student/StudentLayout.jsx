@@ -15,8 +15,7 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { to: '/student', end: true, label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/student/resources', end: false, label: 'My Resources', icon: BookOpen },
+  { to: '/student/resources', end: true, label: 'Resources', icon: LayoutDashboard },
   { to: '/student/profile', end: false, label: 'Profile', icon: User },
   { to: '/student/payments', end: false, label: 'Payments', icon: FileText },
 ];
@@ -60,7 +59,7 @@ export default function StudentLayout() {
         <div className="flex flex-col h-full min-h-0">
           <div className="flex items-center justify-between flex-shrink-0 p-4 border-b border-white/20">
             <div className="flex-1 min-w-0" />
-            <Link to="/student" className="flex items-center justify-center bg-white rounded-lg p-1.5 shrink-0" aria-label="MedEase">
+            <Link to="/student/resources" className="flex items-center justify-center bg-white rounded-lg p-1.5 shrink-0" aria-label="MedEase">
               <img src="/logo.png" alt="" className="h-10 w-auto" />
             </Link>
             <div className="flex-1 min-w-0 flex justify-end">

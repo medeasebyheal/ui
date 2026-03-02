@@ -524,10 +524,10 @@ function CheckoutConfirmation({ payment, planName }) {
         Save confirmation as image
       </button>
       <Link
-        to="/student"
+        to="/student/resources"
         className="block w-full py-3.5 bg-primary text-white font-heading font-semibold rounded-lg hover:bg-primary/90 text-center"
       >
-        Go to Dashboard
+        Go to Resources
       </Link>
     </section>
   );

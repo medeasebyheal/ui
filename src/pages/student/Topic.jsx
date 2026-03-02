@@ -166,7 +166,7 @@ export default function StudentTopic() {
         {!canUseFreeTrialForThisTopic && !user?.freeTrialUsed && (
           <p className="text-sm text-slate-500 mb-4">Free trial is available only for the first topic of the first subject of the first module.</p>
         )}
-        <button onClick={() => navigate('/student')} className="block mt-4 text-primary">Back to Dashboard</button>
+        <button onClick={() => navigate('/student/resources')} className="block mt-4 text-primary">Back to Resources</button>
       </div>
     );
   }

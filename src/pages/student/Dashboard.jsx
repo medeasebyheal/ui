@@ -38,28 +38,13 @@ export default function StudentDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Welcome card - teal gradient like login/signup */}
-      <section className="mb-12">
-        <div className="rounded-2xl p-8 shadow-lg border border-white/30 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #26D0CE 0%, #1A938F 50%, #0D5C58 100%)' }}>
-          <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
-          <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white mb-2">Welcome back, {displayName}! 👋</h1>
-              <p className="text-white/90 text-lg">Access your modules and continue learning.</p>
-            </div>
-            <img src="/stato.png" alt="" className="w-24 h-auto sm:w-28 flex-shrink-0 opacity-95 drop-shadow-lg" aria-hidden />
-          </div>
-        </div>
-      </section>
-
       {/* Info cards - colored backgrounds */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         <Link
           to="/student/resources"
           className="group p-6 rounded-2xl border border-primary/30 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all block bg-white/80 backdrop-blur-sm hover:bg-white"
         >
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white mb-5 group-hover:scale-105 transition-transform" style={{ background: 'linear-gradient(145deg, #1A938F, #0D5C58)' }}>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white mb-5 group-hover:scale-105 transition-transform" style={{ background: 'linear-gradient(145deg, #0D5C58, #1A938F)' }}>
             <BookOpen className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-1">My Resources</h3>
@@ -70,7 +55,7 @@ export default function StudentDashboard() {
           to="/student/profile"
           className="group p-6 rounded-2xl border border-primary/20 shadow-md bg-white/80 backdrop-blur-sm hover:shadow-xl hover:-translate-y-0.5 transition-all block hover:bg-white"
         >
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white mb-5 group-hover:scale-105 transition-transform" style={{ background: 'linear-gradient(145deg, #26D0CE, #1A938F)' }}>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white mb-5 group-hover:scale-105 transition-transform" style={{ background: 'linear-gradient(145deg, #1A938F, #26D0CE)' }}>
             <BarChart3 className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-1">Study Progress</h3>
@@ -136,7 +121,7 @@ export default function StudentDashboard() {
               <h3 className="text-2xl font-bold text-slate-900 mb-3">{continueLearning.title}</h3>
               <p className="text-slate-500 mb-6 max-w-2xl">{continueLearning.description}</p>
               <div className="flex flex-col sm:flex-row items-center gap-6">
-                <span className="inline-flex items-center gap-2 w-full sm:w-auto px-10 py-4 text-white font-bold rounded-xl shadow-lg transition-all justify-center" style={{ background: 'linear-gradient(145deg, #26D0CE, #1A938F)' }}>
+                <span className="inline-flex items-center gap-2 w-full sm:w-auto px-10 py-4 text-white font-bold rounded-xl shadow-lg transition-all justify-center" style={{ background: 'linear-gradient(145deg, #1A938F, #26D0CE)' }}>
                   <PlayCircle className="w-5 h-5" />
                   {recentView ? 'Resume Learning' : 'Open Resources'}
                 </span>

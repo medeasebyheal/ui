@@ -199,12 +199,12 @@ function Navbar() {
               {profileOpen && (
                 <div className="absolute right-0 top-full mt-1 py-1 min-w-[10rem] rounded-lg bg-white border border-gray-200 shadow-lg z-50">
                   <Link
-                    to={user.role === 'admin' ? '/admin' : '/student'}
+                    to={user.role === 'admin' ? '/admin' : '/student/resources'}
                     onClick={() => setProfileOpen(false)}
                     className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
                   >
                     <LayoutDashboard className="w-4 h-4" />
-                    {user.role === 'admin' ? 'Admin' : 'Dashboard'}
+                    {user.role === 'admin' ? 'Admin' : 'Resources'}
                   </Link>
                   <button
                     type="button"
@@ -310,12 +310,12 @@ function Navbar() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <Link
-                    to={user.role === 'admin' ? '/admin' : '/student'}
+                    to={user.role === 'admin' ? '/admin' : '/student/resources'}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="flex items-center gap-2 py-2.5 px-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
                   >
                     <LayoutDashboard className="w-4 h-4" />
-                    {user.role === 'admin' ? 'Admin' : 'Dashboard'}
+                    {user.role === 'admin' ? 'Admin' : 'Resources'}
                   </Link>
                   <button
                     onClick={handleLogout}

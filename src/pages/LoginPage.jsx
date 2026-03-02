@@ -29,7 +29,7 @@ export default function LoginPage() {
       if (returnUrl && returnUrl.startsWith('/checkout') && data.user.role === 'student') {
         navigate(returnUrl);
       } else {
-        navigate(data.user.role === 'admin' ? '/' : '/student');
+        navigate(data.user.role === 'admin' ? '/' : '/student/resources');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
@@ -44,7 +44,7 @@ export default function LoginPage() {
         {/* Left: gradient + form - full screen on mobile */}
         <section
           className="w-full md:w-1/2 min-h-screen md:min-h-0 p-6 sm:p-8 md:p-16 flex flex-col justify-center items-center text-white relative overflow-hidden"
-          style={{ background: 'linear-gradient(145deg, #26D0CE 0%, #1A938F 50%, #0D5C58 100%)' }}
+          style={{ background: 'linear-gradient(145deg, #0D5C58 0%, #1A938F 50%, #26D0CE 100%)' }}
         >
           <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
           <div className="relative z-10 w-full max-w-md">

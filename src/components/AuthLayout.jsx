@@ -7,7 +7,7 @@ export default function AuthLayout() {
   const isAuthPage = pathname === '/login' || pathname === '/register';
 
   if (!loading && user) {
-    const to = user.role === 'admin' ? '/admin' : '/student';
+    const to = user.role === 'admin' ? '/admin' : '/student/resources';
     return <Navigate to={to} replace />;
   }
 

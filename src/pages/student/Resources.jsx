@@ -174,22 +174,22 @@ export default function StudentResources() {
     <div className="flex flex-1 min-w-0 w-full bg-[#F8FAFC] dark:bg-[#0F172A]">
       <div className="flex-1 min-w-0 p-6 lg:p-8 overflow-y-auto custom-scrollbar">
         {/* Header */}
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">My Resources</h2>
-            <p className="text-slate-500 dark:text-slate-400">Welcome back, {displayName}. Explore your visual curriculum.</p>
+       
+
+        {/* Welcome card - teal gradient like login/signup */}
+        <section className="mb-8">
+          <div className="rounded-2xl p-6 shadow-lg border border-white/10 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0D5C58 0%, #1A938F 50%, #26D0CE 100%)' }}>
+            <div className="absolute -top-16 -left-16 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
+            <div className="absolute -right-12 -bottom-12 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
+            <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-4">
+              <div className="flex-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">Welcome back, {displayName}! 👋</h1>
+                <p className="text-white/90">Access your modules and continue learning.</p>
+              </div>
+              <img src="/stato.png" alt="" className="w-20 h-auto sm:w-24 flex-shrink-0 opacity-95 drop-shadow-lg" aria-hidden />
+            </div>
           </div>
-          <div className="relative w-full sm:w-auto">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search topics..."
-              className="pl-10 pr-4 py-2.5 rounded-full border-0 bg-white dark:bg-[#1E293B] shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-[#0D9488] w-full sm:w-64 outline-none transition-all text-slate-900 dark:text-slate-100 placeholder-slate-400"
-            />
-          </div>
-        </header>
+        </section>
 
         {/* Recently Viewed */}
         {recentToShow.length > 0 && (
@@ -198,6 +198,7 @@ export default function StudentResources() {
               <History className="w-5 h-5 text-[#0D9488]" />
               Recently Viewed
             </h3>
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {recentToShow.map((item, idx) => (
                 <Link
@@ -321,18 +322,21 @@ export default function StudentResources() {
                                         key={sub._id}
                                         className={subIdx > 0 ? 'pt-8 border-t border-slate-100 dark:border-slate-800' : ''}
                                       >
-                                        <div className="flex justify-between items-center mb-6">
-                                          <div className="flex items-center gap-4">
-                                            <div className={`w-10 h-10 rounded-lg overflow-hidden ring-2 ${subjectStyle.ring} bg-white dark:bg-slate-800 flex items-center justify-center`}>
+                                    <div className="flex justify-between items-center mb-6">
+                                          <Link
+                                            to={subjectUrl}
+                                            className="flex items-center gap-4 no-underline group hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-lg px-2 py-1 transition-colors"
+                                          >
+                                            <div className={`w-10 h-10 rounded-lg overflow-hidden ring-2 ${subjectStyle.ring} bg-white dark:bg-slate-800 flex items-center justify-center transition-transform group-hover:scale-105`}>
                                               <SubIcon className={`w-5 h-5 ${subjectStyle.accent}`} />
                                             </div>
                                             <div>
-                                              <h5 className="text-xl font-bold text-slate-900 dark:text-white">{sub.name}</h5>
-                                              <p className="text-xs text-slate-400">
+                                              <h5 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-[#0D9488]">{sub.name}</h5>
+                                              <p className="text-xs text-slate-400 group-hover:text-slate-600">
                                                 {topics.length} topic{topics.length !== 1 ? 's' : ''}
                                               </p>
                                             </div>
-                                          </div>
+                                          </Link>
                                           <Link
                                             to={subjectUrl}
                                             className="text-sm font-semibold text-[#0D9488] hover:underline flex items-center gap-1"

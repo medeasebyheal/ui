@@ -17,6 +17,6 @@ export function AdminRoute() {
   const location = useLocation();
   if (loading) return <div className="flex justify-center items-center min-h-[40vh]"><p>Loading...</p></div>;
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
-  if (user.role !== 'admin' && user.role !== 'superadmin') return <Navigate to="/student" replace />;
+  if (user.role !== 'admin' && user.role !== 'superadmin') return <Navigate to="/student/resources" replace />;
   return <AdminLayout />;
 }

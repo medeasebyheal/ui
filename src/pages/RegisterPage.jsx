@@ -45,7 +45,7 @@ export default function RegisterPage() {
         if (returnUrl && returnUrl.startsWith('/checkout')) {
           navigate(returnUrl);
         } else {
-          navigate('/student');
+          navigate('/student/resources');
         }
       }
     } catch (err) {
@@ -65,7 +65,7 @@ export default function RegisterPage() {
       if (returnUrl && returnUrl.startsWith('/checkout')) {
         navigate(returnUrl);
       } else {
-        navigate('/student');
+        navigate('/student/resources');
       }
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || 'Verification failed');
@@ -86,9 +86,9 @@ export default function RegisterPage() {
         {/* Left: gradient + verify card - same as signup */}
         <div
           className="w-full lg:w-1/2 min-h-screen lg:min-h-0 p-6 sm:p-8 lg:p-16 flex flex-col justify-center items-center relative overflow-hidden"
-          style={{ background: 'linear-gradient(145deg, #26D0CE 0%, #1A938F 50%, #0D5C58 100%)' }}
+          style={{ background: 'linear-gradient(145deg, #0D5C58 0%, #1A938F 50%, #26D0CE 100%)' }}
         >
-          <div className="absolute -top-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute -top-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
           <div className="relative z-10 w-full max-w-md">
             <button
               type="button"
