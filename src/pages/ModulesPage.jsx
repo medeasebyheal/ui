@@ -33,23 +33,6 @@ export default function ModulesPage() {
     return Object.values(modulesByYear).flat();
   }, [modulesByYear]);
 
-  const filteredModules = useMemo(() => {
-    let list = allModules;
-    if (yearFilter) list = list.filter((m) => m.yearId === yearFilter);
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
-      list = list.filter((m) => m.name?.toLowerCase().includes(q) || m.yearName?.toLowerCase().includes(q));
-    }
-    // In student panel: show only modules the student has access to
-    if (user && allowedModuleIds.size > 0) {
-      list = list.filter((m) => {
-        const idStr = m._id != null ? String(m._id) : (m.id != null ? String(m.id) : '');
-        return idStr && allowedModuleIds.has(idStr);
-      });
-    }
-    return list;
-  }, [allModules, yearFilter, searchQuery, user, allowedModuleIds]);
-
   // Module IDs the user has access to (from their registered packages only)
   const allowedModuleIds = useMemo(() => {
     const ids = new Set();
@@ -67,6 +50,25 @@ export default function ModulesPage() {
     });
     return ids;
   }, [user?.packages]);
+
+  const filteredModules = useMemo(() => {
+    let list = allModules;
+    if (yearFilter) list = list.filter((m) => m.yearId === yearFilter);
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      list = list.filter((m) => m.name?.toLowerCase().includes(q) || m.yearName?.toLowerCase().includes(q));
+    }
+    // In student panel: show only modules the student has access to
+    if (user && allowedModuleIds.size > 0) {
+      list = list.filter((m) => {
+        const idStr = m._id != null ? String(m._id) : (m.id != null ? String(m.id) : '');
+        return idStr && allowedModuleIds.has(idStr);
+      });
+    }
+    return list;
+  }, [allModules, yearFilter, searchQuery, user, allowedModuleIds]);
+
+ 
 
   return (
     <div className="min-h-screen bg-background-light text-slate-900 font-display">

@@ -23,7 +23,7 @@ export default function AuthModal({ isOpen, onClose, planKey }) {
           Continue to Checkout
         </h3>
         <p className="text-gray-600 mb-6">
-          Login or sign up to continue to checkout.
+          Login or register to continue to checkout.
         </p>
         <div className="flex gap-3">
           <Link
@@ -38,7 +38,7 @@ export default function AuthModal({ isOpen, onClose, planKey }) {
             onClick={onClose}
             className="flex-1 py-3 rounded-lg font-semibold text-center bg-primary text-white hover:bg-primary/90 transition-colors"
           >
-            Sign up
+            Register
           </Link>
         </div>
       </div>
