@@ -4,6 +4,7 @@ import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import { useParseLoadingMessage } from '../../../hooks/useParseLoadingMessage';
 import { Upload, AlertCircle, FileText, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const basePath = (y, m, s, t) => `/admin/resources/years/${y}/modules/${m}/subjects/${s}/topics/${t}`;
 
@@ -62,7 +63,13 @@ export default function BulkMcqPage() {
       const { data } = await api.post(`/admin/topics/${topicId}/mcqs/parse`, { text: text.trim() });
       setPreview(data);
     } catch (e) {
-      setPreview({ mcqs: [], errors: [{ message: e.response?.data?.message || 'Parse failed' }] });
+      const status = e.response?.status;
+      const msg = e.response?.data?.message || 'Parse failed';
+      if (status === 429 && e.response?.data?.resetAt) {
+        const when = new Date(e.response.data.resetAt).toLocaleString();
+        toast.error(`Gemini API exhausted. Try again after ${when}.`);
+      }
+      setPreview({ mcqs: [], errors: [{ message: msg }] });
     }
     setParseLoading(false);
   };
@@ -79,7 +86,13 @@ export default function BulkMcqPage() {
         setPreview(null);
       }
     } catch (e) {
-      setImportResult({ success: false, message: e.response?.data?.message || 'Import failed' });
+      const status = e.response?.status;
+      const msg = e.response?.data?.message || 'Import failed';
+      if (status === 429 && e.response?.data?.resetAt) {
+        const when = new Date(e.response.data.resetAt).toLocaleString();
+        toast.error(`Gemini API exhausted. Try again after ${when}.`);
+      }
+      setImportResult({ success: false, message: msg });
     }
     setImportLoading(false);
   };

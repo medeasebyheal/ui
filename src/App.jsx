@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import AuthLayout from './components/AuthLayout';
 import ScrollToTop from './components/ScrollToTop';
@@ -70,6 +71,7 @@ function App() {
     <BrowserRouter>
       <ScrollToTop />
       <AuthProvider>
+        <Toaster />
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />

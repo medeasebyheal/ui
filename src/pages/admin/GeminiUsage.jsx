@@ -30,7 +30,48 @@ export default function GeminiUsage() {
     setLoading(true);
     fetchUsage();
     const interval = setInterval(() => {
-      api.get('/admin/gemini-usage').then(({ data: res }) => setData(res)).catch(() => {});
+      api
+        .get('/admin/gemini-usage')
+        .then(({ data: res }) =>
+          setData((prev) => {
+            if (!prev) return res;
+
+            const prevKeys = prev.keys ?? [];
+            const newKeys = res.keys ?? [];
+
+            const mergedKeys = newKeys.map((nk) => {
+              const pk = prevKeys.find((p) => p.keyIndex === nk.keyIndex) || {};
+              return {
+                ...nk,
+                // keep the highest seen requests-per-day so RPD only grows during the day
+                rpd: Math.max(pk.rpd ?? 0, nk.rpd ?? 0),
+              };
+            });
+            // include any previous keys that are missing from the new payload
+            prevKeys.forEach((pk) => {
+              if (!mergedKeys.find((m) => m.keyIndex === pk.keyIndex)) {
+                mergedKeys.push(pk);
+              }
+            });
+
+            const prevTotals = prev.totals ?? { requestsToday: 0, tokensToday: 0 };
+            const newTotals = res.totals ?? { requestsToday: 0, tokensToday: 0 };
+            const mergedTotals = {
+              requestsToday: Math.max(prevTotals.requestsToday ?? 0, newTotals.requestsToday ?? 0),
+              tokensToday: Math.max(prevTotals.tokensToday ?? 0, newTotals.tokensToday ?? 0),
+            };
+
+            const prevEase = prev.easegpt ?? { requestsToday: 0, tokensToday: 0 };
+            const newEase = res.easegpt ?? { requestsToday: 0, tokensToday: 0 };
+            const mergedEase = {
+              requestsToday: Math.max(prevEase.requestsToday ?? 0, newEase.requestsToday ?? 0),
+              tokensToday: Math.max(prevEase.tokensToday ?? 0, newEase.tokensToday ?? 0),
+            };
+
+            return { ...res, keys: mergedKeys, totals: mergedTotals, easegpt: mergedEase };
+          })
+        )
+        .catch(() => {});
     }, 60000);
     return () => clearInterval(interval);
   }, [user, navigate]);

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import api from '../../api/client';
+import { toast } from 'react-hot-toast';
 import Modal from './Modal';
 
 export default function BulkMcqModal({ topicId, onSave, onClose }) {
@@ -18,7 +19,13 @@ export default function BulkMcqModal({ topicId, onSave, onClose }) {
       setResult(data);
       if (data.created > 0) onSave?.();
     } catch (err) {
-      setResult({ error: err.response?.data?.message || 'Failed' });
+      const status = err.response?.status;
+      const msg = err.response?.data?.message || 'Failed';
+      if (status === 429 && err.response?.data?.resetAt) {
+        const when = new Date(err.response.data.resetAt).toLocaleString();
+        toast.error(`Gemini API exhausted. Try again after ${when}.`);
+      }
+      setResult({ error: msg });
     }
     setLoading(false);
   };

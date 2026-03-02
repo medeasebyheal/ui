@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../../../api/client';
 import { useParseLoadingMessage } from '../../../hooks/useParseLoadingMessage';
 import { ChevronRight, Upload, AlertCircle, FileText, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const FORMAT_EXAMPLE = `1. A 45-year-old male presents with central chest pain radiating to the left arm. ECG shows ST elevation in leads V1–V4. Which artery is most likely occluded?
 A) Right coronary artery
@@ -53,7 +54,13 @@ export default function ProffOtherSubjectBulkMcqPage() {
       const { data } = await api.post(`${basePath}/mcqs/parse`, { text: text.trim() });
       setPreview(data);
     } catch (e) {
-      setPreview({ mcqs: [], errors: [{ message: e.response?.data?.message || 'Parse failed' }] });
+      const status = e.response?.status;
+      const msg = e.response?.data?.message || 'Parse failed';
+      if (status === 429 && e.response?.data?.resetAt) {
+        const when = new Date(e.response.data.resetAt).toLocaleString();
+        toast.error(`Gemini API exhausted. Try again after ${when}.`);
+      }
+      setPreview({ mcqs: [], errors: [{ message: msg }] });
     }
     setParseLoading(false);
   };
@@ -70,7 +77,13 @@ export default function ProffOtherSubjectBulkMcqPage() {
         setPreview(null);
       }
     } catch (e) {
-      setImportResult({ success: false, message: e.response?.data?.message || 'Import failed' });
+      const status = e.response?.status;
+      const msg = e.response?.data?.message || 'Import failed';
+      if (status === 429 && e.response?.data?.resetAt) {
+        const when = new Date(e.response.data.resetAt).toLocaleString();
+        toast.error(`Gemini API exhausted. Try again after ${when}.`);
+      }
+      setImportResult({ success: false, message: msg });
     }
     setImportLoading(false);
   };
