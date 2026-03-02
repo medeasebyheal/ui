@@ -42,6 +42,7 @@ const MBBS_STUDY_TIPS = [
 
 const PLACEHOLDER_IMAGES = {
   module: 'https://placehold.co/800x400/0D9488/white?text=Module',
+  subject: 'https://placehold.co/600x300/0D9488/white?text=Subject',
 };
 
 function getSubjectStyle(idx) {
@@ -65,7 +66,6 @@ export default function StudentResources() {
   const [years, setYears] = useState([]);
   const [modulesByYear, setModulesByYear] = useState({});
   const [subjectsByModule, setSubjectsByModule] = useState({});
-  const [topicsBySubject, setTopicsBySubject] = useState({});
   const [ospesByModule, setOspesByModule] = useState({});
   const [loadingSubjects, setLoadingSubjects] = useState({});
   const [recentViews, setRecentViews] = useState([]);
@@ -129,20 +129,6 @@ export default function StudentResources() {
       const subs = Array.isArray(subRes.data) ? subRes.data : (subRes.data?.data ?? []);
       setSubjectsByModule((p) => ({ ...p, [id]: subs }));
       setOspesByModule((p) => ({ ...p, [id]: ospeRes.data ?? [] }));
-      const topicPromises = subs.map((s) =>
-        api.get(`/content/subjects/${s._id}/topics`).then((r) => ({
-          subjectId: s._id,
-          data: Array.isArray(r.data) ? r.data : (r.data?.data ?? []),
-        }))
-      );
-      const results = await Promise.all(topicPromises);
-      setTopicsBySubject((p) => {
-        const next = { ...p };
-        results.forEach(({ subjectId, data }) => {
-          next[String(subjectId)] = data || [];
-        });
-        return next;
-      });
     } catch (err) {
       setSubjectsByModule((p) => ({ ...p, [id]: [] }));
       setOspesByModule((p) => ({ ...p, [id]: [] }));
@@ -193,34 +179,29 @@ export default function StudentResources() {
 
         {/* Recently Viewed */}
         {recentToShow.length > 0 && (
-          <section className="mb-10">
-            <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white mb-4">
+          <section className="mb-6">
+            <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white mb-3">
               <History className="w-5 h-5 text-[#0D9488]" />
               Recently Viewed
             </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <div className="space-y-2">
               {recentToShow.map((item, idx) => (
                 <Link
                   key={`${item.type}-${item.id}-${idx}`}
                   to={item.url}
-                  className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden group cursor-pointer hover:shadow-md transition-all"
+                  className="flex items-center justify-between bg-white dark:bg-[#1E293B] rounded-lg border border-slate-100 dark:border-slate-800 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
                 >
-                  <div className="h-24 w-full relative overflow-hidden bg-gradient-to-br from-[#0D9488]/20 to-[#0D9488]/5">
-                    <div className="absolute inset-0 card-image-overlay" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <BookOpen className="w-12 h-12 text-[#0D9488]/40" />
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-md bg-[#0D9488]/10 flex items-center justify-center text-[#0D9488]">
+                      <BookOpen className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-medium text-slate-900 dark:text-white text-sm truncate">{item.name}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{item.meta || 'Resource'} {item.viewedAt ? `• ${timeAgo(item.viewedAt)}` : ''}</div>
                     </div>
                   </div>
-                  <div className="p-4 flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">{item.name}</h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {item.meta || 'Resource'} {item.viewedAt ? `• ${timeAgo(item.viewedAt)}` : ''}
-                      </p>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-[#0D9488] transition-colors shrink-0 ml-2" />
-                  </div>
+                  <ArrowRight className="w-4 h-4 text-slate-300" />
                 </Link>
               ))}
             </div>
@@ -308,80 +289,38 @@ export default function StudentResources() {
                                 {!loading && subjects.length === 0 && (
                                   <p className="text-slate-500 dark:text-slate-400 text-sm py-8 text-center">No subjects in this module yet.</p>
                                 )}
-                                {!loading &&
-                                  subjects.map((sub, subIdx) => {
-                                    const topics = (topicsBySubject[String(sub._id)] || []).sort((a, b) =>
-                                      (a.name || '').localeCompare(b.name || '')
-                                    );
-                                    const subjectStyle = getSubjectStyle(subIdx);
-                                    const SubIcon = subjectStyle.Icon;
-                                    const subjectUrl = `/student/modules/${mod._id}/subjects/${sub._id}`;
-
-                                    return (
-                                      <div
-                                        key={sub._id}
-                                        className={subIdx > 0 ? 'pt-8 border-t border-slate-100 dark:border-slate-800' : ''}
-                                      >
-                                    <div className="flex justify-between items-center mb-6">
-                                          <Link
-                                            to={subjectUrl}
-                                            className="flex items-center gap-4 no-underline group hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-lg px-2 py-1 transition-colors"
-                                          >
-                                            <div className={`w-10 h-10 rounded-lg overflow-hidden ring-2 ${subjectStyle.ring} bg-white dark:bg-slate-800 flex items-center justify-center transition-transform group-hover:scale-105`}>
-                                              <SubIcon className={`w-5 h-5 ${subjectStyle.accent}`} />
+                                {!loading && (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {subjects.map((sub, subIdx) => {
+                                      const subjectUrl = `/student/modules/${mod._id}/subjects/${sub._id}`;
+                                      const img = sub.imageUrl || PLACEHOLDER_IMAGES.subject;
+                                      return (
+                                        <Link
+                                          key={sub._id}
+                                          to={subjectUrl}
+                                          className="group relative bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-md transition-all"
+                                        >
+                                          <div className="h-40 w-full relative bg-slate-100 dark:bg-slate-800">
+                                            <img
+                                              src={img}
+                                              alt={sub.name}
+                                              className="w-full h-full object-cover"
+                                              onError={(e) => {
+                                                e.target.src = PLACEHOLDER_IMAGES.subject;
+                                              }}
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                                              <h5 className="text-white font-semibold text-lg line-clamp-1">{sub.name}</h5>
                                             </div>
-                                            <div>
-                                              <h5 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-[#0D9488]">{sub.name}</h5>
-                                              <p className="text-xs text-slate-400 group-hover:text-slate-600">
-                                                {topics.length} topic{topics.length !== 1 ? 's' : ''}
-                                              </p>
-                                            </div>
-                                          </Link>
-                                          <Link
-                                            to={subjectUrl}
-                                            className="text-sm font-semibold text-[#0D9488] hover:underline flex items-center gap-1"
-                                          >
-                                            View all <ArrowRight className="w-4 h-4" />
-                                          </Link>
-                                        </div>
-                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                          {topics.slice(0, 6).map((topic) => (
-                                            <Link
-                                              key={topic._id}
-                                              to={`/student/modules/${mod._id}/subjects/${sub._id}/topics/${topic._id}`}
-                                              className={`group relative bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden ${subjectStyle.hover} transition-all flex flex-col`}
-                                            >
-                                              <div className="h-32 relative bg-slate-100 dark:bg-slate-800">
-                                                <div className="absolute inset-0 bg-gradient-to-br from-[#0D9488]/10 to-transparent group-hover:from-transparent transition-all" />
-                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                  <BookOpen className="w-12 h-12 text-slate-300 dark:text-slate-600" />
-                                                </div>
-                                              </div>
-                                              <div className="p-5 flex-1 flex flex-col">
-                                                <h6 className="font-bold text-slate-900 dark:text-white mb-1 line-clamp-1">{topic.name}</h6>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 flex-1">
-                                                  {topic.description || 'Study material for this topic.'}
-                                                </p>
-                                                <span className="text-[#0D9488] text-xs font-bold flex items-center gap-1 uppercase tracking-wider group-hover:gap-2 transition-all">
-                                                  Open module <ChevronRight className="w-3.5 h-3.5" />
-                                                </span>
-                                              </div>
-                                            </Link>
-                                          ))}
-                                        </div>
-                                        {topics.length > 6 && (
-                                          <div className="mt-4">
-                                            <Link
-                                              to={subjectUrl}
-                                              className="text-sm font-semibold text-[#0D9488] hover:underline"
-                                            >
-                                              +{topics.length - 6} more in {sub.name}
-                                            </Link>
                                           </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
+                                          <div className="p-4">
+                                            <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{sub.description || ''}</div>
+                                          </div>
+                                        </Link>
+                                      );
+                                    })}
+                                  </div>
+                                )}
 
                                 {/* OSPE block: once per module */}
                                 {!loading && ospes.length > 0 && (

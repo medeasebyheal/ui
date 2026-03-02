@@ -4,7 +4,8 @@ import { useAuth } from '../context/AuthContext';
 export default function AuthLayout() {
   const { pathname } = useLocation();
   const { user, loading } = useAuth();
-  const isAuthPage = pathname === '/login' || pathname === '/register';
+  const isAuthPage =
+    pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password';
 
   if (!loading && user) {
     const to = user.role === 'admin' ? '/admin' : '/student/resources';

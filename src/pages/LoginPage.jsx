@@ -98,7 +98,7 @@ export default function LoginPage() {
                   />
                   <span className="opacity-90">Remember Me</span>
                 </label>
-                <a className="opacity-90 hover:opacity-100 hover:underline transition-all" href="#">Forgot Password?</a>
+                <Link className="opacity-90 hover:opacity-100 hover:underline transition-all" to="/forgot-password">Forgot Password?</Link>
               </div>
               <div className="pt-8">
                 <button

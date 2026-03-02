@@ -51,10 +51,18 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    window.dispatchEvent(new Event('auth-change'));
+    (async () => {
+      try {
+        await api.post('/auth/logout');
+      } catch (e) {
+        // ignore network errors
+      } finally {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        window.dispatchEvent(new Event('auth-change'));
+      }
+    })();
   }, []);
 
   const refreshUser = useCallback(() => {

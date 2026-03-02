@@ -16,11 +16,14 @@ function Navbar() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.get('/content/years').then(({ data }) => setYears(data)).catch(() => setYears([]));
+    api
+      .get('/content/years')
+      .then(({ data }) => setYears(Array.isArray(data) ? data : []))
+      .catch(() => setYears([]));
   }, []);
 
   useEffect(() => {
-    if (!years.length) return;
+    if (!Array.isArray(years) || !years.length) return;
     Promise.all(
       years.map((y) =>
         api.get(`/content/years/${y._id}/modules`).then((r) => ({ yearId: y._id, yearName: y.name, modules: r.data }))
