@@ -98,17 +98,31 @@ export default function StudentResources() {
   }, []);
 
   useEffect(() => {
-    api.get('/content/years').then(({ data }) => setYears(data)).catch(() => setYears([]));
+    // Fetch years with their modules in one request to avoid N+1 requests
+    (async () => {
+      const t0 = performance.now();
+      try {
+        const { data } = await api.get('/content/years-with-modules');
+        const t1 = performance.now();
+        console.log('fetched yearsWithModules in', Math.round(t1 - t0), 'ms');
+        if (!Array.isArray(data)) {
+          setYears([]);
+          setModulesByYear({});
+          return;
+        }
+        setYears(data);
+        const next = {};
+        data.forEach((y) => {
+          next[y._id] = Array.isArray(y.modules) ? y.modules : [];
+        });
+        setModulesByYear(next);
+      } catch (err) {
+        console.warn('years-with-modules fetch failed', err);
+        setYears([]);
+        setModulesByYear({});
+      }
+    })();
   }, []);
-
-  useEffect(() => {
-    if (!years.length) return;
-    years.forEach((year) => {
-      api.get(`/content/years/${year._id}/modules`)
-        .then(({ data }) => setModulesByYear((prev) => ({ ...prev, [year._id]: data })))
-        .catch(() => {});
-    });
-  }, [years.length]);
 
   useEffect(() => {
     setRecentViews(getRecentViews());
@@ -155,6 +169,19 @@ export default function StudentResources() {
     const q = searchQuery.trim().toLowerCase();
     return (text || '').toLowerCase().includes(q);
   };
+
+  // memoize filtered modules per year to avoid repeated filtering on render
+  const filteredModulesByYear = useMemo(() => {
+    const map = {};
+    Object.keys(modulesByYear).forEach((yearId) => {
+      const mods = modulesByYear[yearId] || [];
+      map[yearId] = mods.filter((mod) => {
+        const searchable = `${mod.name || ''} ${mod.description || ''}`;
+        return matchSearch(searchable);
+      });
+    });
+    return map;
+  }, [modulesByYear, searchQuery]);
 
   return (
     <div className="flex flex-1 min-w-0 w-full bg-[#F8FAFC] dark:bg-[#0F172A]">
@@ -246,12 +273,14 @@ export default function StudentResources() {
                           key={mod._id}
                           className="bg-white dark:bg-[#1E293B] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden mb-10"
                         >
-                          {/* Module hero */}
-                          <div className="relative h-48 group">
+                          {/* Module hero (clickable -> module detail) */}
+                          <Link to={`/student/modules/${mod._id}`} className="relative h-48 group block">
                             <img
                               src={moduleImage}
                               alt=""
                               className="w-full h-full object-cover"
+                              loading="lazy"
+                              decoding="async"
                               onError={(e) => {
                                 e.target.src = PLACEHOLDER_IMAGES.module;
                               }}
@@ -269,7 +298,7 @@ export default function StudentResources() {
                                 </div>
                               </div>
                             </div>
-                          </div>
+                          </Link>
 
                           <div className="p-6 lg:p-8">
                             <button
@@ -305,6 +334,8 @@ export default function StudentResources() {
                                               src={img}
                                               alt={sub.name}
                                               className="w-full h-full object-cover"
+                                              loading="lazy"
+                                              decoding="async"
                                               onError={(e) => {
                                                 e.target.src = PLACEHOLDER_IMAGES.subject;
                                               }}

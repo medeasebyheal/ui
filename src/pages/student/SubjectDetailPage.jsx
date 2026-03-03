@@ -66,7 +66,8 @@ export default function SubjectDetailPage() {
       .then(([sub, tops, lectures, subs, mod]) => {
         if (cancelled) return;
         setSubject(sub);
-        setTopics(tops || []);
+        // API may return paginated { topics, page, limit } or an array
+        setTopics(Array.isArray(tops) ? tops : (Array.isArray(tops?.topics) ? tops.topics : []));
         const list = Array.isArray(lectures) ? lectures : [];
         setOneShotLectures(list);
         setSelectedLecture(list[0] || null);
@@ -169,9 +170,7 @@ export default function SubjectDetailPage() {
               </p>
             </div>
             <div className="flex items-center gap-4 flex-shrink-0">
-              {subject.imageUrl && (
-                <img src={subject.imageUrl} alt="" className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-white/30 shadow-lg" />
-              )}
+
               <img src="/stato.png" alt="" className="w-24 h-auto sm:w-28 opacity-95 drop-shadow-lg" aria-hidden />
             </div>
           </div>
@@ -348,8 +347,8 @@ export default function SubjectDetailPage() {
                     <img
                       alt={selectedLecture?.title || 'One Shot Lecture'}
                       className="w-full h-full object-cover opacity-60"
-                      src={getYouTubeThumbnail(selectedLecture?.youtubeUrl) || 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1280&h=720&fit=crop'}
-                      onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1280&h=720&fit=crop'; }}
+                      src={getYouTubeThumbnail(selectedLecture?.youtubeUrl) || 'logo.png'}
+                      onError={(e) => { e.target.src = 'logo.png'; }}
                     />
                     <button
                       type="button"

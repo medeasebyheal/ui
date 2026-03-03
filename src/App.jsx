@@ -1,3 +1,4 @@
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
@@ -23,10 +24,10 @@ import StudentProfile from './pages/student/Profile';
 import StudentResources from './pages/student/Resources';
 import StudentTopic from './pages/student/Topic';
 import StudentModuleOspes from './pages/student/ModuleOspes';
-import ModuleDetailPage from './pages/student/ModuleDetailPage';
-import SubjectDetailPage from './pages/student/SubjectDetailPage';
-import TopicDetailPage from './pages/student/TopicDetailPage';
-import TopicQuizPage from './pages/student/TopicQuizPage';
+const ModuleDetailPage = lazy(() => import('./pages/student/ModuleDetailPage'));
+const SubjectDetailPage = lazy(() => import('./pages/student/SubjectDetailPage'));
+const TopicDetailPage = lazy(() => import('./pages/student/TopicDetailPage'));
+const TopicQuizPage = lazy(() => import('./pages/student/TopicQuizPage'));
 import StudentOspeAttempt from './pages/student/OspeAttempt';
 import StudentPayments from './pages/student/Payments';
 
@@ -97,10 +98,38 @@ function App() {
             <Route path="profile" element={<StudentProfile />} />
             <Route path="resources" element={<StudentResources />} />
             <Route path="topics/:topicId" element={<StudentTopic />} />
-            <Route path="modules/:moduleId" element={<ModuleDetailPage />} />
-            <Route path="modules/:moduleId/subjects/:subjectId" element={<SubjectDetailPage />} />
-            <Route path="modules/:moduleId/subjects/:subjectId/topics/:topicId" element={<TopicDetailPage />} />
-            <Route path="modules/:moduleId/subjects/:subjectId/topics/:topicId/quiz" element={<TopicQuizPage />} />
+            <Route
+              path="modules/:moduleId"
+              element={
+                <Suspense fallback={<div />}>
+                  <ModuleDetailPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="modules/:moduleId/subjects/:subjectId"
+              element={
+                <Suspense fallback={<div />}>
+                  <SubjectDetailPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="modules/:moduleId/subjects/:subjectId/topics/:topicId"
+              element={
+                <Suspense fallback={<div />}>
+                  <TopicDetailPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="modules/:moduleId/subjects/:subjectId/topics/:topicId/quiz"
+              element={
+                <Suspense fallback={<div />}>
+                  <TopicQuizPage />
+                </Suspense>
+              }
+            />
             <Route path="modules/:moduleId/ospes" element={<StudentModuleOspes />} />
             <Route path="ospes/:ospeId" element={<StudentOspeAttempt />} />
             <Route path="payments" element={<StudentPayments />} />

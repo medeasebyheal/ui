@@ -111,7 +111,7 @@ export default function ModuleDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-primary/5 text-slate-800">
+    <div className="min-h-screen bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-100">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="flex text-sm text-slate-500 mb-4">
@@ -130,33 +130,26 @@ export default function ModuleDetailPage() {
           </ol>
         </nav>
 
-        {/* Module Header */}
-        <div className="mb-12">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <h1 className="text-4xl font-bold text-slate-900 mb-2">
-                Module: {module.name}
+        {/* Module Header - styled card like subject page */}
+        <div className="mb-12 rounded-2xl p-8 shadow-lg border border-white/30 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0D5C58 0%, #1A938F 50%, #26D0CE 100%)' }}>
+          <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" aria-hidden />
+          <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-white/5 rounded-full blur-2xl" aria-hidden />
+          <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-white mb-2 font-heading">
+                {module.name}
               </h1>
-              <p className="text-slate-600 max-w-2xl">
-                {module.description ||
-                  'Explore subjects, topics, and practice MCQs to master this module.'}
+              <p className="text-white/90 text-lg max-w-2xl">
+                {module.description || 'Explore subjects, topics, and practice MCQs to master this module.'}
+              </p>
+              <p className="mt-3 text-white/80 text-sm font-medium">
+                Total Subjects: <span className="font-bold text-white">{subjects.length}</span>
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {module.year?.name && (
-                <span className="px-4 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-semibold border border-primary/20">
-                  {module.year.name}
-                </span>
-              )}
-              <span
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold border ${
-                  hasModuleAccess
-                    ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                    : 'bg-slate-100 text-slate-500 border-slate-200'
-                }`}
-              >
-                {hasModuleAccess ? 'Enrolled' : 'Not Enrolled'}
-              </span>
+            <div className="flex items-center gap-4 flex-shrink-0">
+             
+                <img src="/stato.png" alt="MedEase" className="w-28 h-auto rounded-2xl opacity-95 drop-shadow-lg" aria-hidden />
+            
             </div>
           </div>
         </div>
