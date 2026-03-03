@@ -16,9 +16,14 @@ export default function ForgotPassword() {
     setMsg('');
     setLoading(true);
     try {
-      await api.post('/auth/forgot-password', { email });
+      const { data } = await api.post('/auth/forgot-password', { email });
       setMsg('If this email exists, a password reset link has been sent.');
-      toast.success('If this email exists, a reset link has been sent');
+      if (data && data.sent === false) {
+        // email failed to send (SMTP etc.)
+        toast.error('Failed to send reset link. Please try again later.');
+      } else {
+        toast.success('If this email exists, a reset link has been sent');
+      }
     } catch (err) {
       const msg = err.response?.data?.message || 'Request failed';
       setError(msg);
