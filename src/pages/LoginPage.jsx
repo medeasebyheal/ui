@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, BookOpen, Stethoscope, HeartPulse } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
+import { toast } from 'react-hot-toast';
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -23,6 +24,7 @@ export default function LoginPage() {
     try {
       const { data } = await api.post('/auth/login', { email: identifier.trim(), password });
       login(data.token, data.user);
+      toast.success('Logged in');
       if (rememberMe) {
         try { localStorage.setItem('rememberMe', '1'); } catch {}
       }
@@ -32,7 +34,9 @@ export default function LoginPage() {
         navigate(data.user.role === 'admin' ? '/' : '/student/resources');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      const msg = err.response?.data?.message || 'Login failed';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

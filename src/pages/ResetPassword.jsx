@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/client';
+import { toast } from 'react-hot-toast';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -25,9 +26,12 @@ export default function ResetPassword() {
     setLoading(true);
     try {
       await api.post('/auth/reset-password', { token, email, password });
+      toast.success('Password reset successful');
       navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.message || 'Reset failed');
+      const msg = err.response?.data?.message || 'Reset failed';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

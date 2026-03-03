@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff, BookOpen } from 'lucide-react';
 import api from '../api/client';
+import { toast } from 'react-hot-toast';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -17,8 +18,11 @@ export default function ForgotPassword() {
     try {
       await api.post('/auth/forgot-password', { email });
       setMsg('If this email exists, a password reset link has been sent.');
+      toast.success('If this email exists, a reset link has been sent');
     } catch (err) {
-      setError(err.response?.data?.message || 'Request failed');
+      const msg = err.response?.data?.message || 'Request failed';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, KeyRound, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
+import { toast } from 'react-hot-toast';
 
 const WAVE_SVG = (
   <svg className="w-64 h-auto text-primary" fill="none" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
@@ -40,8 +41,10 @@ export default function RegisterPage() {
       const { data } = await api.post('/auth/register', form);
       if (data.pendingVerification) {
         setPendingVerification(true);
+        toast.success('Verification code sent to your email');
       } else {
         login(data.token, data.user);
+        toast.success('Welcome!');
         if (returnUrl && returnUrl.startsWith('/checkout')) {
           navigate(returnUrl);
         } else {
@@ -49,7 +52,9 @@ export default function RegisterPage() {
         }
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || 'Registration failed');
+      const msg = err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || 'Registration failed';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -62,13 +67,16 @@ export default function RegisterPage() {
     try {
       const { data } = await api.post('/auth/verify-otp', { ...form, otp });
       login(data.token, data.user);
+      toast.success('Account verified');
       if (returnUrl && returnUrl.startsWith('/checkout')) {
         navigate(returnUrl);
       } else {
         navigate('/student/resources');
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || 'Verification failed');
+      const msg = err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || 'Verification failed';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
