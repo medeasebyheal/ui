@@ -14,12 +14,15 @@ function Navbar() {
   const modulesRef = useRef(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const isHome = location.pathname === '/';
+    const isHome = location?.pathname === '/';
     api
       .get('/content/years', { skipLoader: isHome })
-      .then(({ data }) => setYears(Array.isArray(data) ? data : []))
+      .then(({ data }) =>
+        setYears(Array.isArray(data) ? data : Array.isArray(data?.years) ? data.years : [])
+      )
       .catch(() => setYears([]));
   }, []);
 
