@@ -100,39 +100,49 @@ export default function GeminiUsage() {
           <div className="rounded-2xl p-8 xl:col-span-2 relative overflow-hidden bg-white dark:bg-slate-800 shadow-sm border">
             <div className="relative z-10 flex flex-col md:flex-row gap-8">
               <div className="flex-1">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
                       <Key className="w-5 h-5 text-primary" />
                     </div>
-                    <h3 className="text-xl font-display font-bold">Primary API Key</h3>
+                    <h3 className="text-xl font-display font-bold">API Keys Overview</h3>
                   </div>
                   <span className="bg-teal-500/10 text-teal-600 px-3 py-1 rounded-full text-xs font-bold border border-teal-500/20">
-                    {keys.length > 0 && keys[0] && !keys[0].exhausted ? 'OPERATIONAL' : 'CHECK KEYS'}
+                    Showing {keys.length} configured key{keys.length !== 1 ? 's' : ''}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 mb-8">
-                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">RPM</p>
-                    <p className="text-lg font-display font-bold">{keys[0]?.rpm ?? 0} <span className="text-slate-400 font-normal">/ {keys[0]?.limits?.rpm ?? 10}</span></p>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">TPM</p>
-                    <p className="text-lg font-display font-bold">{(keys[0]?.tpm ?? 0).toLocaleString()} <span className="text-slate-400 font-normal">/ {(keys[0]?.limits?.tpm ?? 250000).toLocaleString()}</span></p>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">RPD</p>
-                    <p className="text-lg font-display font-bold">{keys[0]?.rpd ?? 0} <span className="text-slate-400 font-normal">/ {keys[0]?.limits?.rpd ?? 20}</span></p>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Tokens Consumed Today</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-display font-black tracking-tighter text-slate-800 dark:text-white">{(keys[0]?.tokens ?? 0).toLocaleString()}</span>
-                    <span className="text-sm font-medium text-teal-500">{/* dynamic percent or trend could go here */}</span>
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                  {keys.length === 0 ? (
+                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border col-span-3 text-sm text-slate-500">
+                      No API keys configured.
+                    </div>
+                  ) : (
+                    keys.map((key) => {
+                      const exhausted = key.exhausted;
+                      return (
+                        <div
+                          key={key.keyIndex}
+                          className={`p-4 rounded-2xl ${exhausted ? 'bg-rose-50/20 border-rose-200 dark:border-rose-800/50' : 'bg-slate-50 dark:bg-slate-900/40 border'} border`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-sm font-medium">{key.label}</div>
+                            <div className={`text-xs font-semibold px-2 py-0.5 rounded ${exhausted ? 'text-rose-700 bg-rose-100 dark:bg-rose-900/30' : 'text-green-700 bg-green-100 dark:bg-green-900/30'}`}>
+                              {exhausted ? 'Over limit' : 'OK'}
+                            </div>
+                          </div>
+                          <div className="text-xs text-slate-500 mb-2">RPM</div>
+                          <div className={`font-semibold ${key.rpm >= key.limits.rpm ? 'text-rose-600' : ''}`}>{key.rpm ?? 0} / {key.limits.rpm}</div>
+                          <div className="text-xs text-slate-500 mt-2">TPM</div>
+                          <div className={`font-semibold ${key.tpm >= key.limits.tpm ? 'text-rose-600' : ''}`}>{(key.tpm ?? 0).toLocaleString()} / {key.limits.tpm.toLocaleString()}</div>
+                          <div className="text-xs text-slate-500 mt-2">RPD</div>
+                          <div className={`font-semibold ${key.rpd >= key.limits.rpd ? 'text-rose-600' : ''}`}>{key.rpd ?? 0} / {key.limits.rpd}</div>
+                          <div className="text-xs text-slate-500 mt-3">Tokens today</div>
+                          <div className="font-bold text-lg">{(key.tokens ?? 0).toLocaleString()}</div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
               <div className="flex flex-col items-center justify-center md:border-l border-slate-200 dark:border-slate-700/50 md:pl-8">
