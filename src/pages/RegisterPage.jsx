@@ -19,7 +19,6 @@ export default function RegisterPage() {
   const [otp, setOtp] = useState('');
   const [pendingVerification, setPendingVerification] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [agreeTerms, setAgreeTerms] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -32,10 +31,7 @@ export default function RegisterPage() {
       setError('Passwords do not match.');
       return;
     }
-    if (!agreeTerms) {
-      setError('Please agree to the Terms of Service and Privacy Policy.');
-      return;
-    }
+    
     setLoading(true);
     try {
       const { data } = await api.post('/auth/register', form);
@@ -270,25 +266,7 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <label className="flex items-start gap-3 pt-2 cursor-pointer select-none">
-                <input
-                  id="terms"
-                  type="checkbox"
-                  checked={agreeTerms}
-                  onChange={(e) => setAgreeTerms(e.target.checked)}
-                  className="mt-1 shrink-0 rounded border-2 border-white/40 bg-white/10 text-primary focus:ring-0 w-5 h-5 min-w-[20px] min-h-[20px] cursor-pointer accent-white touch-manipulation"
-                />
-                <span className="text-sm text-white/90 leading-relaxed pt-0.5">
-                  I agree to the{' '}
-                  <Link to="/contact" onClick={(e) => e.stopPropagation()} className="text-white font-semibold hover:underline">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link to="/contact" onClick={(e) => e.stopPropagation()} className="text-white font-semibold hover:underline">
-                    Privacy Policy
-                  </Link>
-                </span>
-              </label>
+              
 
               <button
                 type="submit"

@@ -10,13 +10,13 @@
   /* Reduce overall text size on smaller screens */
   @media (max-width: 768px) {
     html {
-      font-size: 14px; /* Represents roughly an 87.5% scale on mobile */
+      font-size: 15px; /* Represents roughly an 87.5% scale on mobile */
     }
   }
 
   @media (max-width: 480px) {
     html {
-      font-size: 13px; /* Slightly smaller for very small screens */
+      font-size: 13.8px; /* Slightly smaller for very small screens */
     }
   }
 
