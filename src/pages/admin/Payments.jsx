@@ -34,6 +34,7 @@ export default function AdminPayments() {
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [rejectModal, setRejectModal] = useState({ paymentId: null, reason: '' });
+  const [approveModal, setApproveModal] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
 
   const fetchPayments = () => {
@@ -62,11 +63,16 @@ export default function AdminPayments() {
     } catch (_) {}
   };
  
-  // Show a confirmation dialog before approving a payment
-  const handleApproveWithConfirm = async (id) => {
-    const confirmed = window.confirm('Are you sure you want to approve this payment? This action cannot be undone.');
-    if (!confirmed) return;
-    await handleVerify(id, 'approved');
+  // Open confirm modal before approving a payment
+  const handleApproveWithConfirm = (id) => {
+    setApproveModal(id);
+    setMenuOpen(null);
+  };
+
+  const handleConfirmApprove = async () => {
+    if (!approveModal) return;
+    await handleVerify(approveModal, 'approved');
+    setApproveModal(null);
   };
 
   const handleRejectClick = (paymentId) => {
@@ -214,6 +220,7 @@ export default function AdminPayments() {
                     <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Package Details</span>
                     <p className="text-sm font-medium text-slate-900 dark:text-white">{p.package?.name || '—'}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">{packageSubtitle(p.package)}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Subscription ID: <span className="font-mono">{p.subscriptionId || '—'}</span></p>
                   </div>
                 </div>
                 <div className="lg:w-32">
@@ -374,6 +381,30 @@ export default function AdminPayments() {
               className="px-4 py-2 text-sm font-medium bg-red-600 text-white hover:bg-red-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Confirm Reject
+            </button>
+          </div>
+        </Modal>
+      )}
+      {/* Approve modal */}
+      {approveModal && (
+        <Modal open onClose={() => setApproveModal(null)} title="Approve payment">
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Are you sure you want to approve this payment? This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2 mt-4">
+            <button
+              type="button"
+              onClick={() => setApproveModal(null)}
+              className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmApprove}
+              className="px-4 py-2 text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg"
+            >
+              Confirm Approve
             </button>
           </div>
         </Modal>

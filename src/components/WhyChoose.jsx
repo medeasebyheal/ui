@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 function WhyChoose() {
   const features = [
     {
@@ -17,8 +19,8 @@ function WhyChoose() {
         ),
         title: "EaseGPT",
         description: "AI-powered assistant to help solve MCQs, OSPEs, Viva preparation with intelligent checking and personalized feedback.",
-        comingSoon: true
-      },
+      }
+      ,
     {
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,12 +139,12 @@ function WhyChoose() {
             <p className="text-gray-600 font-body text-base sm:text-lg mb-6 max-w-2xl mx-auto">
               From last-minute revisions to targeted practice, we've got your back through every step of exam season. 💪📚
             </p>
-            <button className="bg-gradient-to-r from-primary to-primary/90 text-white font-heading font-semibold px-8 sm:px-10 py-4 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105 text-base sm:text-lg inline-flex items-center justify-center gap-2">
+            <Link to="/register" className="bg-gradient-to-r from-primary to-primary/90 text-white font-heading font-semibold px-8 sm:px-10 py-4 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105 text-base sm:text-lg inline-flex items-center justify-center gap-2">
               Get Started Now
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
-            </button>
+            </Link>
           </div>
         </div>
       </div>

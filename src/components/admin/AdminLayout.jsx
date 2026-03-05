@@ -10,6 +10,7 @@ import {
   BookOpen,
   Package,
   Tag,
+  Mail,
   Menu,
   X,
   LogOut,
@@ -54,6 +55,7 @@ const navItems = (isSuperAdmin) => [
     ],
   },
   { to: '/admin/packages', end: false, label: 'Packages', icon: Package },
+  { to: '/admin/contact-queries', end: false, label: 'Inquiries', icon: Mail },
   { to: '/admin/promo-codes', end: false, label: 'Promo Codes', icon: Tag },
 ];
 

@@ -13,9 +13,10 @@ export default function AuthLayout() {
   }
 
   return (
-    <div className={`flex flex-col bg-background-light dark:bg-background-dark font-body ${isAuthPage ? 'min-h-screen h-screen' : 'min-h-screen'}`}>
+    <div className={`flex flex-col  font-body ${isAuthPage ? 'min-h-screen h-screen' : 'min-h-screen'}`}>
+      {/* Desktop header for non-auth pages */}
       {!isAuthPage && (
-        <header className="w-full px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+        <header className="w-full px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between dark:border-slate-700  dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
           <Link to="/" className="flex items-center gap-2">
             <img src="/logo.png" alt="MedEase" className="h-9 w-auto hidden md:block" />
             <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">MedEase</h1>
@@ -26,6 +27,8 @@ export default function AuthLayout() {
         </header>
       )}
 
+      {/* Mobile header for auth pages to allow going back to home */}
+      
       <main className={`flex-1 flex min-h-0 ${isAuthPage ? 'w-full flex-col overflow-hidden' : 'flex-col md:flex-row'}`}>
         {!isAuthPage && (
           <>

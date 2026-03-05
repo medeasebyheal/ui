@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, BookOpen, Stethoscope, HeartPulse } from 'lucide-react';
+import { Eye, EyeOff, BookOpen, Stethoscope, HeartPulse, Home } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import { toast } from 'react-hot-toast';
@@ -119,6 +119,14 @@ export default function LoginPage() {
                 Don&apos;t have an account?{' '}
                 <Link to="/register" className="font-bold hover:underline">Register</Link>
               </p>
+            </div>
+
+            {/* Mobile back link below form */}
+            <div className="md:hidden mt-6 text-center">
+              <Link to="/" className="inline-flex items-center justify-center text-sm text-white font-medium gap-2">
+                <Home className="w-4 h-4" />
+                Back to website
+              </Link>
             </div>
           </div>
         </section>

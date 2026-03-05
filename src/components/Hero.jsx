@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 function Hero() {
   const doctorImages = [
     '/dr1.webp',
@@ -69,18 +71,18 @@ function Hero() {
         
         {/* CTA Buttons */}
         <div className="flex flex-row flex-wrap justify-center gap-3 sm:gap-6 pt-4 relative z-10">
-          <button className="flex-1 min-w-0 sm:flex-initial sm:min-w-0 bg-gradient-to-r from-primary to-primary/90 text-white font-heading font-semibold px-4 sm:px-8 py-3 sm:py-4 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105 text-sm sm:text-lg inline-flex items-center justify-center gap-1.5 sm:gap-2">
+          <Link to="/register" className="flex-1 min-w-0 sm:flex-initial sm:min-w-0 bg-gradient-to-r from-primary to-primary/90 text-white font-heading font-semibold px-4 sm:px-8 py-3 sm:py-4 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105 text-sm sm:text-lg inline-flex items-center justify-center gap-1.5 sm:gap-2">
             Start Your Journey 
             <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
-          </button>
-          <button className="flex-1 min-w-0 sm:flex-initial sm:min-w-0 bg-white text-gray-800 border-2 border-gray-300 font-heading font-semibold px-4 sm:px-8 py-3 sm:py-4 rounded-lg hover:bg-gray-50 transition-all duration-300 transform hover:scale-105 text-sm sm:text-lg inline-flex items-center justify-center gap-1.5 sm:gap-2">
+          </Link>
+          <Link to="/modules" className="flex-1 min-w-0 sm:flex-initial sm:min-w-0 bg-white text-gray-800 border-2 border-gray-300 font-heading font-semibold px-4 sm:px-8 py-3 sm:py-4 rounded-lg hover:bg-gray-50 transition-all duration-300 transform hover:scale-105 text-sm sm:text-lg inline-flex items-center justify-center gap-1.5 sm:gap-2">
             Explore Features 
             <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z"/>
             </svg>
-          </button>
+          </Link>
         </div>
         
         {/* User Avatars Section with Wave Animation */}

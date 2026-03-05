@@ -9,7 +9,7 @@ function formatInvoiceId(id) {
   const str = String(id);
   const short = str.slice(-6).toUpperCase();
   const year = new Date().getFullYear();
-  return `INV-${year}-${short}`;
+    return `INV-${year}-${short}`;
 }
 
 function formatAmount(n) {
@@ -199,7 +199,10 @@ export default function StudentPayments() {
                         className="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors"
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-primary font-medium">{formatInvoiceId(p._id)}</span>
+                          <div className="flex flex-col">
+                            <span className="text-primary font-medium">{p.subscriptionId || formatInvoiceId(p._id)}</span>
+                            <span className="text-xs text-slate-400">{formatInvoiceId(p._id)}</span>
+                          </div>
                         </td>
                         <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
                           {p.package?.name || '—'}

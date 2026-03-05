@@ -10,11 +10,16 @@ export function useProtectedContent() {
     const preventCopy = (e) => e.preventDefault();
     const preventSelect = (e) => e.preventDefault();
 
+    const isProduction = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.NODE_ENV === 'production';
+    console.log(isProduction);
     const preventDevToolsShortcuts = (e) => {
-      if (e.key === 'F12') {
-        e.preventDefault();
-        return;
-      }
+      // Only block devtools shortcuts in production builds.
+      if (!isProduction) return;
+
+      // if (e.key === 'F12') {
+      //   e.preventDefault();
+      //   return;
+      // }
       if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'U'].includes(e.key)) {
         e.preventDefault();
         return;

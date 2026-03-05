@@ -53,6 +53,7 @@ import AdminPackages from './pages/admin/Packages';
 import AdminPromoCodes from './pages/admin/PromoCodes';
 import GeminiUsage from './pages/admin/GeminiUsage';
 import AdminResources from './pages/admin/Resources';
+import ContactQueries from './pages/admin/ContactQueries';
 import ResourceLayout from './pages/admin/resources/ResourceLayout';
 import ProgramsList from './pages/admin/resources/ProgramsList';
 import ProgramYears from './pages/admin/resources/ProgramYears';
@@ -159,6 +160,7 @@ function App() {
             <Route path="years/:yearId/modules/:moduleId/subjects/:subjectId/topics/:topicId/mcqs/:mcqId/edit" element={<McqFormPage />} />
             <Route path="years/:yearId/modules/:moduleId/subjects/:subjectId/topics/:topicId" element={<TopicMcqs />} />
           </Route>
+            <Route path="contact-queries" element={<ContactQueries />} />
           <Route path="proff" element={<ProffLayout />}>
             <Route index element={<ProffDashboard />} />
             <Route path="jsmu" element={<ProffJsmuYears />} />

@@ -18,10 +18,12 @@ import {
   Syringe,
   BarChart3,
   ChevronRight,
+  LockIcon,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import { getRecentViews } from '../../utils/recentViews';
+import EmptyPackageCTA from '../../components/EmptyPackageCTA';
 
 const SUBJECT_ICONS = [Accessibility, Activity, FlaskConical, Dna, Syringe, BarChart3];
 const SUBJECT_COLORS = [
@@ -159,6 +161,7 @@ export default function StudentResources() {
   const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'Student';
   const yearLabel = user?.academicDetails?.year ? `MS ${user.academicDetails.year}` : 'Student';
   const recentToShow = (recentViews.length > 0 ? recentViews : []).slice(0, 3);
+  const hasPackages = !!user?.packages?.length;
   // derive study streak from available user fields (fallback to 0)
   const studyStreakDays = Number(user?.studyStreak ?? user?.streakDays ?? user?.profile?.streak ?? 0) || 0;
   const studyStreakGoal = 30;
@@ -203,9 +206,11 @@ export default function StudentResources() {
             </div>
           </div>
         </section>
+  {/* CTA for students without packages */}
+  {!hasPackages && <EmptyPackageCTA />}
 
         {/* Recently Viewed */}
-        {recentToShow.length > 0 && (
+        {hasPackages && recentToShow.length > 0 && (
           <section className="mb-6">
             <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-900 dark:text-white mb-3">
               <History className="w-5 h-5 text-[#0D9488]" />
@@ -242,9 +247,9 @@ export default function StudentResources() {
             const yearModules = Object.prototype.hasOwnProperty.call(modulesByYear, year._id)
               ? modulesByYear[year._id]
               : undefined;
-            const accessibleModules = (yearModules || []).filter((mod) => hasModuleAccess(mod._id));
-            // hide the year only when modules are loaded and none are accessible to the user
-            if (yearModules !== undefined && accessibleModules.length === 0) return null;
+    const modulesForYear = (yearModules || []);
+    // show the year even if user doesn't have access; we'll mark modules as locked when needed
+    if (yearModules !== undefined && modulesForYear.length === 0) return null;
 
             return (
               <div key={year._id}>
@@ -258,7 +263,7 @@ export default function StudentResources() {
                     <p className="text-slate-500 dark:text-slate-400 animate-pulse">Loading modules…</p>
                   </div>
                 ) : (
-                  accessibleModules
+                  modulesForYear
                     .filter((mod) => matchSearch(mod.name) || matchSearch(mod.description))
                     .map((mod, modIdx) => {
                       const modId = String(mod._id);
@@ -267,50 +272,86 @@ export default function StudentResources() {
                       const loading = loadingSubjects[modId];
                       const ospes = ospesByModule[modId] || [];
                       const moduleImage = mod.imageUrl || PLACEHOLDER_IMAGES.module;
+                      const locked = !hasModuleAccess(mod._id) || !user?.packages?.length;
 
                       return (
                         <div
                           key={mod._id}
-                          className="bg-white dark:bg-[#1E293B] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden mb-10"
+                          className="bg-white dark:bg-[#1E293B] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden mb-10 relative"
                         >
                           {/* Module hero (clickable -> module detail) */}
-                          <Link to={`/student/modules/${mod._id}`} className="relative h-48 group block">
-                            <img
-                              src={moduleImage}
-                              alt=""
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              decoding="async"
-                              onError={(e) => {
-                                e.target.src = PLACEHOLDER_IMAGES.module;
-                              }}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 to-transparent flex flex-col justify-end p-6 lg:p-8">
-                              <div className="flex justify-between items-end w-full gap-4">
-                                <div>
-                                  <span className="bg-[#0D9488]/90 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-2 inline-block">
-                                    {year.name}
-                                  </span>
-                                  <h4 className="text-2xl lg:text-3xl font-bold text-white">{mod.name}</h4>
-                                  <p className="text-slate-200 text-sm mt-1 line-clamp-1">
-                                    {mod.description || 'Subjects and topics'}
-                                  </p>
+                          {locked ? (
+                            <div className="relative h-48 group block pointer-events-none">
+                              <img
+                                src={moduleImage}
+                                alt=""
+                                className="w-full h-full object-cover opacity-60"
+                                loading="lazy"
+                                decoding="async"
+                                onError={(e) => {
+                                  e.target.src = PLACEHOLDER_IMAGES.module;
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black/40 flex flex-col justify-center items-center p-6 lg:p-8 text-center">
+                                <span className="text-white  bg-[#0D9488]/90 p-4 rounded-full text-xl font-semibold mb-2"><LockIcon className="w-10 h-10" /></span>
+                               
+                              </div>
+                              <div className="absolute inset-0 bg-gradient-to-r from-slate-900/40 to-transparent flex flex-col justify-end p-6 lg:p-8">
+                                <div className="flex justify-between items-end w-full gap-4">
+                                  <div>
+                                    <span className="bg-[#0D9488]/90 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-2 inline-block">
+                                      {year.name}
+                                    </span>
+                                    <h4 className="text-2xl lg:text-3xl font-bold text-white">{mod.name}</h4>
+                                    <p className="text-slate-200 text-sm mt-1 line-clamp-1">
+                                      {mod.description || 'Subjects and topics'}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </Link>
+                          ) : (
+                            <Link to={`/student/modules/${mod._id}`} className="relative h-48 group block">
+                              <img
+                                src={moduleImage}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                                decoding="async"
+                                onError={(e) => {
+                                  e.target.src = PLACEHOLDER_IMAGES.module;
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 to-transparent flex flex-col justify-end p-6 lg:p-8">
+                                <div className="flex justify-between items-end w-full gap-4">
+                                  <div>
+                                    <span className="bg-[#0D9488]/90 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-2 inline-block">
+                                      {year.name}
+                                    </span>
+                                    <h4 className="text-2xl lg:text-3xl font-bold text-white">{mod.name}</h4>
+                                    <p className="text-slate-200 text-sm mt-1 line-clamp-1">
+                                      {mod.description || 'Subjects and topics'}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </Link>
+                          )}
 
                           <div className="p-6 lg:p-8">
-                            <button
-                              type="button"
-                              onClick={() => toggleModule(modId)}
-                              className="flex items-center gap-2 text-[#0D9488] font-semibold hover:underline mb-6"
-                            >
-                              {isExpanded ? 'Hide subjects' : 'Browse subjects & topics'}
-                              <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!locked) toggleModule(modId);
+              }}
+              className={`flex items-center gap-2 font-semibold mb-6 ${locked ? 'text-slate-400 cursor-not-allowed' : 'text-[#0D9488] hover:underline'}`}
+              title={locked ? 'Subscribe to access this module' : ''}
+            >
+              {isExpanded ? 'Hide subjects' : locked ? 'Locked — Subscribe to access' : 'Browse subjects & topics'}
+              <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+            </button>
 
-                            {isExpanded && (
+            {isExpanded && !locked && (
                               <div className="space-y-10">
                                 {loading && (
                                   <p className="text-slate-500 dark:text-slate-400 text-sm py-8 text-center">Loading subjects and topics…</p>

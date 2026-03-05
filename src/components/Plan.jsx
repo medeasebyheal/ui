@@ -46,8 +46,8 @@ export const PLAN_DATA = [
     {
       planKey: 'full-year',
       name: "Full Year",
-      price: "3750",
-      originalPrice: "4000",
+      price: "4000",
+      originalPrice: "4500",
       duration: "12 Months",
       description: "Complete year coverage",
       badge: "BEST VALUE",
@@ -66,9 +66,8 @@ export const PLAN_DATA = [
     {
       planKey: 'master-proff',
       name: "Proff Buster",
-      price: "—",
-      originalPrice: null,
-      promoPrice: null,
+      price: "Coming Soon",
+      
       duration: "MS 1",
       description: "Papers 1–4",
       badge: "PREMIUM",
@@ -235,23 +234,30 @@ export function PlanCard({ plan, ctaText, ctaTo, isLink = false, onBuyNow }) {
           <span className={`text-4xl sm:text-5xl font-heading font-bold ${
             plan.highlighted ? 'text-white' : 'text-gray-900'
           }`}>
-            {displayPrice === "0" ? "Free" : ["—", "Contact", "TBD"].includes(displayPrice) ? displayPrice : `₨${displayPrice}`}
+            {displayPrice === "Coming Soon" ? "Coming Soon" : displayPrice === "0" ? "Free" : ["—", "Contact", "TBD"].includes(displayPrice) ? displayPrice : `₨${displayPrice}`}
           </span>
-          {displayPrice !== "0" && !["—", "Contact", "TBD"].includes(displayPrice) && (
+          {displayPrice !== "Coming Soon" && displayPrice !== "0" && !["—", "Contact", "TBD"].includes(displayPrice) && (
             <span className={`text-sm ${plan.highlighted ? 'text-white/80' : 'text-gray-500'}`}>
               /{plan.duration}
             </span>
           )}
         </div>
-        {(plan.price === "0" || displayPrice === "—") && plan.duration && (
+        {displayPrice !== "Coming Soon" && (plan.price === "0" || displayPrice === "—") && plan.duration && (
           <p className={`text-sm mt-1 ${plan.highlighted ? 'text-white/80' : 'text-gray-500'}`}>
             {plan.duration}
           </p>
         )}
       </div>
 
+      {/* Coming Soon indicator */}
+      {plan.comingSoon && (
+        <div className="absolute top-4 left-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg transform rotate-0">
+          COMING SOON
+        </div>
+      )}
+
       {/* CTA Button */}
-      {onBuyNow ? (
+      {displayPrice === "Coming Soon" ? null : onBuyNow ? (
         <button
           type="button"
           onClick={() => onBuyNow(plan)}

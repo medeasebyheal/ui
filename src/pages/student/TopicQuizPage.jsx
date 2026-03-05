@@ -517,7 +517,7 @@ export default function TopicQuizPage() {
                 transition={{ duration: 0.2 }}
                 className="bg-white rounded-3xl shadow-sm border border-primary/10 shadow-primary/5 overflow-hidden"
               >
-                <div className="p-8 md:p-12 select-none">
+                <div className="p-4 md:p-12 select-none">
                   <div className="flex items-center justify-between mb-6">
                     <span
                       className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
@@ -543,7 +543,7 @@ export default function TopicQuizPage() {
                   </div>
                   <div className="mb-10">
                     <h3
-                      className={`text-xl md:text-2xl font-display font-bold leading-relaxed ${
+                      className={`text-lg md:text-2xl font-display font-bold leading-relaxed ${
                         flaggedQuestions.has(currentIndex) ? 'text-amber-600 dark:text-amber-500' : 'text-slate-800 dark:text-slate-200'
                       }`}
                     >
@@ -562,7 +562,7 @@ export default function TopicQuizPage() {
                       const showWrong = result != null && selected === i && !result.correct;
                       const disabled = result != null;
                       const isSelected = selected === i;
-                      let labelClass = 'flex items-center gap-4 p-5 rounded-2xl border-2 cursor-pointer transition-all ';
+                      let labelClass = 'flex items-center gap-4 p-3 sm:p-5 rounded-2xl border-2 cursor-pointer transition-all ';
                       if (showCorrect) labelClass += 'border-success-green bg-success-green/10 ';
                       else if (showWrong) labelClass += 'border-red-300 bg-red-50 ';
                       else if (disabled) labelClass += 'border-slate-100 bg-slate-50/50 cursor-default ';
@@ -595,7 +595,7 @@ export default function TopicQuizPage() {
                             >
                               {showCorrect && <Check className="w-4 h-4 text-white" />}
                             </div>
-                            <span className="text-lg font-medium">{opt}</span>
+                            <span className="text-base sm:text-lg font-medium">{opt}</span>
                           </div>
                         </label>
                       );
@@ -619,7 +619,7 @@ export default function TopicQuizPage() {
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="mt-4 p-5 bg-slate-50 rounded-xl border border-slate-200 space-y-5">
+                            <div className="mt-4 p-4 sm:p-5 bg-slate-50 rounded-xl border border-slate-200 space-y-5">
                               <div className="flex items-start gap-3">
                                 <Info className="w-5 h-5 text-success-green flex-shrink-0 mt-0.5" />
                                 <p className="text-slate-600">{result.explanation || 'No explanation available.'}</p>
@@ -641,12 +641,12 @@ export default function TopicQuizPage() {
                     </div>
                   )}
                 </div>
-                <div className="bg-slate-50 border-t border-slate-200 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="bg-slate-50 border-t border-slate-200 p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <button
                     type="button"
                     onClick={handlePrevious}
                     disabled={currentIndex === 0 || transitioning}
-                    className="w-full sm:w-auto px-8 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto px-4 py-2 sm:px-8 sm:py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="w-5 h-5" />
                     <span>Previous Question</span>
@@ -656,7 +656,7 @@ export default function TopicQuizPage() {
                       type="button"
                       onClick={handleSubmitClick}
                       disabled={transitioning}
-                      className="w-full sm:w-auto px-10 py-3 bg-primary text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full sm:w-auto px-4 py-2 sm:px-10 sm:py-3 bg-primary text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span>Submit Quiz</span>
                       <Send className="w-5 h-5" />
@@ -666,7 +666,7 @@ export default function TopicQuizPage() {
                       type="button"
                       onClick={handleNext}
                       disabled={transitioning}
-                      className="w-full sm:w-auto px-10 py-3 bg-primary text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full sm:w-auto px-4 py-2 sm:px-10 sm:py-3 bg-primary text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span>Next Question</span>
                       <ChevronRight className="w-5 h-5" />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import EmptyPackageCTA from '../../components/EmptyPackageCTA';
 import { BookOpen, BarChart3, CreditCard, Calendar, PlayCircle, Info } from 'lucide-react';
 import { getRecentViews } from '../../utils/recentViews';
 
@@ -20,7 +21,8 @@ export default function StudentDashboard() {
   const firstPackage = user?.packages?.[0]?.package;
   const packageName = firstPackage?.name || 'Package';
 
-  const continueLearning = recentView
+  // Only treat recentView as a resume target when the user has an active package.
+  const continueLearning = (hasPackages && recentView)
     ? {
         title: recentView.name,
         subject: recentView.meta || (recentView.type === 'module' ? 'Module' : recentView.type === 'topic' ? 'Topic' : recentView.type === 'ospe' ? 'OSPE' : 'Resource'),
@@ -92,6 +94,7 @@ export default function StudentDashboard() {
         </Link>
       </section>
 
+    
       {/* Continue Learning */}
       <section>
         <div className="flex items-center justify-between mb-6">
@@ -123,9 +126,9 @@ export default function StudentDashboard() {
               <div className="flex flex-col sm:flex-row items-center gap-6">
                 <span className="inline-flex items-center gap-2 w-full sm:w-auto px-10 py-4 text-white font-bold rounded-xl shadow-lg transition-all justify-center" style={{ background: 'linear-gradient(145deg, #1A938F, #26D0CE)' }}>
                   <PlayCircle className="w-5 h-5" />
-                  {recentView ? 'Resume Learning' : 'Open Resources'}
+                  {hasPackages && recentView ? 'Resume Learning' : 'Open Resources'}
                 </span>
-                {recentView && (
+                {hasPackages && recentView && (
                   <span className="text-sm text-slate-500 font-medium">Continue from your last opened resource</span>
                 )}
               </div>

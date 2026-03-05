@@ -30,6 +30,7 @@ export default function CheckoutPage() {
   const [promoApplied, setPromoApplied] = useState(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [receipt, setReceipt] = useState(null);
+  const [receiptPreview, setReceiptPreview] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const receiptInputRef = useRef(null);
 
@@ -63,6 +64,23 @@ export default function CheckoutPage() {
     }
     api.get('/packages').then(({ data }) => setPackages(data)).catch(() => setPackages([])).finally(() => setLoading(false));
   }, [user, planKey, navigate]);
+
+  useEffect(() => {
+    let url = null;
+    if (!receipt) {
+      setReceiptPreview(null);
+      return;
+    }
+    try {
+      url = URL.createObjectURL(receipt);
+      setReceiptPreview(url);
+    } catch {
+      setReceiptPreview(null);
+    }
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [receipt]);
 
   useEffect(() => {
     if (planKey !== 'master-proff' && yearsFromPackages.length > 0 && !yearsFromPackages.includes(year)) {
@@ -397,23 +415,32 @@ export default function CheckoutPage() {
                     id="receipt-upload"
                   />
                   {receipt ? (
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                      <p className="text-sm font-medium text-primary truncate max-w-[200px] sm:max-w-none">{receipt.name}</p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setReceipt(null);
-                          setFieldErrors((err) => ({ ...err, receipt: '' }));
-                          if (receiptInputRef.current) receiptInputRef.current.value = '';
-                        }}
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                        aria-label="Remove file"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                      <label htmlFor="receipt-upload" className="text-xs text-primary font-medium cursor-pointer hover:underline">
-                        Choose different file
-                      </label>
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="relative">
+                        {receiptPreview ? (
+                          <img src={receiptPreview} alt="Receipt preview" className="max-w-[220px] max-h-[140px] object-contain rounded-md border" />
+                        ) : (
+                          <div className="w-[220px] h-[140px] flex items-center justify-center rounded-md border bg-gray-50 text-sm text-gray-500">Preview not available</div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReceipt(null);
+                            setFieldErrors((err) => ({ ...err, receipt: '' }));
+                            if (receiptInputRef.current) receiptInputRef.current.value = '';
+                          }}
+                          className="absolute -top-2 -right-2 inline-flex items-center justify-center w-7 h-7 rounded-full bg-red-100 text-red-600 hover:bg-red-200 shadow"
+                          aria-label="Remove receipt"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="flex flex-col items-start">
+                        <p className="text-sm font-medium text-primary truncate max-w-[200px]">{receipt.name}</p>
+                        <label htmlFor="receipt-upload" className="text-xs text-primary font-medium cursor-pointer hover:underline mt-2">
+                          Choose different file
+                        </label>
+                      </div>
                     </div>
                   ) : (
                     <label htmlFor="receipt-upload" className="cursor-pointer flex flex-col items-center">
@@ -454,7 +481,7 @@ export default function CheckoutPage() {
               <span className="text-primary text-xl">₨{finalPrice}</span>
             </div>
             <p className="text-sm text-gray-500 mb-4">
-              10% of your payment supports charitable initiatives in medical education.
+              10% of your payment supports charitable initiatives.
             </p>
             {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
             <button
@@ -511,7 +538,7 @@ function CheckoutConfirmation({ payment, planName }) {
           </div>
           <div className="flex justify-between pt-2 border-t border-gray-100">
             <span className="text-gray-500">Subscription ID</span>
-            <span className="text-xs font-mono text-gray-600">{payment._id}</span>
+            <span className="text-xs font-mono text-gray-600">{payment.subscriptionId || payment._id}</span>
           </div>
         </div>
       </div>
