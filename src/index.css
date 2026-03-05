@@ -3,6 +3,23 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    font-size: 16px;
+  }
+
+  /* Reduce overall text size on smaller screens */
+  @media (max-width: 768px) {
+    html {
+      font-size: 14px; /* Represents roughly an 87.5% scale on mobile */
+    }
+  }
+
+  @media (max-width: 480px) {
+    html {
+      font-size: 13px; /* Slightly smaller for very small screens */
+    }
+  }
+
   body {
     font-family: 'Inter', sans-serif;
   }
