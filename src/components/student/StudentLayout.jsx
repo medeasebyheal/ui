@@ -7,6 +7,7 @@ import {
   BookOpen,
   User,
   FileText,
+  Package,
   Menu,
   X,
   LogOut,
@@ -16,6 +17,7 @@ import {
 
 const navItems = [
   { to: '/student/resources', end: true, label: 'Resources', icon: LayoutDashboard },
+  { to: '/packages', end: false, label: 'Packages', icon: Package },
   { to: '/student/profile', end: false, label: 'Profile', icon: User },
   { to: '/student/payments', end: false, label: 'Payments', icon: FileText },
 ];
