@@ -8,6 +8,7 @@ import ScrollToTop from './components/ScrollToTop';
 import { StudentRoute, AdminRoute } from './components/ProtectedRoute';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
+import Maintenance from './pages/Maintenance';
 
 import Home from './pages/Home';
 import AboutPage from './pages/AboutPage';
@@ -83,6 +84,20 @@ function App() {
       mirror: false,
     });
   }, []);
+  // Maintenance toggle (set to true to enable maintenance mode for all routes)
+  const maintenance = true;
+  if (maintenance) {
+    // render maintenance for all routes
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="*" element={<Maintenance />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  // Show maintenance page at home route; keep other routes available.
   return (
     <BrowserRouter>
       <ScrollToTop />
@@ -90,7 +105,7 @@ function App() {
         <Toaster />
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
+            <Route index element={<Maintenance />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="packages" element={<PackagesPage />} />
             <Route path="modules" element={<ModulesPage />} />
