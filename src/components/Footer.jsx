@@ -1,4 +1,5 @@
 import { Mail, Phone, MapPin, Facebook, Instagram, Youtube } from 'lucide-react'
+import { Link } from 'react-router-dom';
 
 function Footer() {
   return (
@@ -56,34 +57,34 @@ function Footer() {
             <h4 className="text-lg font-heading font-bold text-white mb-4 sm:mb-6">Quick Links</h4>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
+                <Link to="/" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
                   Home
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#about" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
+                <Link to="/about" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
                   About Us
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#features" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
+                <Link to="/modules" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
                   Features
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#plans" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
+                <Link to="/packages" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
                   Pricing Plans
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#testimonials" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
+                <Link to={{ pathname: '/', hash: '#testimonials' }} className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
                   Testimonials
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
+                <Link to="/blog" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
                   Blog
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -93,34 +94,34 @@ function Footer() {
             <h4 className="text-lg font-heading font-bold text-white mb-4 sm:mb-6">Resources</h4>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
+                <Link to="/modules" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
                   MCQ Database
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
+                <Link to="/modules" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
                   OSPE Practice
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
+                <Link to="/contact" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
                   Live Classes
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
+                <Link to="/modules" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
                   Recorded Lectures
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
+                <Link to="/packages" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
                   Past Papers
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
+                <Link to="/modules" className="text-sm sm:text-base hover:text-primary transition-colors duration-300">
                   Study Materials
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -186,15 +187,12 @@ function Footer() {
               © {new Date().getFullYear()} MedEase. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
-              <a href="#" className="text-gray-400 hover:text-primary transition-colors">
+              <Link to="/privacy" className="text-gray-400 hover:text-primary transition-colors">
                 Privacy Policy
-              </a>
-              <a href="#" className="text-gray-400 hover:text-primary transition-colors">
+              </Link>
+              <Link to="/terms" className="text-gray-400 hover:text-primary transition-colors">
                 Terms of Service
-              </a>
-              <a href="#" className="text-gray-400 hover:text-primary transition-colors">
-                Refund Policy
-              </a>
+              </Link>
             </div>
           </div>
         </div>

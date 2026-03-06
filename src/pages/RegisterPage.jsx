@@ -27,11 +27,18 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!form.name.trim()) { toast.error('Full Name is required'); return; }
+    if (!form.email.trim() || !/^\S+@\S+\.\S+$/.test(form.email)) { toast.error('A valid Email Address is required'); return; }
+    if (!form.password) { toast.error('Password is required'); return; }
+    if (form.password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
+
     if (form.password !== confirmPassword) {
+      toast.error('Passwords do not match.');
       setError('Passwords do not match.');
       return;
     }
-    
+
     setLoading(true);
     try {
       const { data } = await api.post('/auth/register', form);
@@ -59,6 +66,10 @@ export default function RegisterPage() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setError('');
+    if (!otp || otp.length !== 6) {
+      toast.error('Please enter a valid 6-digit verification code');
+      return;
+    }
     setLoading(true);
     try {
       const { data } = await api.post('/auth/verify-otp', { ...form, otp });
@@ -92,7 +103,7 @@ export default function RegisterPage() {
           className="w-full lg:w-1/2 min-h-screen lg:min-h-0 p-6 sm:p-8 lg:p-16 flex flex-col justify-center items-center relative overflow-hidden"
           style={{ background: 'linear-gradient(145deg, #0D5C58 0%, #1A938F 50%, #26D0CE 100%)' }}
         >
-        <div className="absolute -top-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+          <div className="absolute -top-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
           <div className="relative z-10 w-full max-w-md">
             <button
               type="button"
@@ -266,7 +277,7 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              
+
 
               <button
                 type="submit"

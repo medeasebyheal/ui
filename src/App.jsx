@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
@@ -6,6 +6,8 @@ import Layout from './components/Layout';
 import AuthLayout from './components/AuthLayout';
 import ScrollToTop from './components/ScrollToTop';
 import { StudentRoute, AdminRoute } from './components/ProtectedRoute';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 import Home from './pages/Home';
 import AboutPage from './pages/AboutPage';
@@ -13,6 +15,8 @@ import PackagesPage from './pages/PackagesPage';
 import ModulesPage from './pages/ModulesPage';
 import ProffPage from './pages/ProffPage';
 import ContactPage from './pages/ContactPage';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import Terms from './pages/Terms';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPassword from './pages/ForgotPassword';
@@ -71,6 +75,14 @@ import SubjectsList from './pages/admin/resources/SubjectsList';
 import TopicsList from './pages/admin/resources/TopicsList';
 
 function App() {
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      easing: 'ease-out-cubic',
+      once: false,
+      mirror: false,
+    });
+  }, []);
   return (
     <BrowserRouter>
       <ScrollToTop />
@@ -84,6 +96,8 @@ function App() {
             <Route path="modules" element={<ModulesPage />} />
             <Route path="proff" element={<ProffPage />} />
             <Route path="contact" element={<ContactPage />} />
+            <Route path="privacy" element={<PrivacyPolicy />} />
+            <Route path="terms" element={<Terms />} />
             <Route path="checkout" element={<CheckoutPage />} />
           </Route>
 

@@ -75,11 +75,45 @@ export default function StudentResources() {
   const [studyTipIndex, setStudyTipIndex] = useState(() => Math.floor(Math.random() * MBBS_STUDY_TIPS.length));
   const [expandedModules, setExpandedModules] = useState({});
 
+  const firstModuleIdStr = useMemo(() => {
+    let first = null;
+    let minTime = Infinity;
+    Object.values(modulesByYear).forEach((mods) => {
+      (mods || []).forEach((m) => {
+        const t = new Date(m.createdAt || 0).getTime();
+        if (t < minTime) {
+          minTime = t;
+          first = String(m._id);
+        }
+      });
+    });
+    return first;
+  }, [modulesByYear]);
+
+  const hasActiveFreeTrial = useMemo(() => {
+    if (!user?.packages?.length) return false;
+    const now = Date.now();
+    return user.packages.some((up) => {
+      if (!up || up.status !== 'active') return false;
+      const pkg = up.package || {};
+      const name = (pkg.name || '').toString();
+      const planKey = pkg.planKey || '';
+      if (up.expiresAt && new Date(up.expiresAt).getTime() <= now) return false;
+      return /free[-\s]?trial/i.test(name) || String(planKey) === 'free-trial';
+    });
+  }, [user?.packages]);
+
   const enrolledModuleIds = useMemo(() => {
     const ids = new Set();
     if (!user?.packages?.length) return ids;
     user.packages.forEach((up) => {
-      const pkg = up.package;
+      if (!up || up.status !== 'active') return;
+      const pkg = up.package || {};
+      const name = (pkg.name || '').toString();
+      const planKey = pkg.planKey || '';
+      const isTrialPkg = /free[-\s]?trial/i.test(name) || String(planKey) === 'free-trial';
+      if (isTrialPkg) return; // exclude free trial from Full module access
+
       if (pkg?.moduleIds?.length) {
         pkg.moduleIds.forEach((id) => {
           const idStr = typeof id === 'object' && id != null ? String(id._id || id) : String(id);
@@ -190,7 +224,7 @@ export default function StudentResources() {
     <div className="flex flex-1 min-w-0 w-full bg-[#F8FAFC] dark:bg-[#0F172A]">
       <div className="flex-1 min-w-0 p-6 lg:p-8 overflow-y-auto custom-scrollbar">
         {/* Header */}
-       
+
 
         {/* Welcome card - teal gradient like login/signup */}
         <section className="mb-8">
@@ -206,8 +240,8 @@ export default function StudentResources() {
             </div>
           </div>
         </section>
-  {/* CTA for students without packages */}
-  {!hasPackages && <EmptyPackageCTA />}
+        {/* CTA for students without packages */}
+        {!hasPackages && <EmptyPackageCTA />}
 
         {/* Recently Viewed */}
         {hasPackages && recentToShow.length > 0 && (
@@ -247,9 +281,9 @@ export default function StudentResources() {
             const yearModules = Object.prototype.hasOwnProperty.call(modulesByYear, year._id)
               ? modulesByYear[year._id]
               : undefined;
-    const modulesForYear = (yearModules || []);
-    // show the year even if user doesn't have access; we'll mark modules as locked when needed
-    if (yearModules !== undefined && modulesForYear.length === 0) return null;
+            const modulesForYear = (yearModules || []);
+            // show the year even if user doesn't have access; we'll mark modules as locked when needed
+            if (yearModules !== undefined && modulesForYear.length === 0) return null;
 
             return (
               <div key={year._id}>
@@ -272,7 +306,8 @@ export default function StudentResources() {
                       const loading = loadingSubjects[modId];
                       const ospes = ospesByModule[modId] || [];
                       const moduleImage = mod.imageUrl || PLACEHOLDER_IMAGES.module;
-                      const locked = !hasModuleAccess(mod._id) || !user?.packages?.length;
+                      const isFreeTrialAccessible = hasActiveFreeTrial && modId === firstModuleIdStr;
+                      const locked = (!hasModuleAccess(mod._id) && !isFreeTrialAccessible) || !user?.packages?.length;
 
                       return (
                         <div
@@ -294,7 +329,7 @@ export default function StudentResources() {
                               />
                               <div className="absolute inset-0 bg-black/40 flex flex-col justify-center items-center p-6 lg:p-8 text-center">
                                 <span className="text-white  bg-[#0D9488]/90 p-4 rounded-full text-xl font-semibold mb-2"><LockIcon className="w-10 h-10" /></span>
-                               
+
                               </div>
                               <div className="absolute inset-0 bg-gradient-to-r from-slate-900/40 to-transparent flex flex-col justify-end p-6 lg:p-8">
                                 <div className="flex justify-between items-end w-full gap-4">
@@ -339,19 +374,19 @@ export default function StudentResources() {
                           )}
 
                           <div className="p-6 lg:p-8">
-            <button
-              type="button"
-              onClick={() => {
-                if (!locked) toggleModule(modId);
-              }}
-              className={`flex items-center gap-2 font-semibold mb-6 ${locked ? 'text-slate-400 cursor-not-allowed' : 'text-[#0D9488] hover:underline'}`}
-              title={locked ? 'Subscribe to access this module' : ''}
-            >
-              {isExpanded ? 'Hide subjects' : locked ? 'Locked — Subscribe to access' : 'Browse subjects & topics'}
-              <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!locked) toggleModule(modId);
+                              }}
+                              className={`flex items-center gap-2 font-semibold mb-6 ${locked ? 'text-slate-400 cursor-not-allowed' : 'text-[#0D9488] hover:underline'}`}
+                              title={locked ? 'Subscribe to access this module' : ''}
+                            >
+                              {isExpanded ? 'Hide subjects' : locked ? 'Locked — Subscribe to access' : 'Browse subjects & topics'}
+                              <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                            </button>
 
-            {isExpanded && !locked && (
+                            {isExpanded && !locked && (
                               <div className="space-y-10">
                                 {loading && (
                                   <p className="text-slate-500 dark:text-slate-400 text-sm py-8 text-center">Loading subjects and topics…</p>
@@ -398,24 +433,31 @@ export default function StudentResources() {
                                 {!loading && ospes.length > 0 && (
                                   <div className="pt-8 mt-8 border-t border-slate-100 dark:border-slate-800">
                                     <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">OSPE Practice</p>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                      {ospes.map((ospe) => (
-                                        <Link
-                                          key={ospe._id}
-                                          to={`/student/ospes/${ospe._id}`}
-                                          className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/40 hover:border-[#0D9488] transition-all"
-                                        >
-                                          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
-                                            <FileText className="w-5 h-5" />
-                                          </div>
-                                          <div className="min-w-0 flex-1">
-                                            <h6 className="font-semibold text-slate-900 dark:text-white truncate">{ospe.name}</h6>
-                                            <p className="text-xs text-slate-500 truncate">{ospe.description || 'Practice exam'}</p>
-                                          </div>
-                                          <span className="text-xs font-bold text-[#0D9488] shrink-0">Start</span>
-                                        </Link>
-                                      ))}
-                                    </div>
+                                    {!hasModuleAccess(mod._id) ? (
+                                      <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center gap-3">
+                                        <LockIcon className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                                        <p className="text-sm font-medium text-amber-800 dark:text-amber-200">OSPE practice is locked in free trial.</p>
+                                      </div>
+                                    ) : (
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {ospes.map((ospe) => (
+                                          <Link
+                                            key={ospe._id}
+                                            to={`/student/ospes/${ospe._id}`}
+                                            className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/40 hover:border-[#0D9488] transition-all"
+                                          >
+                                            <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+                                              <FileText className="w-5 h-5" />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                              <h6 className="font-semibold text-slate-900 dark:text-white truncate">{ospe.name}</h6>
+                                              <p className="text-xs text-slate-500 truncate">{ospe.description || 'Practice exam'}</p>
+                                            </div>
+                                            <span className="text-xs font-bold text-[#0D9488] shrink-0">Start</span>
+                                          </Link>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>

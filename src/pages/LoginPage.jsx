@@ -20,13 +20,23 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!identifier.trim()) {
+      toast.error('Please enter your Email or Username');
+      return;
+    }
+    if (!password) {
+      toast.error('Please enter your Password');
+      return;
+    }
+
     setLoading(true);
     try {
       const { data } = await api.post('/auth/login', { email: identifier.trim(), password });
       login(data.token, data.user);
       toast.success('Logged in');
       if (rememberMe) {
-        try { localStorage.setItem('rememberMe', '1'); } catch {}
+        try { localStorage.setItem('rememberMe', '1'); } catch { }
       }
       if (returnUrl && returnUrl.startsWith('/checkout') && data.user.role === 'student') {
         navigate(returnUrl);

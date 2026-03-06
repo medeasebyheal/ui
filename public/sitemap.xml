@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://www.medeasebyheal.com/</loc>
+    <lastmod>2026-03-06</lastmod>
+    <priority>1.00</priority>
+  </url>
+  <url>
+    <loc>https://www.medeasebyheal.com/about</loc>
+    <lastmod>2026-03-06</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://www.medeasebyheal.com/packages</loc>
+    <lastmod>2026-03-06</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://www.medeasebyheal.com/modules</loc>
+    <lastmod>2026-03-06</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://www.medeasebyheal.com/contact</loc>
+    <lastmod>2026-03-06</lastmod>
+    <priority>0.64</priority>
+  </url>
+  <url>
+    <loc>https://www.medeasebyheal.com/privacy</loc>
+    <lastmod>2026-03-06</lastmod>
+    <priority>0.64</priority>
+  </url>
+  <url>
+    <loc>https://www.medeasebyheal.com/terms</loc>
+    <lastmod>2026-03-06</lastmod>
+    <priority>0.64</priority>
+  </url>
+</urlset>
+

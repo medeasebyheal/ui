@@ -3,16 +3,26 @@ import api from '../api/client';
 import { toast } from 'react-hot-toast';
 
 export default function ContactPage() {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '', packageInterest: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '', packageInterest: '', institution: '', college: '', rollNumber: '', batch: '' });
   const [status, setStatus] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!form.name.trim()) { toast.error('Name is required'); return; }
+    if (!form.email.trim() || !/^\S+@\S+\.\S+$/.test(form.email)) { toast.error('Valid Email is required'); return; }
+    if (!form.institution.trim()) { toast.error('Institution is required'); return; }
+    if (!form.college.trim()) { toast.error('College is required'); return; }
+    if (!form.rollNumber.trim()) { toast.error('Roll number is required'); return; }
+    if (!form.batch.trim()) { toast.error('Batch is required'); return; }
+    if (!/^\d{4}$/.test(form.batch.trim())) { toast.error('Batch must be a 4-digit year (e.g. 2024)'); return; }
+    if (!form.message.trim()) { toast.error('Message is required'); return; }
+
     setStatus('sending');
     try {
       await api.post('/contact', form);
       setStatus('sent');
-      setForm({ name: '', email: '', phone: '', subject: '', message: '', packageInterest: '' });
+      setForm({ name: '', email: '', phone: '', subject: '', message: '', packageInterest: '', institution: '', college: '', rollNumber: '', batch: '' });
       toast.success('Message sent — we will get back to you soon.');
     } catch (err) {
       setStatus('error');
@@ -74,6 +84,55 @@ export default function ContactPage() {
               onChange={(e) => setForm((f) => ({ ...f, packageInterest: e.target.value }))}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
             />
+          </div>
+
+          <div className="border-t border-gray-200 mt-6 pt-6 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Med school details</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Institution <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. JSMU"
+                  value={form.institution}
+                  onChange={(e) => setForm((f) => ({ ...f, institution: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">College <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. FJMC"
+                  value={form.college}
+                  onChange={(e) => setForm((f) => ({ ...f, college: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Roll number <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  value={form.rollNumber}
+                  onChange={(e) => setForm((f) => ({ ...f, rollNumber: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Batch <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 2024"
+                  value={form.batch}
+                  onChange={(e) => setForm((f) => ({ ...f, batch: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                />
+              </div>
+            </div>
           </div>
 
           <div>

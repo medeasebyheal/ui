@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Package, User, CreditCard, Tag, CheckCircle, Download, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
+import { toast } from 'react-hot-toast';
 
 const PLAN_KEYS = ['half-year', 'full-year', 'master-proff'];
 
@@ -43,14 +44,21 @@ export default function CheckoutPage() {
 
   const validate = () => {
     const errs = {};
-    if (!academic.institution?.trim()) errs.institution = 'Required';
-    if (!academic.college?.trim()) errs.college = 'Required';
-    if (!academic.rollNumber?.trim()) errs.rollNumber = 'Required';
-    if (!academic.batch?.trim()) errs.batch = 'Required';
+    if (!academic.institution?.trim()) errs.institution = 'Institution is required';
+    if (!academic.college?.trim()) errs.college = 'College is required';
+    if (!academic.rollNumber?.trim()) errs.rollNumber = 'Roll number is required';
+    if (!academic.batch?.trim()) errs.batch = 'Batch is required';
+    else if (!/^\d{4}$/.test(academic.batch.trim())) errs.batch = 'Batch must be a 4-digit year (e.g. 2024)';
+
     if (!receipt) errs.receipt = 'Please upload receipt';
     else if (receipt.size > MAX_RECEIPT_SIZE) errs.receipt = 'Receipt must be under 5MB';
+
     setFieldErrors(errs);
-    return Object.keys(errs).length === 0;
+    if (Object.keys(errs).length > 0) {
+      toast.error('Please fill all required fields correctly.');
+      return false;
+    }
+    return true;
   };
 
   useEffect(() => {
@@ -127,12 +135,22 @@ export default function CheckoutPage() {
         originalAmount: basePrice,
       });
       setPromoApplied(data);
+      toast.success(`Promo applied! You save ₨${data.discount || 0}`);
     } catch (err) {
       setPromoApplied(null);
-      setError(err.response?.data?.message || 'Invalid promo code');
+      const msg = err.response?.data?.message || 'Invalid promo code';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setPromoLoading(false);
     }
+  };
+
+  const handleRemovePromo = () => {
+    setPromoApplied(null);
+    setPromoCode('');
+    setError('');
+    toast.success('Promo removed');
   };
 
   const handleSubmit = async (e) => {
@@ -178,7 +196,7 @@ export default function CheckoutPage() {
         packageId: pkg._id,
         academicDetails: { ...academic, year, part },
       });
-    } catch (_) {}
+    } catch (_) { }
     try {
       const form = new FormData();
       form.append('packageId', pkg._id);
@@ -193,10 +211,13 @@ export default function CheckoutPage() {
       form.append('part', String(part));
       const { data } = await api.post('/payments', form);
       setSuccess({ payment: data, plan: pkg?.name });
+      toast.success('Payment uploaded — awaiting verification');
       setReceipt(null);
       await refreshUser();
     } catch (err) {
-      setError(err.response?.data?.message || 'Payment upload failed');
+      const msg = err.response?.data?.message || 'Payment upload failed';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -374,6 +395,18 @@ export default function CheckoutPage() {
                   </div>
                 </div>
                 <p className="text-xs text-gray-500">Transfer the amount to either account, then upload your payment receipt below.</p>
+                <p className="text-sm text-gray-700 mt-2">
+                  If you have any problems making the payment, contact us on WhatsApp:&nbsp;
+                  <a
+                    href="https://wa.me/923290123208"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                    aria-label="Contact MedEase on WhatsApp"
+                  >
+                    +92 329 0123208
+                  </a>
+                </p>
               </div>
               {basePrice > 0 && (
                 <div>
@@ -399,7 +432,17 @@ export default function CheckoutPage() {
                     </button>
                   </div>
                   {promoApplied && (
-                    <p className="text-sm text-green-600 mt-2">Promo applied! You save ₨{promoDiscount}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-sm text-green-600">Promo applied! You save ₨{promoDiscount}</p>
+                      <button
+                        type="button"
+                        onClick={handleRemovePromo}
+                        className="text-xs text-red-600 ml-3 hover:underline"
+                        aria-label="Remove promo code"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -437,9 +480,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex flex-col items-start">
                         <p className="text-sm font-medium text-primary truncate max-w-[200px]">{receipt.name}</p>
-                        <label htmlFor="receipt-upload" className="text-xs text-primary font-medium cursor-pointer hover:underline mt-2">
-                          Choose different file
-                        </label>
+                        <p className="text-xs text-green-600 font-medium mt-2">Uploaded</p>
                       </div>
                     </div>
                   ) : (

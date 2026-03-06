@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { UserPlus, Search, Eye, Pencil, BadgeCheck, Trash2, Ban, Unlock } from 'lucide-react';
+import { UserPlus, Search, Eye, Pencil, Trash2, Ban, Unlock } from 'lucide-react';
 import api from '../../api/client';
 import Modal from '../../components/admin/Modal';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
@@ -279,16 +279,7 @@ export default function AdminUsers() {
                         >
                           <Pencil className="w-5 h-5" />
                         </button>
-                        {!u.isVerified && (
-                          <button
-                            type="button"
-                            onClick={() => handleVerify(u._id)}
-                            className="p-2 text-slate-400 hover:text-emerald-600 transition-colors rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/10"
-                            title="Verify"
-                          >
-                            <BadgeCheck className="w-5 h-5" />
-                          </button>
-                        )}
+                        {/* Verify action removed from listing; verification can be performed from the user detail modal */}
                         <button
                           type="button"
                           onClick={() => setDeleteConfirm(u)}

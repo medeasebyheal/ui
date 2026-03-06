@@ -51,11 +51,25 @@ export default function SubjectDetailPage() {
   const [error, setError] = useState(null);
   const [selectedLecture, setSelectedLecture] = useState(null);
   const [oneShotVideoPlaying, setOneShotVideoPlaying] = useState(false);
+  const [firstModuleId, setFirstModuleId] = useState(null);
 
   useProtectedContent();
 
   useEffect(() => {
     let cancelled = false;
+    api.get('/content/years-with-modules').then(r => {
+      if (!cancelled && Array.isArray(r.data)) {
+        let first = null;
+        let minTime = Infinity;
+        r.data.forEach(y => {
+          (y.modules || []).forEach(m => {
+            const t = new Date(m.createdAt || 0).getTime();
+            if (t < minTime) { minTime = t; first = String(m._id); }
+          });
+        });
+        setFirstModuleId(first);
+      }
+    }).catch(() => { });
     Promise.all([
       api.get(`/content/subjects/${subjectId}`).then((r) => r.data),
       api.get(`/content/subjects/${subjectId}/topics`).then((r) => r.data),
@@ -101,7 +115,13 @@ export default function SubjectDetailPage() {
     const ids = new Set();
     if (!user?.packages?.length) return false;
     user.packages.forEach((up) => {
-      const pkg = up.package;
+      if (!up || up.status !== 'active') return;
+      const pkg = up.package || {};
+      const name = (pkg.name || '').toString();
+      const planKey = pkg.planKey || '';
+      const isTrialPkg = /free[-\s]?trial/i.test(name) || String(planKey) === 'free-trial';
+      if (isTrialPkg) return; // Exclude free trial from FULL module access
+
       if (pkg?.moduleIds?.length) {
         pkg.moduleIds.forEach((id) => {
           const idStr = typeof id === 'object' && id != null ? String(id._id || id) : String(id);
@@ -112,8 +132,31 @@ export default function SubjectDetailPage() {
     return ids.has(String(moduleId));
   }, [user?.packages, moduleId]);
 
+  const hasActiveFreeTrial = useMemo(() => {
+    if (!user?.packages?.length) return false;
+    const now = Date.now();
+    return user.packages.some((up) => {
+      if (!up || up.status !== 'active') return false;
+      const pkg = up.package || {};
+      const name = (pkg.name || '').toString();
+      const planKey = pkg.planKey || '';
+      // expiry check on user-package if available
+      if (up.expiresAt && new Date(up.expiresAt).getTime() <= now) return false;
+      return /free[-\s]?trial/i.test(name) || String(planKey) === 'free-trial';
+    });
+  }, [user?.packages]);
+
   const sortedTopics = useMemo(() => {
     return [...(topics || [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [topics]);
+
+  const firstTopic = useMemo(() => {
+    if (!topics || topics.length === 0) return null;
+    return topics.reduce((min, t) => {
+      if (!t) return min;
+      if (!min) return t;
+      return new Date(t.createdAt) < new Date(min.createdAt) ? t : min;
+    }, null);
   }, [topics]);
 
   const sortedModuleSubjects = useMemo(() => {
@@ -184,11 +227,10 @@ export default function SubjectDetailPage() {
               <Link
                 key={s._id}
                 to={`/student/modules/${moduleId}/subjects/${s._id}`}
-                className={`shrink-0 px-6 py-2.5 rounded-full font-medium transition-all active:scale-95 ${
-                  isActive
+                className={`shrink-0 px-6 py-2.5 rounded-full font-medium transition-all active:scale-95 ${isActive
                     ? 'bg-primary text-white shadow-lg shadow-primary/20'
                     : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-                }`}
+                  }`}
               >
                 {s.name}
               </Link>
@@ -206,7 +248,8 @@ export default function SubjectDetailPage() {
             sortedTopics.map((topic) => {
               const topicIdShort = String(topic._id).slice(-6).toUpperCase();
               const progressPercent = topic.progressPercent ?? 0;
-              const accessible = hasModuleAccess;
+              const isFirstTopic = firstTopic && String(firstTopic._id) === String(topic._id);
+              const accessible = hasModuleAccess || (hasActiveFreeTrial && isFirstTopic && String(moduleId) === firstModuleId);
               const topicImageUrl = topic.imageUrl || TOPIC_PLACEHOLDER_IMAGE;
 
               return (
@@ -259,11 +302,10 @@ export default function SubjectDetailPage() {
                             : '#'
                         }
                         onClick={(e) => !accessible && e.preventDefault()}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors ${
-                          accessible
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors ${accessible
                             ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600'
                             : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
-                        }`}
+                          }`}
                       >
                         <HelpCircle className="w-5 h-5" />
                         MCQs
@@ -275,11 +317,10 @@ export default function SubjectDetailPage() {
                             : '#'
                         }
                         onClick={(e) => !accessible && e.preventDefault()}
-                        className={`flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all ${
-                          accessible
+                        className={`flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all ${accessible
                             ? 'bg-primary text-white hover:bg-teal-700 shadow-lg shadow-primary/20'
                             : 'bg-slate-200 dark:bg-slate-600 text-slate-500 cursor-not-allowed'
-                        }`}
+                          }`}
                       >
                         <PlayCircle className="w-5 h-5" />
                         Explanatory Video
@@ -375,11 +416,10 @@ export default function SubjectDetailPage() {
                           setSelectedLecture(lecture);
                           setOneShotVideoPlaying(false);
                         }}
-                        className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all group text-left ${
-                          selectedLecture?._id === lecture._id
+                        className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all group text-left ${selectedLecture?._id === lecture._id
                             ? 'bg-primary/10 dark:bg-primary/20 border-primary/30'
                             : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-primary/30'
-                        }`}
+                          }`}
                       >
                         <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400">
                           <Video className="w-6 h-6" />
