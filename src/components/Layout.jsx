@@ -2,9 +2,10 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
 
-export default function Layout() {
+export default function Layout({ maintenance = false }) {
   const location = useLocation();
-  const isHome = location.pathname === '/';
+  // Only treat homepage as maintenance-hidden when maintenance mode is active.
+  const isHome = maintenance && location.pathname === '/';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 overflow-x-hidden flex flex-col">

@@ -85,7 +85,7 @@ function App() {
     });
   }, []);
   // Maintenance toggle (set to true to enable maintenance mode for all routes)
-  const maintenance = true;
+  const maintenance = false;
   if (maintenance) {
     // render maintenance for all routes
     return (
@@ -104,8 +104,8 @@ function App() {
       <AuthProvider>
         <Toaster />
         <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Maintenance />} />
+          <Route path="/" element={<Layout maintenance={maintenance} />}>
+            <Route index element={<Home />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="packages" element={<PackagesPage />} />
             <Route path="modules" element={<ModulesPage />} />

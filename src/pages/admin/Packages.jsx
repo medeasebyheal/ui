@@ -10,6 +10,11 @@ const PACKAGE_TYPES = [
   { value: 'year_half_part2', label: 'Half Year - Part 2', badge: 'blue' },
   { value: 'year_full', label: 'Full Year', badge: 'purple' },
   { value: 'master_proff', label: 'Proff Buster', badge: 'amber' },
+  // Free-trial variants
+  { value: 'year_half_part1-free', label: 'Half Year - Part 1 (Free Trial)', badge: 'blue' },
+  { value: 'year_half_part2-free', label: 'Half Year - Part 2 (Free Trial)', badge: 'blue' },
+  { value: 'year_full-free', label: 'Full Year (Free Trial)', badge: 'purple' },
+  { value: 'master_proff-free', label: 'Proff Buster (Free Trial)', badge: 'amber' },
 ];
 
 const PER_PAGE = 10;

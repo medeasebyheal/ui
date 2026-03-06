@@ -140,9 +140,10 @@ export default function SubjectDetailPage() {
       const pkg = up.package || {};
       const name = (pkg.name || '').toString();
       const planKey = pkg.planKey || '';
+      const ptype = (pkg.type || '').toString();
       // expiry check on user-package if available
       if (up.expiresAt && new Date(up.expiresAt).getTime() <= now) return false;
-      return /free[-\s]?trial/i.test(name) || String(planKey) === 'free-trial';
+      return /free[-\s]?trial/i.test(name) || /free/i.test(ptype) || String(planKey) === 'free-trial';
     });
   }, [user?.packages]);
 
