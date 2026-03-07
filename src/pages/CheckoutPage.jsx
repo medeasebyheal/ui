@@ -134,7 +134,21 @@ export default function CheckoutPage() {
         code: promoCode.trim(),
         originalAmount: basePrice,
       });
-      setPromoApplied(data);
+      // Convert server UTC timestamps into PKT display datetime strings
+      const toPKTDate = (iso) => {
+        if (!iso) return null;
+        return new Date(iso).toLocaleString('en-US', {
+          timeZone: 'Asia/Karachi',
+          dateStyle: 'medium',
+          timeStyle: 'short'
+        });
+      };
+      const enriched = {
+        ...data,
+        pktValidFrom: toPKTDate(data.validFrom),
+        pktValidTo: toPKTDate(data.validTo),
+      };
+      setPromoApplied(enriched);
       toast.success(`Promo applied! You save ₨${data.discount || 0}`);
     } catch (err) {
       setPromoApplied(null);
@@ -433,7 +447,12 @@ export default function CheckoutPage() {
                   </div>
                   {promoApplied && (
                     <div className="flex items-center justify-between mt-2">
-                      <p className="text-sm text-green-600">Promo applied! You save ₨{promoDiscount}</p>
+                      <div className="text-left">
+                        <p className="text-sm text-green-600">Promo applied! You save ₨{promoDiscount}</p>
+                        {(promoApplied.pktValidFrom || promoApplied.pktValidTo) && (
+                          <p className="text-xs text-slate-500">Valid: {promoApplied.pktValidFrom || '—'} to {promoApplied.pktValidTo || '—'} (PKT)</p>
+                        )}
+                      </div>
                       <button
                         type="button"
                         onClick={handleRemovePromo}

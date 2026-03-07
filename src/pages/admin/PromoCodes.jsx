@@ -7,8 +7,9 @@ const PER_PAGE = 10;
 
 function formatDateRange(from, to) {
   if (!from && !to) return '—';
-  const f = from ? new Date(from).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-  const t = to ? new Date(to).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+  const opts = { timeZone: 'Asia/Karachi', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+  const f = from ? new Date(from).toLocaleString('en-US', opts) : '—';
+  const t = to ? new Date(to).toLocaleString('en-US', opts) : '—';
   return `${f} - ${t}`;
 }
 
@@ -21,7 +22,7 @@ function daysLeft(validTo) {
 }
 
 function isExpired(promo) {
-  if (promo.validTo && new Date(promo.validTo) < new Date()) return true;
+  if (promo.validTo && new Date(promo.validTo).getTime() < Date.now()) return true;
   if (promo.usageLimit != null && (promo.usageCount || 0) >= promo.usageLimit) return true;
   return false;
 }
@@ -69,8 +70,22 @@ export default function AdminPromoCodes() {
 
   const handleEdit = (promo) => {
     setEditing(promo);
-    const from = promo.validFrom ? new Date(promo.validFrom).toISOString().slice(0, 10) : '';
-    const to = promo.validTo ? new Date(promo.validTo).toISOString().slice(0, 10) : '';
+    // Convert stored UTC timestamps back to PKT datetime-local strings (YYYY-MM-DDThh:mm)
+    const from = promo.validFrom
+      ? (() => {
+        const d = new Date(promo.validFrom);
+        // shift UTC -> PKT (UTC+5)
+        const pk = new Date(d.getTime() + 5 * 60 * 60 * 1000);
+        return pk.toISOString().slice(0, 16);
+      })()
+      : '';
+    const to = promo.validTo
+      ? (() => {
+        const d = new Date(promo.validTo);
+        const pk = new Date(d.getTime() + 5 * 60 * 60 * 1000);
+        return pk.toISOString().slice(0, 16);
+      })()
+      : '';
     setForm({
       code: promo.code || '',
       discountType: promo.discountType || 'fixed',
@@ -91,8 +106,13 @@ export default function AdminPromoCodes() {
         code: form.code.trim().toUpperCase(),
         discountType: form.discountType,
         discountValue: Number(form.discountValue) || 0,
-        validFrom: form.validFrom ? new Date(form.validFrom + 'T00:00:00.000Z').toISOString() : undefined,
-        validTo: form.validTo ? new Date(form.validTo + 'T23:59:59.999Z').toISOString() : undefined,
+        // Save dates in Pakistan time (PKT / UTC+5). Convert local YYYY-MM-DDThh:mm to UTC ISO.
+        validFrom: form.validFrom
+          ? new Date(form.validFrom + "+05:00").toISOString()
+          : undefined,
+        validTo: form.validTo
+          ? new Date(form.validTo + "+05:00").toISOString()
+          : undefined,
         usageLimit: form.usageLimit ? Number(form.usageLimit) : null,
         isActive: form.isActive,
       };
@@ -192,18 +212,18 @@ export default function AdminPromoCodes() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Valid From</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Valid From (PKT)</label>
                     <input
-                      type="date"
+                      type="datetime-local"
                       value={form.validFrom}
                       onChange={(e) => setForm((f) => ({ ...f, validFrom: e.target.value }))}
                       className="w-full rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-primary transition-all px-3 py-2"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Valid To</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Valid To (PKT)</label>
                     <input
-                      type="date"
+                      type="datetime-local"
                       value={form.validTo}
                       onChange={(e) => setForm((f) => ({ ...f, validTo: e.target.value }))}
                       className="w-full rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-primary transition-all px-3 py-2"
@@ -321,9 +341,8 @@ export default function AdminPromoCodes() {
                               <span className="text-xs font-medium text-slate-700 dark:text-slate-300 shrink-0">{usageLabel}</span>
                             </div>
                             <div
-                              className={`text-[10px] uppercase tracking-tighter font-semibold ${
-                                percent >= 100 ? 'text-slate-400' : percent >= 80 ? 'text-amber-600 dark:text-amber-400' : 'text-primary'
-                              }`}
+                              className={`text-[10px] uppercase tracking-tighter font-semibold ${percent >= 100 ? 'text-slate-400' : percent >= 80 ? 'text-amber-600 dark:text-amber-400' : 'text-primary'
+                                }`}
                             >
                               {statLabel}
                             </div>
@@ -404,9 +423,8 @@ export default function AdminPromoCodes() {
                       key={p}
                       type="button"
                       onClick={() => setPage(p)}
-                      className={`px-3 py-1 rounded font-medium transition-all ${
-                        page === p ? 'bg-primary text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
+                      className={`px-3 py-1 rounded font-medium transition-all ${page === p ? 'bg-primary text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                        }`}
                     >
                       {p}
                     </button>
