@@ -26,15 +26,69 @@ function escapeHtml(text) {
     .replace(/'/g, '&#39;');
 }
 
-/** Format chat message: **bold**, *italic*, * at line start → bullet, newlines preserved. Safe for dangerouslySetInnerHTML. */
+/** Format chat message with simple markdown-like rules:
+ * - Headings: lines starting with "### " → <h3>
+ * - Unordered lists: lines starting with "- " → grouped into <ul><li>...</li></ul>
+ * - Bold: **text** → <strong>
+ * - Italic: *text* → <em>
+ * - Paragraphs / newlines preserved
+ *
+ * Safe for dangerouslySetInnerHTML (input is escaped first).
+ */
 function formatMessageContent(text) {
   if (typeof text !== 'string') return '';
   const escaped = escapeHtml(text);
-  return escaped
-    .replace(/\*\*([^*]*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/(^|\n)\* +/g, '$1• ') // line-start "* " → bullet
-    .replace(/\*([^*\s][^*]*?)\*/g, '<em>$1</em>') // *word* italic
-    .replace(/\n/g, '<br />');
+  const lines = escaped.split(/\r?\n/);
+  let out = '';
+  let inList = false;
+
+  const applyInlineFormatting = (s) =>
+    s
+      .replace(/\*\*([^*]*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*\s][^*]*?)\*/g, '<em>$1</em>');
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    const line = raw.trim();
+
+    if (line.startsWith('### ')) {
+      if (inList) {
+        out += '</ul>';
+        inList = false;
+      }
+      out += `<h3 class="text-sm font-semibold mb-2">${applyInlineFormatting(line.slice(4).trim())}</h3>`;
+      continue;
+    }
+
+    if (line.startsWith('- ')) {
+      if (!inList) {
+        inList = true;
+        out += '<ul class="ml-4 list-disc my-2">';
+      }
+      out += `<li>${applyInlineFormatting(line.slice(2).trim())}</li>`;
+      continue;
+    }
+
+    // empty line -> paragraph break
+    if (line === '') {
+      if (inList) {
+        out += '</ul>';
+        inList = false;
+      }
+      out += '<br/>';
+      continue;
+    }
+
+    // regular line
+    if (inList) {
+      out += '</ul>';
+      inList = false;
+    }
+    out += `<div>${applyInlineFormatting(line)}</div>`;
+  }
+
+  if (inList) out += '</ul>';
+  return out;
 }
 
 /** Build first message from MCQ context: question, correct answer, and explanation (truncated to maxLength). */

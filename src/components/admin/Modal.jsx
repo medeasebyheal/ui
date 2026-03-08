@@ -1,7 +1,12 @@
-export default function Modal({ open, onClose, title, children }) {
+export default function Modal({ open, onClose, title, children, closeOnBackdrop = true }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+      onClick={() => {
+        if (closeOnBackdrop && typeof onClose === 'function') onClose();
+      }}
+    >
       <div
         className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}

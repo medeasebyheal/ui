@@ -23,12 +23,14 @@ import {
 
 const navItems = (isSuperAdmin) => [
   { to: '/admin', end: true, label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/admin/users', end: false, label: 'Users', icon: Users },
+ 
   ...(isSuperAdmin
     ? [
+        { to: '/admin/users', end: false, label: 'Users', icon: Users },
         { to: '/admin/payments', end: false, label: 'Payments', icon: CreditCard, showPendingDot: true },
         { to: '/admin/admins', end: true, label: 'Admins', icon: ShieldCheck },
         { to: '/admin/gemini-usage', end: true, label: 'API Usage', icon: BarChart3 },
+        { to: '/admin/promo-codes', end: false, label: 'Promo Codes', icon: Tag },
       ]
     : []),
   {
@@ -56,7 +58,7 @@ const navItems = (isSuperAdmin) => [
   },
   { to: '/admin/packages', end: false, label: 'Packages', icon: Package },
   { to: '/admin/contact-queries', end: false, label: 'Inquiries', icon: Mail },
-  { to: '/admin/promo-codes', end: false, label: 'Promo Codes', icon: Tag },
+ 
 ];
 
 export default function AdminLayout() {

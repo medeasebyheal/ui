@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { BarChart3, AlertTriangle, RefreshCw, MessageCircle, Calendar, Key, Database, Info, Download, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BarChart3, AlertTriangle, RefreshCw, MessageCircle, Calendar, Key, Database, Info, Download, ArrowRight, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
 
 function todayUTCDateString() {
   const d = new Date();
@@ -58,6 +58,7 @@ export default function GeminiUsage() {
 
   const keys = (data?.summary?.keys) ?? [];
   const totals = data?.summary?.totals ?? { requests: 0, tokens: 0 };
+  const openai = data?.summary?.openai ?? { requestsToday: 0, tokensToday: 0 };
   const entries = data?.entries ?? [];
 
   return (
@@ -69,8 +70,8 @@ export default function GeminiUsage() {
               <BarChart3 className="w-5 h-5 text-primary" />
               <span className="text-sm font-semibold text-primary uppercase tracking-wider">Metrics</span>
             </div>
-            <h1 className="text-3xl font-display font-extrabold tracking-tight">API Usage <span className="text-slate-400 dark:text-slate-500">— Gemini</span></h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1 max-w-xl">Real-time daily log monitoring for Gemini API integrations. Persistent call logs synchronized with MongoDB.</p>
+            <h1 className="text-3xl font-display font-extrabold tracking-tight">API Usage <span className="text-slate-400 dark:text-slate-500">— Gemini & OpenAI</span></h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-1 max-w-xl">Real-time daily log monitoring for Gemini and OpenAI API integrations. Persistent call logs synchronized with MongoDB.</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 shadow-sm">
@@ -161,38 +162,69 @@ export default function GeminiUsage() {
             </div>
           </div>
 
-          <div className="rounded-2xl p-8 bg-white dark:bg-slate-800 shadow-sm border">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-500">
-                <Database className="w-5 h-5" />
+          <div className="space-y-6">
+            <div className="rounded-2xl p-8 bg-white dark:bg-slate-800 shadow-sm border">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-500">
+                  <Database className="w-5 h-5" />
+                </div>
+                <h3 className="text-xl font-display font-bold">Gemini Totals</h3>
               </div>
-              <h3 className="text-xl font-display font-bold">Aggregate Totals</h3>
-            </div>
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between items-end mb-1">
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Requests</p>
-                  <p className="text-xl font-display font-bold">{totals.requests ?? 0}</p>
+              <div className="space-y-6">
+                <div>
+                  <div className="flex justify-between items-end mb-1">
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Requests</p>
+                    <p className="text-xl font-display font-bold">{totals.requests ?? 0}</p>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-500" style={{ width: `${Math.min(100, ((totals.requests ?? 0) / ((keys.length || 1) * 20)) * 100)}%` }}></div>
+                  </div>
                 </div>
-                <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-500" style={{ width: `${Math.min(100, ((totals.requests ?? 0) / ((keys.length || 1) * 20)) * 100)}%` }}></div>
+                <div>
+                  <div className="flex justify-between items-end mb-1">
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Tokens</p>
+                    <p className="text-xl font-display font-bold">{(totals.tokens ?? 0).toLocaleString()}</p>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary" style={{ width: `${Math.min(100, ((totals.tokens ?? 0) / Math.max(1, (keys.reduce((s,k)=>s+(k.limits?.tpm||250000),0))) ) * 100)}%` }}></div>
+                  </div>
                 </div>
               </div>
-              <div>
-                <div className="flex justify-between items-end mb-1">
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Tokens</p>
-                  <p className="text-xl font-display font-bold">{(totals.tokens ?? 0).toLocaleString()}</p>
-                </div>
-                <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${Math.min(100, ((totals.tokens ?? 0) / Math.max(1, (keys.reduce((s,k)=>s+(k.limits?.tpm||250000),0))) ) * 100)}%` }}></div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-8 pt-8 border-t border-slate-200 dark:border-slate-800">
+              <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
                   <Info className="w-4 h-4" />
-                  <span>Usage is computed per-day (UTC)</span>
+                  <span>Per-day (UTC), from logs</span>
                 </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl p-8 bg-white dark:bg-slate-800 shadow-sm border">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-500">
+                  <Zap className="w-5 h-5" />
+                </div>
+                <h3 className="text-xl font-display font-bold">OpenAI Usage</h3>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <div className="flex justify-between items-end mb-1">
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Requests Today</p>
+                    <p className="text-xl font-display font-bold">{openai.requestsToday ?? 0}</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between items-end mb-1">
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Tokens Today</p>
+                    <p className="text-xl font-display font-bold">{(openai.tokensToday ?? 0).toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                  <Info className="w-4 h-4" />
+                  <span>EaseGPT + MCQ parse (in-memory, resets on restart)</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { UserPlus, Search, Eye, Pencil, Trash2, Ban, Unlock } from 'lucide-react';
+import { UserPlus, Search, Eye, Pencil, Trash2, Ban, Unlock, UserX } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import api from '../../api/client';
 import Modal from '../../components/admin/Modal';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
@@ -98,7 +99,10 @@ export default function AdminUsers() {
       setUsers((prev) => prev.filter((u) => u._id !== deleteConfirm._id));
       setTotal((t) => Math.max(0, t - 1));
       setDeleteConfirm(null);
-    } catch (_) {}
+      toast.success('User deleted');
+    } catch (_) {
+      toast.error('Failed to delete user');
+    }
   };
 
   const handleBlock = async (id) => {
@@ -106,7 +110,10 @@ export default function AdminUsers() {
       const { data } = await api.patch(`/users/${id}/block`);
       setUsers((prev) => prev.map((u) => (u._id === data._id ? data : u)));
       if (viewUser?._id === data._id) setViewUser(data);
-    } catch (_) {}
+      toast.success('User blocked');
+    } catch (_) {
+      toast.error('Failed to block user');
+    }
     setActionConfirm(null);
   };
 
@@ -115,7 +122,24 @@ export default function AdminUsers() {
       const { data } = await api.patch(`/users/${id}/unblock`);
       setUsers((prev) => prev.map((u) => (u._id === data._id ? data : u)));
       if (viewUser?._id === data._id) setViewUser(data);
-    } catch (_) {}
+      toast.success('User unblocked');
+    } catch (_) {
+      toast.error('Failed to unblock user');
+    }
+    setActionConfirm(null);
+  };
+
+  const handleRevoke = async (id) => {
+    try {
+      const { data } = await api.patch(`/users/${id}/revoke`);
+      // API returns updated user in data.user
+      const updatedUser = data.user || data;
+      setUsers((prev) => prev.map((u) => (u._id === updatedUser._id ? updatedUser : u)));
+      if (viewUser?._id === updatedUser._id) setViewUser(updatedUser);
+      toast.success('User access revoked');
+    } catch (_) {
+      toast.error('Failed to revoke access');
+    }
     setActionConfirm(null);
   };
 
@@ -263,6 +287,22 @@ export default function AdminUsers() {
                             <Unlock className="w-5 h-5" />
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (u.activePlanId == null) return;
+                            setActionConfirm({ type: 'revoke', user: u });
+                          }}
+                          disabled={u.activePlanId == null}
+                          className={`p-2 text-slate-400 transition-colors rounded-lg ${
+                            u.activePlanId == null
+                              ? 'opacity-50 cursor-not-allowed'
+                              : 'hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/10'
+                          }`}
+                          title={u.activePlanId == null ? 'Access already revoked' : 'Revoke Access'}
+                        >
+                          <UserX className="w-5 h-5" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => setViewUser(u)}
@@ -445,21 +485,36 @@ export default function AdminUsers() {
       <ConfirmDialog
         open={!!actionConfirm}
         onClose={() => setActionConfirm(null)}
-        title={actionConfirm?.type === 'block' ? 'Block user' : 'Unblock user'}
+        title={
+          actionConfirm?.type === 'block'
+            ? 'Block user'
+            : actionConfirm?.type === 'unblock'
+            ? 'Unblock user'
+            : actionConfirm?.type === 'revoke'
+            ? 'Revoke user access'
+            : ''
+        }
         message={
           actionConfirm
             ? actionConfirm.type === 'block'
               ? `Block ${actionConfirm.user?.name || actionConfirm.user?.email}? The user will be unable to log in.`
-              : `Unblock ${actionConfirm.user?.name || actionConfirm.user?.email}?`
+              : actionConfirm.type === 'unblock'
+              ? `Unblock ${actionConfirm.user?.name || actionConfirm.user?.email}?`
+              : actionConfirm.type === 'revoke'
+              ? `Revoke access for ${actionConfirm.user?.name || actionConfirm.user?.email}? This will expire their subscriptions and log them out of all devices.`
+              : ''
             : ''
         }
-        confirmLabel={actionConfirm?.type === 'block' ? 'Block' : 'Unblock'}
+        confirmLabel={
+          actionConfirm?.type === 'block' ? 'Block' : actionConfirm?.type === 'unblock' ? 'Unblock' : actionConfirm?.type === 'revoke' ? 'Revoke' : ''
+        }
         onConfirm={() => {
           if (!actionConfirm) return;
           if (actionConfirm.type === 'block') handleBlock(actionConfirm.user._id);
-          else handleUnblock(actionConfirm.user._id);
+          else if (actionConfirm.type === 'unblock') handleUnblock(actionConfirm.user._id);
+          else if (actionConfirm.type === 'revoke') handleRevoke(actionConfirm.user._id);
         }}
-        danger={actionConfirm?.type === 'block'}
+        danger={actionConfirm?.type === 'block' || actionConfirm?.type === 'revoke'}
       />
     </div>
   );

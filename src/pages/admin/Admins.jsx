@@ -153,7 +153,12 @@ export default function AdminsPage() {
       </div>
 
       {addOpen && (
-        <Modal open onClose={() => { setAddOpen(false); setError(''); setAddForm({ name: '', email: '', password: '' }); }} title="Add Admin">
+        <Modal
+          open
+          closeOnBackdrop={false}
+          onClose={() => { setAddOpen(false); setError(''); setAddForm({ name: '', email: '', password: '' }); }}
+          title="Add Admin"
+        >
           <form onSubmit={handleAddAdmin} className="space-y-4">
             {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
             <div>
