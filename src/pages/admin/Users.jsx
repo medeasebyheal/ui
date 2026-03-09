@@ -219,6 +219,7 @@ export default function AdminUsers() {
               <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">User Details</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Role</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Academic</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Status</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Joined Date</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300 text-right">Actions</th>
@@ -252,6 +253,13 @@ export default function AdminUsers() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 capitalize">{u.role || '—'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                      <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{u.academicDetails?.institution || '—'}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        {u.academicDetails?.year ? `MS ${u.academicDetails.year}` : ''}
+                        {u.academicDetails?.rollNumber ? (u.academicDetails?.year ? ` • ${u.academicDetails.rollNumber}` : u.academicDetails.rollNumber) : ''}
+                      </div>
+                    </td>
                     <td className="px-6 py-4">
                       {u.isVerified ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">

@@ -140,7 +140,6 @@ export default function StudentResources() {
       try {
         const { data } = await api.get('/content/years-with-modules');
         const t1 = performance.now();
-        console.log('fetched yearsWithModules in', Math.round(t1 - t0), 'ms');
         if (!Array.isArray(data)) {
           setYears([]);
           setModulesByYear({});
@@ -197,9 +196,10 @@ export default function StudentResources() {
   const recentToShow = (recentViews.length > 0 ? recentViews : []).slice(0, 3);
   const hasPackages = !!user?.packages?.length;
   // derive study streak from available user fields (fallback to 0)
-  const studyStreakDays = Number(user?.studyStreak ?? user?.streakDays ?? user?.profile?.streak ?? 0) || 0;
+  const studyStreakDays = Number(user?.studyStreakDays ) || 0;
   const studyStreakGoal = 30;
   const studyStreakPct = Math.max(0, Math.min(100, Math.round((studyStreakDays / studyStreakGoal) * 100)));
+
 
   const matchSearch = (text) => {
     if (!searchQuery.trim()) return true;
@@ -219,6 +219,33 @@ export default function StudentResources() {
     });
     return map;
   }, [modulesByYear, searchQuery]);
+
+  // ping streak API once per user per day (store last ping day in localStorage)
+  useEffect(() => {
+    if (!user || !user._id) return;
+    try {
+      const key = `streakPinged:${user._id}`;
+      const last = localStorage.getItem(key);
+      const d = new Date();
+      const today = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(
+        d.getUTCDate()
+      ).padStart(2, '0')}`;
+      
+      if (last === today) return;
+      (async () => {
+        try {
+          await api.post('/auth/streak/ping').catch(() => {});
+          localStorage.setItem(key, today);
+          // refresh user info once to reflect updated streak
+          refreshUser?.();
+        } catch (_) {}
+      })();
+    } catch (_) {
+      // localStorage may be unavailable in some contexts; ignore
+    }
+    // we intentionally do not include refreshUser to avoid re-running when it changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   return (
     <div className="flex flex-1 min-w-0 w-full bg-[#F8FAFC] dark:bg-[#0F172A]">

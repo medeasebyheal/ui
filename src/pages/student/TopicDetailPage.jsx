@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, HelpCircle, PlayCircle, Play, Share2, CheckCircle, FileText, Link as LinkIcon, Download, Loader2 } from 'lucide-react';
+import { ChevronRight, HelpCircle, PlayCircle, Play, Share2, CheckCircle, FileText, Link as LinkIcon, Download, Loader2, FileQuestion, Eye   } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { recordRecentView } from '../../utils/recentViews';
@@ -8,7 +8,7 @@ import { useProtectedContent } from '../../hooks/useProtectedContent';
 import ControlledYouTubePlayer from '../../components/student/ControlledYouTubePlayer';
 import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '../../utils/youtube';
 
-const LECTURE_PREVIEW_FALLBACK = 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1280&h=720&fit=crop';
+const LECTURE_PREVIEW_FALLBACK = 'https://static.vecteezy.com/system/resources/previews/022/215/234/non_2x/doctor-gives-a-training-lecture-about-anatomy-for-students-doctor-presenting-human-brain-infographics-online-medical-seminar-lecture-healthcare-meeting-concept-illustration-vector.jpg';
 
 export default function TopicDetailPage() {
   const { moduleId, subjectId, topicId } = useParams();
@@ -22,6 +22,7 @@ export default function TopicDetailPage() {
  
   const [loading, setLoading] = useState(true);
   const [resources, setResources] = useState([]);
+  const [bookmarkedMcqs, setBookmarkedMcqs] = useState([]); // array of bookmark objects { _id, mcq }
   const [downloadingPdf, setDownloadingPdf] = useState(null);
   // video player is handled by ControlledYouTubePlayer
 
@@ -88,6 +89,12 @@ export default function TopicDetailPage() {
     api.get(`/content/topics/${topicId}/resources`)
       .then(({ data }) => setResources(data || []))
       .catch(() => setResources([]));
+    // fetch bookmarked mcqs for this topic (controller returns populated mcq)
+    api.get('/bookmarks', { params: { topic: topicId } })
+      .then(({ data }) => {
+        setBookmarkedMcqs(data || []);
+      })
+      .catch(() => setBookmarkedMcqs([]));
   }, [topicId]);
 
   // ControlledYouTubePlayer will load the YouTube IFrame API when needed
@@ -268,13 +275,32 @@ export default function TopicDetailPage() {
                 <FileText className="w-5 h-5 text-primary" />
                 Resources
               </h3>
+             
               {resources.length === 0 ? (
                 <p className="text-sm text-slate-500">No resources for this topic yet.</p>
               ) : (
                 <ul className="space-y-3">
                   {resources.map((res) => (
-                    <li key={res._id}>
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-transparent hover:border-primary/30 hover:bg-teal-50/50 transition-all group">
+                  <li key={res._id}>
+                      <div
+                        onClick={(e) => {
+                          // make the whole resource row clickable for PDFs (and links)
+                          if (res.type === 'pdf') {
+                            handleResourceClick(e, res);
+                          } else if (res.url) {
+                            window.open(res.url, '_blank', 'noopener,noreferrer');
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            if (res.type === 'pdf') handleResourceClick(e, res);
+                            else if (res.url) window.open(res.url, '_blank', 'noopener,noreferrer');
+                          }
+                        }}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-transparent hover:border-primary/30 hover:bg-teal-50/50 transition-all group cursor-pointer"
+                      >
                         {res.type === 'pdf' ? (
                           <FileText className="w-5 h-5 text-primary flex-shrink-0" />
                         ) : (
@@ -303,6 +329,60 @@ export default function TopicDetailPage() {
                       </div>
                     </li>
                   ))}
+                </ul>
+              )}
+            </div>
+            <div className="bg-white border border-primary/20 rounded-2xl p-6 shadow-sm">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                Bookmarked MCQs
+              </h3>
+             
+              {bookmarkedMcqs.length === 0 ? (
+                <p className="text-sm text-slate-500">No bookmarked MCQs for this topic yet.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {bookmarkedMcqs.map((b) => {
+                    const mcq = b.mcq || {};
+                    const key = b._id || mcq._id;
+                    return (
+                      <li key={key}>
+                        <div
+                          onClick={(e) => {
+                            // open quiz page and scroll to mcq
+                            window.location.href = `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topicId}/quiz?scrollTo=${encodeURIComponent(mcq._id)}`;
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              window.location.href = `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topicId}/quiz?scrollTo=${encodeURIComponent(mcq._id)}`;
+                            }
+                          }}
+                          className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-transparent hover:border-primary/30 hover:bg-teal-50/50 transition-all group cursor-pointer"
+                        >
+                          <FileQuestion className="w-5 h-5 text-primary flex-shrink-0" />
+                          <span className="text-sm font-medium text-slate-900 truncate flex-1">
+                            {(() => {
+                              const qIndex = mcqs.findIndex((m) => String(m._id) === String(mcq._id));
+                              const qNo = qIndex >= 0 ? qIndex + 1 : '-';
+                              return ` ${qNo}.  ${mcq.question || 'Bookmarked question'}`;
+                            })()}
+                          </span>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => e.preventDefault()}
+                              className="p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-white transition-colors disabled:opacity-50"
+                              title="View MCQ"
+                            >
+                              <Eye className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>

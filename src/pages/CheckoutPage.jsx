@@ -229,9 +229,15 @@ export default function CheckoutPage() {
       setReceipt(null);
       await refreshUser();
     } catch (err) {
-      const msg = err.response?.data?.message || 'Payment upload failed';
-      setError(msg);
-      toast.error(msg);
+      const status = err.response?.status;
+      const serverMsg = err.response?.data?.message;
+      const baseMsg = serverMsg || 'Payment upload failed';
+      setError(baseMsg);
+      if (!status || status >= 500) {
+        toast.error(`${baseMsg}. Please try again in a few minutes. If the issue persists contact support.`);
+      } else {
+        toast.error(`${baseMsg}. Please try again. If the issue persists contact support.`);
+      }
     } finally {
       setSubmitting(false);
     }

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   ChevronRight,
   Dna,
@@ -253,11 +253,8 @@ export default function SubjectDetailPage() {
               const accessible = hasModuleAccess || (hasActiveFreeTrial && isFirstTopic && String(moduleId) === firstModuleId);
               const topicImageUrl = topic.imageUrl || TOPIC_PLACEHOLDER_IMAGE;
 
-              return (
-                <div
-                  key={topic._id}
-                  className="group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-slate-200 dark:border-slate-700 flex flex-col h-full"
-                >
+              const cardChildren = (
+                <>
                   <div className="aspect-[4/3] bg-slate-100 dark:bg-slate-700/50 relative overflow-hidden">
                     <img
                       src={topicImageUrl}
@@ -280,29 +277,15 @@ export default function SubjectDetailPage() {
                         `Study ${topic.name} with MCQs and explanatory video.`}
                       {(topic.content?.length || 0) > 100 ? '…' : ''}
                     </p>
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between text-xs font-semibold mb-1.5">
-                        <span className="text-slate-500 dark:text-slate-400">Progress</span>
-                        <span className="text-primary">{progressPercent}%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                        <div
-                          className="bg-primary h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: `${progressPercent}%`,
-                            boxShadow: '0 0 10px rgba(6, 146, 133, 0.4)',
-                          }}
-                        />
-                      </div>
-                    </div>
+                   
                     <div className="flex gap-3">
-                      <Link
-                        to={
-                          accessible
-                            ? `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}/quiz`
-                            : '#'
-                        }
-                        onClick={(e) => !accessible && e.preventDefault()}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!accessible) return;
+                          navigate(`/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}/quiz`);
+                        }}
                         className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors ${accessible
                             ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600'
                             : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
@@ -310,14 +293,14 @@ export default function SubjectDetailPage() {
                       >
                         <HelpCircle className="w-5 h-5" />
                         MCQs
-                      </Link>
-                      <Link
-                        to={
-                          accessible
-                            ? `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}`
-                            : '#'
-                        }
-                        onClick={(e) => !accessible && e.preventDefault()}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!accessible) return;
+                          navigate(`/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}`);
+                        }}
                         className={`flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all ${accessible
                             ? 'bg-primary text-white hover:bg-teal-700 shadow-lg shadow-primary/20'
                             : 'bg-slate-200 dark:bg-slate-600 text-slate-500 cursor-not-allowed'
@@ -325,9 +308,26 @@ export default function SubjectDetailPage() {
                       >
                         <PlayCircle className="w-5 h-5" />
                         Explanatory Video
-                      </Link>
+                      </button>
                     </div>
                   </div>
+                </>
+              );
+
+              return accessible ? (
+                <Link
+                  key={topic._id}
+                  to={`/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}`}
+                  className="group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-slate-200 dark:border-slate-700 flex flex-col h-full"
+                >
+                  {cardChildren}
+                </Link>
+              ) : (
+                <div
+                  key={topic._id}
+                  className="group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-slate-200 dark:border-slate-700 flex flex-col h-full cursor-not-allowed"
+                >
+                  {cardChildren}
                 </div>
               );
             })

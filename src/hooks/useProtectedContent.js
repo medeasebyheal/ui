@@ -11,7 +11,7 @@ export function useProtectedContent() {
     const preventSelect = (e) => e.preventDefault();
 
     const isProduction = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.NODE_ENV === 'production';
-    console.log(isProduction);
+
     const preventDevToolsShortcuts = (e) => {
       // Only block devtools shortcuts in production builds.
       if (!isProduction) return;

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import api from '../../api/client';
@@ -27,6 +27,7 @@ export default function TopicQuizPage() {
   const [transitioning, setTransitioning] = useState(false);
   const [answerResults, setAnswerResults] = useState({});
   const [flaggedQuestions, setFlaggedQuestions] = useState(new Set());
+  const [bookmarksMap, setBookmarksMap] = useState({}); // mcqId -> bookmarkId
   const [quizStartTime, setQuizStartTime] = useState(() => Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [showResults, setShowResults] = useState(false);
@@ -61,6 +62,45 @@ export default function TopicQuizPage() {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [topicId, useFreeTrial, refreshUser]);
+
+  // If link contains ?scrollTo=mcqId, navigate to that question once mcqs loaded
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const scrollToId = searchParams.get('scrollTo');
+    if (!scrollToId) return;
+    if (!mcqs || mcqs.length === 0) return;
+    const idx = mcqs.findIndex((m) => String(m._id) === String(scrollToId));
+    if (idx >= 0) {
+      setCurrentIndex(idx);
+      // clear the query param to avoid repeated jumps
+      try {
+        const sp = new URLSearchParams(searchParams);
+        sp.delete('scrollTo');
+        setSearchParams(sp, { replace: true });
+      } catch (_) {}
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mcqs]);
+
+  // fetch bookmarks for this topic for the current user
+  useEffect(() => {
+    if (!topicId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await api.get('/bookmarks', { params: { topic: topicId } });
+        if (cancelled) return;
+        const map = {};
+        (data || []).forEach((b) => {
+          if (b.mcq) map[b.mcq._id || b.mcq] = b._id;
+        });
+        setBookmarksMap(map);
+      } catch (_) {
+        setBookmarksMap({});
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [topicId]);
 
   const triggerConfetti = useCallback(() => {
     const end = Date.now() + 2500;
@@ -146,6 +186,36 @@ export default function TopicQuizPage() {
       else next.add(currentIndex);
       return next;
     });
+  };
+
+  const toggleBookmark = async (mcqId) => {
+    try {
+      const existingId = bookmarksMap[mcqId];
+      if (existingId) {
+        // optimistic UI
+        setBookmarksMap((prev) => {
+          const copy = { ...prev };
+          delete copy[mcqId];
+          return copy;
+        });
+        await api.delete(`/bookmarks/${existingId}`);
+      } else {
+        // optimistic: create placeholder id to avoid double-clicks
+        setBookmarksMap((prev) => ({ ...prev, [mcqId]: 'pending' }));
+        const { data } = await api.post('/bookmarks', { topic: topicId, mcq: mcqId });
+        setBookmarksMap((prev) => ({ ...prev, [mcqId]: data._id }));
+      }
+    } catch (err) {
+      // revert on error and show toast
+      if (bookmarksMap[mcqId] === 'pending') {
+        setBookmarksMap((prev) => {
+          const copy = { ...prev };
+          delete copy[mcqId];
+          return copy;
+        });
+      }
+      toast.error('Bookmark action failed. Try again.');
+    }
   };
 
   const backToSubject = () => navigate(`/student/modules/${moduleId}/subjects/${subjectId}`);
@@ -539,6 +609,16 @@ export default function TopicQuizPage() {
                     >
                       <Flag className="w-5 h-5" />
                       <span>{flaggedQuestions.has(currentIndex) ? 'Unflag Question' : 'Flag Question'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleBookmark(mcq._id)}
+                      className={`flex items-center gap-1 font-semibold transition-colors rounded-lg px-2 py-1 ${
+                        bookmarksMap[mcq._id] ? 'bg-primary text-white' : 'text-slate-700 hover:text-primary'
+                      }`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 0 0-1 1v18l7-4 7 4V3a1 1 0 0 0-1-1H6z"/></svg>
+                      <span>{bookmarksMap[mcq._id] ? 'Bookmarked' : 'Bookmark'}</span>
                     </button>
                   </div>
                   <div className="mb-10">

@@ -221,10 +221,7 @@ export default function ModuleDetailPage() {
                     </div>
                     <div className="p-5">
                       <h3 className="text-lg font-bold text-slate-900 mb-1">{sub.name}</h3>
-                      <p className="text-xs text-slate-500 mb-4">
-                        {topicCount} {topicCount === 1 ? 'Sub-module' : 'Sub-modules'}
-                        {sub.description ? ` · ${sub.description.slice(0, 50)}${sub.description.length > 50 ? '…' : ''}` : ''}
-                      </p>
+                     
                       {accessible ? (
                         <span className="text-primary font-semibold text-sm inline-flex items-center gap-1">
                           Explore <ArrowRight className="w-4 h-4" />
