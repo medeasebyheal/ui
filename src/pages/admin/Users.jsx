@@ -220,8 +220,6 @@ export default function AdminUsers() {
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">User Details</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Role</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Academic</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Status</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Joined Date</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300 text-right">Actions</th>
               </tr>
             </thead>
@@ -260,20 +258,8 @@ export default function AdminUsers() {
                         {u.academicDetails?.rollNumber ? (u.academicDetails?.year ? ` • ${u.academicDetails.rollNumber}` : u.academicDetails.rollNumber) : ''}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      {u.isVerified ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 shrink-0" />
-                          Verified
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 shrink-0" />
-                          Pending
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">{formatDate(u.createdAt)}</td>
+                 
+                    
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         {!u.isBlocked ? (
@@ -298,10 +284,10 @@ export default function AdminUsers() {
                         <button
                           type="button"
                           onClick={() => {
-                            if (u.activePlanId == null) return;
+                           
                             setActionConfirm({ type: 'revoke', user: u });
                           }}
-                          disabled={u.activePlanId == null}
+                         
                           className={`p-2 text-slate-400 transition-colors rounded-lg ${
                             u.activePlanId == null
                               ? 'opacity-50 cursor-not-allowed'
