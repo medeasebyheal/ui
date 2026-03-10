@@ -75,11 +75,12 @@ export default function BulkMcqPage() {
   };
 
   const handleImport = async () => {
-    if (!text.trim()) return;
+    if (!preview?.mcqs?.length) return;
     setImportLoading(true);
     setImportResult(null);
     try {
-      const { data } = await api.post(`/admin/topics/${topicId}/mcqs/bulk`, { text: text.trim(), type });
+      // send parsed MCQs from preview to backend to avoid re-parsing
+      const { data } = await api.post(`/admin/topics/${topicId}/mcqs/bulk`, { mcqs: preview.mcqs, type });
       setImportResult({ success: true, created: data.created, errors: data.errors, partialBlockIndices: data.partialBlockIndices || [], source: data.source, usage: data.usage });
       if (data.created > 0) {
         setText('');
@@ -91,10 +92,13 @@ export default function BulkMcqPage() {
       if (status === 429 && e.response?.data?.resetAt) {
         const when = new Date(e.response.data.resetAt).toLocaleString();
         toast.error(`Gemini API exhausted. Try again after ${when}.`);
+      } else {
+        toast.error(msg);
       }
       setImportResult({ success: false, message: msg });
+    } finally {
+      setImportLoading(false);
     }
-    setImportLoading(false);
   };
 
   const canSave = text.trim() && preview?.mcqs?.length > 0 && (!preview.errors || preview.errors.length === 0);
