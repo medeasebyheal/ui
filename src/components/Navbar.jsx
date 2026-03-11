@@ -8,6 +8,7 @@ function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [modulesDropdownOpen, setModulesDropdownOpen] = useState(false);
+  const [mobileModulesOpen, setMobileModulesOpen] = useState(false);
   const [years, setYears] = useState([]);
   const [modulesByYear, setModulesByYear] = useState({});
   const profileRef = useRef(null);
@@ -258,7 +259,7 @@ function Navbar() {
       </div>
 
       {isMobileMenuOpen && (
-        <div className="md:hidden container mx-auto px-4 sm:px-6 lg:px-8 mt-2 pb-3 space-y-3 border-t border-gray-200 pt-3">
+        <div className="md:hidden container mx-auto px-4 sm:px-6 lg:px-8 mt-2 pb-3 space-y-3 border-t border-gray-200 pt-3 max-h-[70vh] overflow-y-auto">
           <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="block text-gray-700 font-body hover:text-primary transition-colors py-2 px-4 rounded-lg hover:bg-gray-50">
             Home
           </Link>
@@ -268,34 +269,46 @@ function Navbar() {
           <Link to="/packages" onClick={() => setIsMobileMenuOpen(false)} className="block text-gray-700 font-body hover:text-primary transition-colors py-2 px-4 rounded-lg hover:bg-gray-50">
             Packages
           </Link>
-          <Link to="/modules" onClick={() => setIsMobileMenuOpen(false)} className="block text-gray-700 font-body hover:text-primary transition-colors py-2 px-4 rounded-lg hover:bg-gray-50">
-            Modules
-          </Link>
-          {allModules.length > 0 && (
-            <div className="pl-4 space-y-1 border-l-2 border-gray-100">
-              {allModules.map((mod) => {
-                const modIdStr = mod._id != null ? String(mod._id) : '';
-                const hasAccess = user && modIdStr && allowedModuleIds.has(modIdStr);
-                const to = hasAccess ? `/student/modules/${mod._id}` : '/packages';
-                return (
-                  <Link
-                    key={mod._id}
-                    to={to}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-2 py-2 px-3 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg"
-                  >
-                    {hasAccess ? (
-                      <LockOpen className="w-4 h-4 text-primary" />
-                    ) : (
-                      <Lock className="w-4 h-4 text-gray-400" />
-                    )}
-                    <span className="truncate">{mod.name}</span>
-                    {mod.yearName && <span className="text-xs text-gray-400 flex-shrink-0">{mod.yearName}</span>}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+          {/* Mobile: Modules toggle to avoid rendering long list by default */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setMobileModulesOpen((s) => !s)}
+              className="w-full text-left flex items-center justify-between text-gray-700 font-body hover:text-primary transition-colors py-2 px-4 rounded-lg hover:bg-gray-50"
+            >
+              <span>Modules</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${mobileModulesOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {mobileModulesOpen && allModules.length > 0 && (
+              <div className="pl-4 space-y-1 border-l-2 border-gray-100 max-h-60 overflow-y-auto">
+                {allModules.map((mod) => {
+                  const modIdStr = mod._id != null ? String(mod._id) : '';
+                  const hasAccess = user && modIdStr && allowedModuleIds.has(modIdStr);
+                  const to = hasAccess ? `/student/modules/${mod._id}` : '/packages';
+                  return (
+                    <Link
+                      key={mod._id}
+                      to={to}
+                      onClick={() => { setIsMobileMenuOpen(false); setMobileModulesOpen(false); }}
+                      className="flex items-center gap-2 py-2 px-3 text-sm text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg"
+                    >
+                      {hasAccess ? (
+                        <LockOpen className="w-4 h-4 text-primary" />
+                      ) : (
+                        <Lock className="w-4 h-4 text-gray-400" />
+                      )}
+                      <span className="truncate">{mod.name}</span>
+                      {mod.yearName && <span className="text-xs text-gray-400 flex-shrink-0">{mod.yearName}</span>}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+            {/* fallback link to modules page */}
+            <Link to="/modules" onClick={() => setIsMobileMenuOpen(false)} className="block text-gray-700 font-body hover:text-primary transition-colors py-2 px-4 rounded-lg hover:bg-gray-50">
+              View all modules →
+            </Link>
+          </div>
           <Link to="/proff" onClick={() => setIsMobileMenuOpen(false)} className="block text-gray-700 font-body hover:text-primary transition-colors py-2 px-4 rounded-lg hover:bg-gray-50">
             Proff
           </Link>
