@@ -32,6 +32,7 @@ export default function AdminUsers() {
   const [searchInput, setSearchInput] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [verifiedFilter, setVerifiedFilter] = useState('');
+  const [subscriptionFilter, setSubscriptionFilter] = useState('');
   const [viewUser, setViewUser] = useState(null);
   const [editUser, setEditUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -46,6 +47,9 @@ export default function AdminUsers() {
     if (search) params.search = search;
     if (roleFilter) params.role = roleFilter;
     if (verifiedFilter !== '') params.verified = verifiedFilter;
+    if (subscriptionFilter === 'paid') params.subscribed = 'paid';
+    else if (subscriptionFilter === 'free') params.subscribed = 'free';
+    else if (subscriptionFilter === 'unsubscribed') params.subscribed = 'false';
     api
       .get('/users', { params })
       .then(({ data }) => {
@@ -54,7 +58,7 @@ export default function AdminUsers() {
       })
       .catch(() => setUsers([]))
       .finally(() => setLoading(false));
-  }, [page, search, roleFilter, verifiedFilter]);
+  }, [page, search, roleFilter, verifiedFilter, subscriptionFilter]);
 
   useEffect(() => {
     fetchUsers();
@@ -166,13 +170,7 @@ export default function AdminUsers() {
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Users</h2>
           <p className="text-slate-500 dark:text-slate-400 mt-0.5">Manage your students and administrators roles.</p>
         </div>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-teal-700 text-white font-medium rounded-lg transition-all shadow-sm w-fit"
-        >
-          <UserPlus className="w-4 h-4" />
-          Add New User
-        </button>
+        
       </div>
 
       {/* Filters */}
@@ -190,14 +188,15 @@ export default function AdminUsers() {
           />
         </div>
         <div className="flex flex-wrap gap-2">
+          
           <select
-            value={verifiedFilter}
-            onChange={(e) => setVerifiedFilter(e.target.value)}
+            value={subscriptionFilter}
+            onChange={(e) => { setSubscriptionFilter(e.target.value); setPage(1); }}
             className="bg-slate-50 dark:bg-slate-800 border-0 rounded-lg text-sm px-4 py-2 focus:ring-2 focus:ring-primary cursor-pointer"
           >
-            <option value="">All Statuses</option>
-            <option value="true">Verified</option>
-            <option value="false">Pending</option>
+            <option value="">All subscriptions</option>
+            <option value="paid">Subscribed (Paid)</option>
+            <option value="free">Subscribed (Free trial)</option>
           </select>
           <select
             value={roleFilter}
@@ -218,21 +217,23 @@ export default function AdminUsers() {
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">User Details</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Contact</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Role</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Academic</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Academic Details</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300">Subscription</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                     Loading...
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                     No users found.
                   </td>
                 </tr>
@@ -250,6 +251,7 @@ export default function AdminUsers() {
                         </div>
                       </div>
                     </td>
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">{u.contact || '—'}</td>
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 capitalize">{u.role || '—'}</td>
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
                       <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{u.academicDetails?.institution || '—'}</div>
@@ -257,6 +259,17 @@ export default function AdminUsers() {
                         {u.academicDetails?.year ? `MS ${u.academicDetails.year}` : ''}
                         {u.academicDetails?.rollNumber ? (u.academicDetails?.year ? ` • ${u.academicDetails.rollNumber}` : u.academicDetails.rollNumber) : ''}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      {u.hasActivePackage ? (
+                        u.isFreeTrial ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium">Subscribed (Free trial)</span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">Subscribed</span>
+                        )
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full bg-slate-50 text-slate-500 text-xs">Not subscribed</span>
+                      )}
                     </td>
                  
                     
@@ -284,16 +297,15 @@ export default function AdminUsers() {
                         <button
                           type="button"
                           onClick={() => {
-                           
-                            setActionConfirm({ type: 'revoke', user: u });
+                            if (u.hasActivePackage) setActionConfirm({ type: 'revoke', user: u });
                           }}
-                         
+                          disabled={!u.hasActivePackage}
                           className={`p-2 text-slate-400 transition-colors rounded-lg ${
-                            u.activePlanId == null
+                            !u.hasActivePackage
                               ? 'opacity-50 cursor-not-allowed'
                               : 'hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/10'
                           }`}
-                          title={u.activePlanId == null ? 'Access already revoked' : 'Revoke Access'}
+                          title={!u.hasActivePackage ? 'Access already revoked' : 'Revoke Access'}
                         >
                           <UserX className="w-5 h-5" />
                         </button>

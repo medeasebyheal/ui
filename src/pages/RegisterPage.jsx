@@ -30,6 +30,9 @@ export default function RegisterPage() {
 
     if (!form.name.trim()) { toast.error('Full Name is required'); return; }
     if (!form.email.trim() || !/^\S+@\S+\.\S+$/.test(form.email)) { toast.error('A valid Email Address is required'); return; }
+    if (!form.contact.trim()) { toast.error('Contact number is required'); return; }
+    const contactDigits = form.contact.replace(/\D/g, '');
+    if (contactDigits.length < 10) { toast.error('Enter a valid contact number'); return; }
     if (!form.password) { toast.error('Password is required'); return; }
     if (form.password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
 
@@ -242,6 +245,18 @@ export default function RegisterPage() {
                     value={form.email}
                     onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                     autoComplete="email"
+                  />
+                </div>
+                <div className="relative group">
+                  <input
+                    className="w-full bg-transparent border-0 border-b-2 border-white/30 text-white placeholder-white/70 py-3 px-1 focus:outline-none focus:border-white transition-all duration-300 rounded-none text-lg"
+                    placeholder="Contact Number"
+                    type="tel"
+                    required
+                    inputMode="tel"
+                    value={form.contact}
+                    onChange={(e) => setForm((f) => ({ ...f, contact: e.target.value }))}
+                    autoComplete="tel"
                   />
                 </div>
                 <div className="relative group">

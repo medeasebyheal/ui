@@ -61,6 +61,15 @@ export default function CheckoutPage() {
     return true;
   };
 
+  // Derived flag for enabling the submit button without waiting for explicit validation call
+  const isAcademicComplete = Boolean(
+    academic.institution?.trim() &&
+    academic.college?.trim() &&
+    academic.rollNumber?.trim() &&
+    /^\d{4}$/.test(String(academic.batch || '').trim()) &&
+    receipt
+  );
+
   useEffect(() => {
     if (!user) {
       navigate('/');
@@ -346,6 +355,7 @@ export default function CheckoutPage() {
                   type="text"
                   value={academic.institution}
                   onChange={(e) => { setAcademic((a) => ({ ...a, institution: e.target.value })); setFieldErrors((e2) => ({ ...e2, institution: '' })); }}
+                  required
                   className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.institution ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="e.g. JSMU"
                 />
@@ -357,6 +367,7 @@ export default function CheckoutPage() {
                   type="text"
                   value={academic.college}
                   onChange={(e) => { setAcademic((a) => ({ ...a, college: e.target.value })); setFieldErrors((e2) => ({ ...e2, college: '' })); }}
+                  required
                   className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.college ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="e.g. FJMC"
                 />
@@ -368,6 +379,7 @@ export default function CheckoutPage() {
                   type="text"
                   value={academic.rollNumber}
                   onChange={(e) => { setAcademic((a) => ({ ...a, rollNumber: e.target.value })); setFieldErrors((e2) => ({ ...e2, rollNumber: '' })); }}
+                  required
                   className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.rollNumber ? 'border-red-500' : 'border-gray-300'}`}
                 />
                 {fieldErrors.rollNumber && <p className="text-xs text-red-600 mt-1">{fieldErrors.rollNumber}</p>}
@@ -378,6 +390,7 @@ export default function CheckoutPage() {
                   type="text"
                   value={academic.batch}
                   onChange={(e) => { setAcademic((a) => ({ ...a, batch: e.target.value })); setFieldErrors((e2) => ({ ...e2, batch: '' })); }}
+                  required
                   className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.batch ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="e.g. 2024"
                 />
@@ -552,7 +565,7 @@ export default function CheckoutPage() {
             {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
             <button
               type="submit"
-              disabled={submitting || !resolvePackage()}
+              disabled={submitting || !resolvePackage() || !isAcademicComplete}
               className="w-full py-3.5 bg-primary text-white font-heading font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
             >
               {submitting ? 'Processing...' : 'Complete purchase'}
