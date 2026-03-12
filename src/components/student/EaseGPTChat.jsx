@@ -249,13 +249,29 @@ const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, m
     const useQuestionIndex = pending.questionIndex ?? ospeQuestionIndex;
     const ctx = pending.contextOverride || context || {};
     // normalize context keys so buildFirstMessage receives expected fields (question, options, correctIndex, explanation)
-    const normCtx = {
-      question: (ctx.question || ctx.questionText || '').trim(),
-      options: Array.isArray(ctx.options) ? ctx.options : [],
-      correctIndex: typeof ctx.correctIndex === 'number' ? ctx.correctIndex : (typeof ctx.correctIdx === 'number' ? ctx.correctIdx : undefined),
-      explanation: (ctx.explanation || ctx.expectedAnswer || '').trim(),
-    };
-    const text = buildFirstMessage(normCtx, MAX_INPUT_LENGTH);
+    let text = '';
+    if (useMode === 'ospe') {
+      // Build concise OSPE-first prompt including image description, student answer and expected explanation.
+      const parts = [];
+      const qText = (ctx.questionText || ctx.question || '').trim();
+      if (qText) parts.push(`Question: ${qText}`);
+      if (ctx.imageDescription) parts.push(`Image: ${String(ctx.imageDescription).trim()}`);
+      if (ctx.studentAnswer) parts.push(`Student answer: ${String(ctx.studentAnswer).trim()}`);
+      if (ctx.explanation || ctx.expectedAnswer) parts.push(`Correct answer / explanation: ${String(ctx.explanation || ctx.expectedAnswer).trim()}`);
+      parts.push('');
+      parts.push(
+        'Please: (1) classify the student answer as Correct / Partially correct / Incorrect / Misconception, (2) give the recommended answer (one short line), (3) explain the underlying concept in 2-3 short sentences. Keep the reply concise.'
+      );
+      text = parts.filter(Boolean).join('\n\n').slice(0, MAX_INPUT_LENGTH);
+    } else {
+      const normCtx = {
+        question: (ctx.question || ctx.questionText || '').trim(),
+        options: Array.isArray(ctx.options) ? ctx.options : [],
+        correctIndex: typeof ctx.correctIndex === 'number' ? ctx.correctIndex : (typeof ctx.correctIdx === 'number' ? ctx.correctIdx : undefined),
+        explanation: (ctx.explanation || ctx.expectedAnswer || '').trim(),
+      };
+      text = buildFirstMessage(normCtx, MAX_INPUT_LENGTH);
+    }
     const newUserMessage = { role: 'user', content: text };
     setMessagesByMcq((prev) => ({
       ...prev,
@@ -265,6 +281,13 @@ const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, m
     setError(null);
 
     const history = (messagesByMcq[mcqKey] || []).map((m) => ({ role: m.role, content: m.content }));
+    console.log('history', history);
+    console.log('text', text);
+    console.log('useMode', useMode);
+    console.log('mcqId', mcqId);
+    console.log('useOspeId', useOspeId);
+    console.log('useQuestionIndex', useQuestionIndex);
+    console.log('context', ctx);
     sendEaseGPTMessage(api, { mode: useMode, mcqId: mcqId, ospeId: useOspeId, questionIndex: useQuestionIndex, context: ctx, message: text, history })
       .then((data) => {
         firstMessageRequestStartedRef.current = false;
