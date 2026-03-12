@@ -122,6 +122,7 @@ async function sendEaseGPTMessage(apiClient, { mode = 'mcq', mcqId, ospeId, ques
         explanation: context.explanation || context.expectedAnswer,
         studentAnswer: context.studentAnswer,
         stationNote: context.stationNote,
+        imageDescription: context.imageDescription,
       },
     };
     const { data } = await apiClient.post('/ospes/easegpt', payload, { skipLoader: true });
@@ -252,17 +253,41 @@ const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, m
     let text = '';
     let contentForChat = '';
     if (useMode === 'ospe') {
-      // Build concise OSPE prompt: Question and Your Answer only (no image description in prompt).
-      const parts = [];
       const qText = (ctx.questionText || ctx.question || '').trim();
-      if (qText) parts.push(`Question: ${qText}`);
-      if (ctx.studentAnswer) parts.push(`Your Answer: ${String(ctx.studentAnswer).trim()}`);
-      if (ctx.explanation || ctx.expectedAnswer) parts.push(`Correct answer / explanation: ${String(ctx.explanation || ctx.expectedAnswer).trim()}`);
-      const instruction =
-        'Please: (1) classify the student answer as Correct / Partially correct / Incorrect / Misconception, (2) give the recommended answer (one short line), (3) explain the underlying concept in 2-3 short sentences. Keep the reply concise.';
-      const partsForApi = [...parts, '', instruction];
-      text = partsForApi.filter(Boolean).join('\n\n').slice(0, MAX_INPUT_LENGTH);
-      contentForChat = parts.filter(Boolean).join('\n\n').slice(0, MAX_INPUT_LENGTH);
+      const opts = Array.isArray(ctx.options) ? ctx.options : [];
+      const selectedIdx = typeof ctx.selectedIndex === 'number' ? ctx.selectedIndex : -1;
+      const correctIdx = typeof ctx.correctIndex === 'number' ? ctx.correctIndex : 0;
+      const hasWrittenAnswer = String(ctx.studentAnswer || '').trim().length > 0;
+      const isOspeMcq = opts.length > 0 && selectedIdx >= 0 && !hasWrittenAnswer;
+
+      if (isOspeMcq) {
+        // OSPE MCQ: ask to explain selected vs correct (include image description for context).
+        const parts = [];
+        if (qText) parts.push(`Question: ${qText}`);
+        if (ctx.imageDescription) parts.push(`Image: ${String(ctx.imageDescription).trim()}`);
+        if (opts.length)
+          parts.push(`Options: ${opts.map((o, i) => `${String.fromCharCode(65 + i)}. ${o}`).join(' | ')}`);
+        const selectedOpt = selectedIdx >= 0 && selectedIdx < opts.length ? opts[selectedIdx] : '';
+        const correctOpt = opts[correctIdx];
+        parts.push(`My selection: ${selectedIdx} (${selectedOpt})`);
+        parts.push(`Correct answer: ${correctIdx} (${correctOpt || ''})`);
+        if (ctx.explanation || ctx.expectedAnswer)
+          parts.push(`Explanation: ${String(ctx.explanation || ctx.expectedAnswer).trim()}`);
+        const mcqInstruction = 'Please explain why my selected answer is correct or incorrect and the key concept.';
+        text = [...parts, '', mcqInstruction].filter(Boolean).join('\n\n').slice(0, MAX_INPUT_LENGTH);
+        contentForChat = parts.filter(Boolean).join('\n\n').slice(0, MAX_INPUT_LENGTH);
+      } else {
+        // OSPE viva (written answer): Question, Your Answer, Correct answer, classification instruction (API only).
+        const parts = [];
+        if (qText) parts.push(`Question: ${qText}`);
+        if (ctx.studentAnswer) parts.push(`Your Answer: ${String(ctx.studentAnswer).trim()}`);
+        if (ctx.explanation || ctx.expectedAnswer) parts.push(`Correct answer / explanation: ${String(ctx.explanation || ctx.expectedAnswer).trim()}`);
+        const instruction =
+          'Please: (1) classify the student answer as Correct / Partially correct / Incorrect / Misconception, (2) give the recommended answer (one short line), (3) explain the underlying concept in 2-3 short sentences. Keep the reply concise.';
+        const partsForApi = [...parts, '', instruction];
+        text = partsForApi.filter(Boolean).join('\n\n').slice(0, MAX_INPUT_LENGTH);
+        contentForChat = parts.filter(Boolean).join('\n\n').slice(0, MAX_INPUT_LENGTH);
+      }
     } else {
       const normCtx = {
         question: (ctx.question || ctx.questionText || '').trim(),
