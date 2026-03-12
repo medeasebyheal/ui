@@ -391,8 +391,6 @@ export default function StudentOspeAttempt() {
                               const gi = startIdx + qi;
                               const ans = result.answers[gi];
                               const score = getScore(ans);
-                              const pctVal = ans?.correctnessPercentage;
-                              const assessmentVal = ans?.assessment;
                               const isMcq = MCQ_TYPES.includes(q.type);
                               const userAns = isMcq
                                 ? (q.options || [])[ans?.selectedIndex]
@@ -408,18 +406,6 @@ export default function StudentOspeAttempt() {
                               return (
                                 <div key={qi} className="space-y-3">
                                   <p className="font-medium text-slate-900">{q.questionText}</p>
-                                  {(assessmentVal || pctVal != null) && (
-                                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                                      {assessmentVal && (
-                                        <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-medium">
-                                          {assessmentVal}
-                                        </span>
-                                      )}
-                                      {pctVal != null && (
-                                        <span className="text-slate-600">{pctVal}% match</span>
-                                      )}
-                                    </div>
-                                  )}
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className={`p-4 rounded-xl border ${boxClass}`}>
                                       <label className="text-[10px] uppercase font-bold text-slate-500 block mb-2">Your answer</label>
@@ -431,6 +417,7 @@ export default function StudentOspeAttempt() {
                                     </div>
                                   </div>
                               <div className="mt-2">
+                                <p className="text-xs text-slate-500 mb-1.5">Get AI feedback to rate your answer and understand the key concept.</p>
                                 <button
                                   type="button"
                                   className="text-primary font-semibold text-sm inline-flex items-center gap-2"
