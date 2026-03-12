@@ -16,10 +16,10 @@ export function useProtectedContent() {
       // Only block devtools shortcuts in production builds.
       if (!isProduction) return;
 
-      // if (e.key === 'F12') {
-      //   e.preventDefault();
-      //   return;
-      // }
+      if (e.key === 'F12') {
+        e.preventDefault();
+        return;
+      }
       if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'U'].includes(e.key)) {
         e.preventDefault();
         return;

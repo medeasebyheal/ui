@@ -155,8 +155,9 @@ export default function StudentOspeAttempt() {
       const { data } = await api.post('/ospes/attempts', { ospeId, answers: answerList });
       setResult(data);
       setSubmitted(true);
-      const correct = (data.answers || []).filter((a) => a.correct).length;
-      const pct = totalQuestions > 0 ? (correct / totalQuestions) * 100 : 0;
+      const getScore = (a) => (a?.correctnessPercentage != null ? a.correctnessPercentage / 100 : (a?.correct ? 1 : 0));
+      const totalScore = (data.answers || []).reduce((s, a) => s + getScore(a), 0);
+      const pct = totalQuestions > 0 ? (totalScore / totalQuestions) * 100 : 0;
       if (pct >= 80) {
         const duration = 2000;
         const end = Date.now() + duration;
@@ -248,19 +249,22 @@ export default function StudentOspeAttempt() {
   }
 
   if (submitted && result) {
-    const correctCount = (result.answers || []).filter((a) => a.correct).length;
-    const pct = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+    const getScore = (a) => {
+      if (a?.correctnessPercentage != null) return a.correctnessPercentage / 100;
+      return a?.correct ? 1 : 0;
+    };
+    const totalScore = (result.answers || []).reduce((sum, a) => sum + getScore(a), 0);
+    const pct = totalQuestions > 0 ? Math.round((totalScore / totalQuestions) * 100) : 0;
     const byStation = [];
     let idx = 0;
     stations.forEach((s, si) => {
       const qs = s.questions || [];
-      let correct = 0;
+      let stationScore = 0;
       qs.forEach(() => {
-        const a = result.answers[idx];
-        if (a?.correct) correct++;
+        stationScore += getScore(result.answers[idx]);
         idx++;
       });
-      byStation.push({ stationIndex: si, correct, total: qs.length, station: s });
+      byStation.push({ stationIndex: si, score: stationScore, total: qs.length, station: s });
     });
 
     return (
@@ -276,7 +280,7 @@ export default function StudentOspeAttempt() {
                   {pct >= 80 ? 'Excellent Performance!' : pct >= 60 ? 'Good Job!' : 'Keep Practicing'}
                 </h1>
                 <p className="text-slate-600 mb-6">
-                  You scored {correctCount} out of {totalQuestions} correct.
+                  You scored {totalScore % 1 === 0 ? totalScore : totalScore.toFixed(1)} out of {totalQuestions} ({pct}%).
                 </p>
                 <div className="flex flex-wrap gap-3 justify-center md:justify-start">
                   <button
@@ -300,15 +304,16 @@ export default function StudentOspeAttempt() {
                 Section Summary
               </h3>
               <div className="space-y-5">
-                {byStation.map(({ stationIndex, correct, total }) => {
-                  const p = total > 0 ? Math.round((correct / total) * 100) : 0;
+                {byStation.map(({ stationIndex, score, total }) => {
+                  const p = total > 0 ? Math.round((score / total) * 100) : 0;
                   const barClass = p >= 80 ? 'bg-emerald-500' : p >= 60 ? 'bg-primary' : 'bg-amber-500';
                   const textClass = p >= 80 ? 'text-emerald-600' : p >= 60 ? 'text-primary' : 'text-amber-600';
+                  const scoreStr = score % 1 === 0 ? score : score.toFixed(1);
                   return (
                     <div key={stationIndex}>
                       <div className="flex justify-between text-sm mb-2">
                         <span className="font-medium">Station {stationIndex + 1}</span>
-                        <span className={`font-semibold ${textClass}`}>{correct}/{total}</span>
+                        <span className={`font-semibold ${textClass}`}>{scoreStr}/{total}</span>
                       </div>
                       <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                         <div
@@ -335,12 +340,11 @@ export default function StudentOspeAttempt() {
                 stations.slice(0, si).forEach((st) => { qIdx += (st.questions || []).length; });
                 const startIdx = qIdx;
                 const qs = s.questions || [];
-                let correctHere = 0;
+                let stationScore = 0;
                 qs.forEach((_, qi) => {
-                  const a = result.answers[startIdx + qi];
-                  if (a?.correct) correctHere++;
+                  stationScore += getScore(result.answers[startIdx + qi]);
                 });
-                const hasError = correctHere < qs.length;
+                const hasError = stationScore < qs.length;
                 return (
                   <div
                     key={si}
@@ -361,7 +365,9 @@ export default function StudentOspeAttempt() {
                       </div>
                       <div className="flex-1">
                         <h4 className="font-semibold">Station {si + 1}</h4>
-                        <p className="text-xs text-slate-500">{correctHere}/{qs.length} correct</p>
+                        <p className="text-xs text-slate-500">
+                          {stationScore % 1 === 0 ? stationScore : stationScore.toFixed(1)}/{qs.length} marks
+                        </p>
                       </div>
                       {hasError ? (
                         <span className="text-rose-500">Review</span>
@@ -372,17 +378,21 @@ export default function StudentOspeAttempt() {
                     </div>
                     {isExpanded && (
                       <div className="p-6 border-t border-slate-100 bg-slate-50/50">
-                        <div className="grid md:grid-cols-2 gap-8">
+                        <div className="flex flex-col gap-8">
                           {s.imageUrl && (
-                            <div className="rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
-                              <img src={s.imageUrl} alt={`Station ${si + 1}`} className="w-full h-64 object-contain" />
+                            <div className="flex justify-center">
+                              <div className="rounded-lg overflow-hidden border border-slate-200 bg-slate-100 max-w-2xl w-full">
+                                <img src={s.imageUrl} alt={`Station ${si + 1}`} className="w-full h-64 object-contain mx-auto" />
+                              </div>
                             </div>
                           )}
                           <div className="space-y-6">
                             {qs.map((q, qi) => {
                               const gi = startIdx + qi;
                               const ans = result.answers[gi];
-                              const correct = ans?.correct;
+                              const score = getScore(ans);
+                              const pctVal = ans?.correctnessPercentage;
+                              const assessmentVal = ans?.assessment;
                               const isMcq = MCQ_TYPES.includes(q.type);
                               const userAns = isMcq
                                 ? (q.options || [])[ans?.selectedIndex]
@@ -390,13 +400,28 @@ export default function StudentOspeAttempt() {
                               const correctAns = isMcq
                                 ? (q.options || [])[q.correctIndex]
                                 : q.expectedAnswer || '—';
+                              const boxClass = score >= 0.6
+                                ? 'border-emerald-200 bg-emerald-50/50'
+                                : score >= 0.4
+                                  ? 'border-amber-200 bg-amber-50/50'
+                                  : 'border-rose-200 bg-rose-50/50';
                               return (
                                 <div key={qi} className="space-y-3">
                                   <p className="font-medium text-slate-900">{q.questionText}</p>
+                                  {(assessmentVal || pctVal != null) && (
+                                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                                      {assessmentVal && (
+                                        <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-medium">
+                                          {assessmentVal}
+                                        </span>
+                                      )}
+                                      {pctVal != null && (
+                                        <span className="text-slate-600">{pctVal}% match</span>
+                                      )}
+                                    </div>
+                                  )}
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className={`p-4 rounded-xl border ${
-                                      correct ? 'border-emerald-200 bg-emerald-50/50' : 'border-rose-200 bg-rose-50/50'
-                                    }`}>
+                                    <div className={`p-4 rounded-xl border ${boxClass}`}>
                                       <label className="text-[10px] uppercase font-bold text-slate-500 block mb-2">Your answer</label>
                                       <p className="text-sm font-medium">{userAns || '—'}</p>
                                     </div>
@@ -556,18 +581,19 @@ export default function StudentOspeAttempt() {
                 )}
               </div>
 
-              <div className="p-6 md:p-8 grid md:grid-cols-2 gap-8 select-none">
+              <div className="p-6 md:p-8 flex flex-col gap-8 select-none">
                 {station.imageUrl && (
-                  <div className="space-y-4">
-                    <div
-                      className="relative group cursor-zoom-in overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
-                      onClick={() => setZoomImageUrl(station.imageUrl)}
-                    >
-                      <img
-                        src={station.imageUrl}
-                        alt={`Station ${currentStationIndex + 1}`}
-                        className="w-full aspect-square object-contain transition-transform duration-300 group-hover:scale-105"
-                      />
+                  <div className="flex justify-center">
+                    <div className="space-y-4 w-full max-w-2xl">
+                      <div
+                        className="relative group cursor-zoom-in overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+                        onClick={() => setZoomImageUrl(station.imageUrl)}
+                      >
+                        <img
+                          src={station.imageUrl}
+                          alt={`Station ${currentStationIndex + 1}`}
+                          className="w-full aspect-square object-contain transition-transform duration-300 group-hover:scale-105 mx-auto block"
+                        />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 p-3 rounded-full shadow-lg">
                           <ZoomIn className="w-6 h-6 text-primary" />
@@ -579,9 +605,10 @@ export default function StudentOspeAttempt() {
                     </div>
                     <p className="text-xs text-slate-500 italic text-center">Click image to zoom</p>
                   </div>
+                  </div>
                 )}
 
-                <div className={`space-y-6 ${!station.imageUrl ? 'md:col-span-2' : ''} max-h-[600px] overflow-y-auto pr-2 select-none`}>
+                <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 select-none">
                   {(station.questions || []).map((q, qi) => {
                     const gi = globalIdx++;
                     const isMcq = MCQ_TYPES.includes(q.type);

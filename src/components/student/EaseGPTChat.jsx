@@ -250,19 +250,19 @@ const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, m
     const ctx = pending.contextOverride || context || {};
     // normalize context keys so buildFirstMessage receives expected fields (question, options, correctIndex, explanation)
     let text = '';
+    let contentForChat = '';
     if (useMode === 'ospe') {
-      // Build concise OSPE-first prompt including image description, student answer and expected explanation.
+      // Build concise OSPE prompt: Question and Your Answer only (no image description in prompt).
       const parts = [];
       const qText = (ctx.questionText || ctx.question || '').trim();
       if (qText) parts.push(`Question: ${qText}`);
-      if (ctx.imageDescription) parts.push(`Image: ${String(ctx.imageDescription).trim()}`);
-      if (ctx.studentAnswer) parts.push(`Student answer: ${String(ctx.studentAnswer).trim()}`);
+      if (ctx.studentAnswer) parts.push(`Your Answer: ${String(ctx.studentAnswer).trim()}`);
       if (ctx.explanation || ctx.expectedAnswer) parts.push(`Correct answer / explanation: ${String(ctx.explanation || ctx.expectedAnswer).trim()}`);
-      parts.push('');
-      parts.push(
-        'Please: (1) classify the student answer as Correct / Partially correct / Incorrect / Misconception, (2) give the recommended answer (one short line), (3) explain the underlying concept in 2-3 short sentences. Keep the reply concise.'
-      );
-      text = parts.filter(Boolean).join('\n\n').slice(0, MAX_INPUT_LENGTH);
+      const instruction =
+        'Please: (1) classify the student answer as Correct / Partially correct / Incorrect / Misconception, (2) give the recommended answer (one short line), (3) explain the underlying concept in 2-3 short sentences. Keep the reply concise.';
+      const partsForApi = [...parts, '', instruction];
+      text = partsForApi.filter(Boolean).join('\n\n').slice(0, MAX_INPUT_LENGTH);
+      contentForChat = parts.filter(Boolean).join('\n\n').slice(0, MAX_INPUT_LENGTH);
     } else {
       const normCtx = {
         question: (ctx.question || ctx.questionText || '').trim(),
@@ -271,8 +271,9 @@ const EaseGPTChat = forwardRef(function EaseGPTChat({ enabled, mcqId, context, m
         explanation: (ctx.explanation || ctx.expectedAnswer || '').trim(),
       };
       text = buildFirstMessage(normCtx, MAX_INPUT_LENGTH);
+      contentForChat = text;
     }
-    const newUserMessage = { role: 'user', content: text };
+    const newUserMessage = { role: 'user', content: contentForChat || text };
     setMessagesByMcq((prev) => ({
       ...prev,
       [mcqKey]: [...(prev[mcqKey] || []), newUserMessage],
