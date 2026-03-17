@@ -51,25 +51,11 @@ export default function SubjectDetailPage() {
   const [error, setError] = useState(null);
   const [selectedLecture, setSelectedLecture] = useState(null);
   const [oneShotVideoPlaying, setOneShotVideoPlaying] = useState(false);
-  const [firstModuleId, setFirstModuleId] = useState(null);
 
   useProtectedContent();
 
   useEffect(() => {
     let cancelled = false;
-    api.get('/content/years-with-modules').then(r => {
-      if (!cancelled && Array.isArray(r.data)) {
-        let first = null;
-        let minTime = Infinity;
-        r.data.forEach(y => {
-          (y.modules || []).forEach(m => {
-            const t = new Date(m.createdAt || 0).getTime();
-            if (t < minTime) { minTime = t; first = String(m._id); }
-          });
-        });
-        setFirstModuleId(first);
-      }
-    }).catch(() => { });
     Promise.all([
       api.get(`/content/subjects/${subjectId}`).then((r) => r.data),
       api.get(`/content/subjects/${subjectId}/topics`).then((r) => r.data),
@@ -132,19 +118,27 @@ export default function SubjectDetailPage() {
     return ids.has(String(moduleId));
   }, [user?.packages, moduleId]);
 
-  const hasActiveFreeTrial = useMemo(() => {
-    if (!user?.packages?.length) return false;
+  const freeTrialModuleIds = useMemo(() => {
+    const ids = new Set();
+    if (!user?.packages?.length) return ids;
     const now = Date.now();
-    return user.packages.some((up) => {
-      if (!up || up.status !== 'active') return false;
+    user.packages.forEach((up) => {
+      if (!up || up.status !== 'active') return;
+      if (up.expiresAt && new Date(up.expiresAt).getTime() <= now) return;
       const pkg = up.package || {};
       const name = (pkg.name || '').toString();
       const planKey = pkg.planKey || '';
       const ptype = (pkg.type || '').toString();
-      // expiry check on user-package if available
-      if (up.expiresAt && new Date(up.expiresAt).getTime() <= now) return false;
-      return /free[-\s]?trial/i.test(name) || /free/i.test(ptype) || String(planKey) === 'free-trial';
+      const isTrialPkg = /free[-\s]?trial/i.test(name) || /free/i.test(ptype) || String(planKey) === 'free-trial';
+      if (!isTrialPkg) return;
+      if (pkg?.moduleIds?.length) {
+        pkg.moduleIds.forEach((id) => {
+          const idStr = typeof id === 'object' && id != null ? String(id._id || id) : String(id);
+          if (idStr && idStr !== 'undefined') ids.add(idStr);
+        });
+      }
     });
+    return ids;
   }, [user?.packages]);
 
   const sortedTopics = useMemo(() => {
@@ -250,7 +244,7 @@ export default function SubjectDetailPage() {
               const topicIdShort = String(topic._id).slice(-6).toUpperCase();
               const progressPercent = topic.progressPercent ?? 0;
               const isFirstTopic = firstTopic && String(firstTopic._id) === String(topic._id);
-              const accessible = hasModuleAccess || (hasActiveFreeTrial && isFirstTopic && String(moduleId) === firstModuleId);
+              const accessible = hasModuleAccess || (isFirstTopic && freeTrialModuleIds.has(String(moduleId)));
               const topicImageUrl = topic.imageUrl || TOPIC_PLACEHOLDER_IMAGE;
 
               const cardChildren = (
