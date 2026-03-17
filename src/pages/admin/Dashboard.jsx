@@ -11,6 +11,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [removeFifthLoading, setRemoveFifthLoading] = useState(false);
   const [removeFifthResult, setRemoveFifthResult] = useState(null);
+  const [activateTrialLoading, setActivateTrialLoading] = useState(false);
+  const [activateTrialResult, setActivateTrialResult] = useState(null);
 
   useEffect(() => {
     api
@@ -32,6 +34,23 @@ export default function AdminDashboard() {
       })
       .catch((err) => setRemoveFifthResult({ error: err.response?.data?.message || err.message || 'Request failed' }))
       .finally(() => setRemoveFifthLoading(false));
+  };
+
+  const handleActivateFreeTrialForAll = () => {
+    if (activateTrialLoading) return;
+    setActivateTrialResult(null);
+    setActivateTrialLoading(true);
+    api
+      .post('/admin/free-trial/activate-all')
+      .then(({ data: res }) => {
+        setActivateTrialResult(res);
+      })
+      .catch((err) =>
+        setActivateTrialResult({
+          error: err.response?.data?.message || err.message || 'Request failed',
+        })
+      )
+      .finally(() => setActivateTrialLoading(false));
   };
 
   const stats = data || {};
@@ -275,6 +294,45 @@ export default function AdminDashboard() {
                 >
                   View All Transactions
                 </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isSuperAdmin && (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <Wrench className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                Maintenance Tools
+              </h3>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                  Activate free-trial packages for all student users (all years/modules configured as free-trial).
+                </p>
+                <button
+                  type="button"
+                  onClick={handleActivateFreeTrialForAll}
+                  disabled={activateTrialLoading}
+                  className="px-4 py-2 bg-primary hover:bg-teal-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2"
+                >
+                  <Wrench className="w-4 h-4" />
+                  {activateTrialLoading ? 'Running…' : 'Activate free trial for all students'}
+                </button>
+                {activateTrialResult && (
+                  <p
+                    className={`mt-2 text-sm font-medium ${
+                      activateTrialResult.error
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : 'text-emerald-600 dark:text-emerald-400'
+                    }`}
+                  >
+                    {activateTrialResult.error ||
+                      `Done. Created ${activateTrialResult.created ?? 0} free-trial UserPackage records.`}
+                  </p>
+                )}
               </div>
             </div>
           </div>
