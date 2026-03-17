@@ -75,21 +75,6 @@ export default function StudentResources() {
   const [studyTipIndex, setStudyTipIndex] = useState(() => Math.floor(Math.random() * MBBS_STUDY_TIPS.length));
   const [expandedModules, setExpandedModules] = useState({});
 
-  const firstModuleIdStr = useMemo(() => {
-    let first = null;
-    let minTime = Infinity;
-    Object.values(modulesByYear).forEach((mods) => {
-      (mods || []).forEach((m) => {
-        const t = new Date(m.createdAt || 0).getTime();
-        if (t < minTime) {
-          minTime = t;
-          first = String(m._id);
-        }
-      });
-    });
-    return first;
-  }, [modulesByYear]);
-
   const hasActiveFreeTrial = useMemo(() => {
     if (!user?.packages?.length) return false;
     const now = Date.now();
@@ -114,6 +99,28 @@ export default function StudentResources() {
       const isTrialPkg = /free[-\s]?trial/i.test(name) || String(planKey) === 'free-trial';
       if (isTrialPkg) return; // exclude free trial from Full module access
 
+      if (pkg?.moduleIds?.length) {
+        pkg.moduleIds.forEach((id) => {
+          const idStr = typeof id === 'object' && id != null ? String(id._id || id) : String(id);
+          if (idStr && idStr !== 'undefined') ids.add(idStr);
+        });
+      }
+    });
+    return ids;
+  }, [user?.packages]);
+
+  const freeTrialModuleIds = useMemo(() => {
+    const ids = new Set();
+    if (!user?.packages?.length) return ids;
+    const now = Date.now();
+    user.packages.forEach((up) => {
+      if (!up || up.status !== 'active') return;
+      if (up.expiresAt && new Date(up.expiresAt).getTime() <= now) return;
+      const pkg = up.package || {};
+      const name = (pkg.name || '').toString();
+      const planKey = pkg.planKey || '';
+      const isTrialPkg = /free[-\s]?trial/i.test(name) || String(planKey) === 'free-trial';
+      if (!isTrialPkg) return;
       if (pkg?.moduleIds?.length) {
         pkg.moduleIds.forEach((id) => {
           const idStr = typeof id === 'object' && id != null ? String(id._id || id) : String(id);
@@ -333,7 +340,7 @@ export default function StudentResources() {
                       const loading = loadingSubjects[modId];
                       const ospes = ospesByModule[modId] || [];
                       const moduleImage = mod.imageUrl || PLACEHOLDER_IMAGES.module;
-                      const isFreeTrialAccessible = hasActiveFreeTrial && modId === firstModuleIdStr;
+                      const isFreeTrialAccessible = freeTrialModuleIds.has(modId);
                       const locked = (!hasModuleAccess(mod._id) && !isFreeTrialAccessible) || !user?.packages?.length;
 
                       return (
