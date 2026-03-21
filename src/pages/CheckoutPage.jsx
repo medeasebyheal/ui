@@ -233,7 +233,15 @@ export default function CheckoutPage() {
       form.append('year', String(year));
       form.append('part', String(part));
       const { data } = await api.post('/payments', form);
-      setSuccess({ payment: data, plan: pkg?.name });
+      setSuccess({
+        payment: data,
+        plan: pkg?.name,
+        summary: {
+          basePrice,
+          discount: promoDiscount,
+          finalPrice,
+        },
+      });
       toast.success('Payment uploaded — awaiting verification');
       setReceipt(null);
       await refreshUser();
@@ -261,6 +269,7 @@ export default function CheckoutPage() {
       <CheckoutConfirmation
         payment={success.payment}
         planName={success.plan}
+        summary={success.summary}
       />
     );
   }
@@ -577,8 +586,18 @@ export default function CheckoutPage() {
   );
 }
 
-function CheckoutConfirmation({ payment, planName }) {
+function CheckoutConfirmation({ payment, planName, summary }) {
   const cardRef = useRef(null);
+
+  const base = summary?.basePrice ?? (payment?.originalAmount != null ? Number(payment.originalAmount) : null);
+  const discount =
+    summary?.discount ??
+    (payment?.originalAmount != null && payment?.amount != null
+      ? Math.max(0, Number(payment.originalAmount) - Number(payment.amount))
+      : 0);
+  const totalPaid =
+    summary?.finalPrice ??
+    (payment?.amount != null && payment?.amount !== '' ? Number(payment.amount) : null);
 
   const handleSaveAsImage = async () => {
     const html2canvas = (await import('html2canvas')).default;
@@ -607,9 +626,21 @@ function CheckoutConfirmation({ payment, planName }) {
             <span className="text-gray-600">Plan</span>
             <span className="font-medium">{planName}</span>
           </div>
+          {base != null && base > 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Package price</span>
+              <span className={discount > 0 ? 'text-gray-400 line-through' : 'font-medium'}>₨{base}</span>
+            </div>
+          )}
+          {discount > 0 && (
+            <div className="flex justify-between text-green-600">
+              <span>Promo discount</span>
+              <span>-₨{discount}</span>
+            </div>
+          )}
           <div className="flex justify-between">
-            <span className="text-gray-600">Amount</span>
-            <span className="font-medium">₨{payment.amount}</span>
+            <span className="text-gray-600">Amount paid</span>
+            <span className="font-medium text-primary">₨{totalPaid != null && !Number.isNaN(totalPaid) ? totalPaid : payment.amount}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Status</span>
