@@ -7,7 +7,8 @@ import AuthModal from '../components/AuthModal';
 export default function PackagesPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const plans = PLAN_DATA;
+  const plans = user ? PLAN_DATA.filter((p) => p.planKey !== 'free-trial') : PLAN_DATA;
+  const isThreePlans = plans.length === 3;
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalPlanKey, setAuthModalPlanKey] = useState(null);
 
@@ -42,8 +43,8 @@ export default function PackagesPage() {
           </p>
         </div>
 
-        {/* Desktop Grid - same as home Plan (4 columns) */}
-        <div className="hidden xl:grid xl:grid-cols-4 gap-6 xl:gap-8 pt-4">
+        {/* Desktop Grid - center when only 3 plans (logged-in) */}
+        <div className={`hidden xl:grid gap-6 xl:gap-8 pt-4 ${isThreePlans ? 'xl:grid-cols-3 max-w-6xl mx-auto' : 'xl:grid-cols-4'}`}>
           {plans.map((plan, index) => (
             <PlanCard key={index} plan={plan} onBuyNow={handleBuyNow} />
           ))}
@@ -52,7 +53,7 @@ export default function PackagesPage() {
         {/* Tablet Horizontal Scroll - same as home Plan */}
         <div className="hidden md:block xl:hidden relative pt-6">
           <div className="overflow-x-auto">
-            <div className="flex gap-6 pb-6 px-4 pt-6">
+            <div className={`flex gap-6 pb-6 px-4 pt-6 ${isThreePlans ? 'justify-center' : ''}`}>
               {plans.map((plan, index) => (
                 <div key={index} className="flex-shrink-0 w-[340px] lg:w-[380px]">
                   <PlanCard plan={plan} onBuyNow={handleBuyNow} />

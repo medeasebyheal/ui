@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import EmptyPackageCTA from '../../components/EmptyPackageCTA';
@@ -21,25 +21,68 @@ export default function StudentDashboard() {
   const firstPackage = user?.packages?.[0]?.package;
   const packageName = firstPackage?.name || 'Package';
 
+  const hasPurchasedPackage = useMemo(() => {
+    return user?.packages?.some(up => {
+      if (!up || up.status !== 'active') return false;
+      const pkg = up.package || {};
+      const name = (pkg.name || '').toString();
+      const planKey = pkg.planKey || '';
+      const isFreeTrial = /free[-\s]?trial/i.test(name) || String(planKey) === 'free-trial';
+      return !isFreeTrial;
+    }) || false;
+  }, [user?.packages]);
+
+  const hasActiveFreeTrial = useMemo(() => {
+    return user?.packages?.some(up => {
+      if (!up || up.status !== 'active') return false;
+      const pkg = up.package || {};
+      const name = (pkg.name || '').toString();
+      const planKey = pkg.planKey || '';
+      const now = Date.now();
+      if (up.expiresAt && new Date(up.expiresAt).getTime() <= now) return false;
+      const isFreeTrial = /free[-\s]?trial/i.test(name) || String(planKey) === 'free-trial';
+      return isFreeTrial;
+    }) || false;
+  }, [user?.packages]);
+
+  const showFreeTrialIndicator = hasActiveFreeTrial && !hasPurchasedPackage;
+
   // Only treat recentView as a resume target when the user has an active package.
   const continueLearning = (hasPackages && recentView)
     ? {
-        title: recentView.name,
-        subject: recentView.meta || (recentView.type === 'module' ? 'Module' : recentView.type === 'topic' ? 'Topic' : recentView.type === 'ospe' ? 'OSPE' : 'Resource'),
-        description: 'Pick up where you left off and continue your learning.',
-        url: recentView.url,
-        imageUrl: FALLBACK_IMAGE,
-      }
+      title: recentView.name,
+      subject: recentView.meta || (recentView.type === 'module' ? 'Module' : recentView.type === 'topic' ? 'Topic' : recentView.type === 'ospe' ? 'OSPE' : 'Resource'),
+      description: 'Pick up where you left off and continue your learning.',
+      url: recentView.url,
+      imageUrl: FALLBACK_IMAGE,
+    }
     : {
-        title: 'Explore your modules',
-        subject: 'Get Started',
-        description: 'Open Resources to browse topics, subjects, and OSPEs.',
-        url: '/student/resources',
-        imageUrl: FALLBACK_IMAGE,
-      };
+      title: 'Explore your modules',
+      subject: 'Get Started',
+      description: 'Open Resources to browse topics, subjects, and OSPEs.',
+      url: '/student/resources',
+      imageUrl: FALLBACK_IMAGE,
+    };
 
   return (
     <div className="max-w-7xl mx-auto">
+      {showFreeTrialIndicator && (
+        <div className="mb-8 p-5 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white rounded-xl text-teal-600 shadow-sm border border-teal-100">
+              <Info className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="font-bold text-teal-900 text-lg">Free Trial Active</h4>
+              <p className="text-sm text-teal-700 font-medium">You are currently exploring on a free trial.</p>
+            </div>
+          </div>
+          <Link to="/packages" className="px-6 py-2.5 bg-teal-600 text-white text-sm font-bold rounded-xl hover:bg-teal-700 transition-all shadow-md shadow-teal-600/20 hover:shadow-lg hover:shadow-teal-600/30 flex-shrink-0 text-center w-full sm:w-auto hover:-translate-y-0.5">
+            Upgrade Now
+          </Link>
+        </div>
+      )}
+
       {/* Info cards - colored backgrounds */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         <Link
@@ -73,8 +116,11 @@ export default function StudentDashboard() {
           </div>
           <div className="flex justify-between items-start mb-1">
             <h3 className="text-lg font-bold text-slate-900">Packages</h3>
-            {hasPackages && (
+            {hasPackages && !showFreeTrialIndicator && (
               <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Active</span>
+            )}
+            {showFreeTrialIndicator && (
+              <span className="bg-teal-100 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Free Trial</span>
             )}
           </div>
           <p className="text-sm text-slate-600">
@@ -94,7 +140,7 @@ export default function StudentDashboard() {
         </Link>
       </section>
 
-    
+
       {/* Continue Learning */}
       <section>
         <div className="flex items-center justify-between mb-6">

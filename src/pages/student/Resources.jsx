@@ -19,6 +19,7 @@ import {
   BarChart3,
   ChevronRight,
   LockIcon,
+  Info,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
@@ -87,6 +88,20 @@ export default function StudentResources() {
       return /free[-\s]?trial/i.test(name) || String(planKey) === 'free-trial';
     });
   }, [user?.packages]);
+
+  const hasPurchasedPackage = useMemo(() => {
+    if (!user?.packages?.length) return false;
+    return user.packages.some((up) => {
+      if (!up || up.status !== 'active') return false;
+      const pkg = up.package || {};
+      const name = (pkg.name || '').toString();
+      const planKey = pkg.planKey || '';
+      const isTrialPkg = /free[-\s]?trial/i.test(name) || String(planKey) === 'free-trial';
+      return !isTrialPkg;
+    });
+  }, [user?.packages]);
+
+  const showFreeTrialIndicator = hasActiveFreeTrial && !hasPurchasedPackage;
 
   const enrolledModuleIds = useMemo(() => {
     const ids = new Set();
@@ -203,7 +218,7 @@ export default function StudentResources() {
   const recentToShow = (recentViews.length > 0 ? recentViews : []).slice(0, 3);
   const hasPackages = !!user?.packages?.length;
   // derive study streak from available user fields (fallback to 0)
-  const studyStreakDays = Number(user?.studyStreakDays ) || 0;
+  const studyStreakDays = Number(user?.studyStreakDays) || 0;
   const studyStreakGoal = 30;
   const studyStreakPct = Math.max(0, Math.min(100, Math.round((studyStreakDays / studyStreakGoal) * 100)));
 
@@ -237,15 +252,15 @@ export default function StudentResources() {
       const today = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(
         d.getUTCDate()
       ).padStart(2, '0')}`;
-      
+
       if (last === today) return;
       (async () => {
         try {
-          await api.post('/auth/streak/ping').catch(() => {});
+          await api.post('/auth/streak/ping').catch(() => { });
           localStorage.setItem(key, today);
           // refresh user info once to reflect updated streak
           refreshUser?.();
-        } catch (_) {}
+        } catch (_) { }
       })();
     } catch (_) {
       // localStorage may be unavailable in some contexts; ignore
@@ -274,8 +289,26 @@ export default function StudentResources() {
             </div>
           </div>
         </section>
+
+        {showFreeTrialIndicator && (
+          <div className="mb-8 p-5 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white rounded-xl text-teal-600 shadow-sm border border-teal-100">
+                <Info className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-bold text-teal-900 text-lg">Free Trial Active</h4>
+                <p className="text-sm text-teal-700 font-medium">You are currently exploring on a free trial.</p>
+              </div>
+            </div>
+            <Link to="/packages" className="px-6 py-2.5 bg-teal-600 text-white text-sm font-bold rounded-xl hover:bg-teal-700 transition-all shadow-md shadow-teal-600/20 hover:shadow-lg hover:shadow-teal-600/30 flex-shrink-0 text-center w-full sm:w-auto hover:-translate-y-0.5">
+              Upgrade Now
+            </Link>
+          </div>
+        )}
+
         {/* CTA for students without packages */}
-        {!hasPackages && <EmptyPackageCTA />}
+        {!hasPackages && !showFreeTrialIndicator && <EmptyPackageCTA />}
 
         {/* Recently Viewed */}
         {hasPackages && recentToShow.length > 0 && (
@@ -592,7 +625,7 @@ export default function StudentResources() {
             </p>
           </div>
 
-          {!user?.packages?.length && (
+          {!hasPackages && (
             <div className="bg-slate-900 text-white p-5 rounded-2xl">
               <h4 className="text-sm font-bold mb-1">Pro Subscription</h4>
               <p className="text-xs text-slate-400 mb-4">Get full access to all modules and OSPE practice.</p>
@@ -602,6 +635,27 @@ export default function StudentResources() {
               >
                 SUBSCRIBE
               </Link>
+            </div>
+          )}
+
+          {showFreeTrialIndicator && (
+            <div className="bg-gradient-to-br from-teal-900 to-emerald-900 text-teal-50 p-5 rounded-2xl border border-teal-700/50 shadow-lg relative overflow-hidden">
+              <div className="absolute -top-6 -right-6 w-20 h-20 bg-teal-400/20 rounded-full blur-xl" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1.5 bg-teal-800/80 rounded-md border border-teal-600/50">
+                    <Info className="w-4 h-4 text-teal-300" />
+                  </div>
+                  <h4 className="text-sm font-bold text-teal-100">Free Trial Active</h4>
+                </div>
+                <p className="text-xs text-teal-300/90 mb-4 font-medium">You are experiencing limited access. Upgrade to unlock all modules.</p>
+                <Link
+                  to="/packages"
+                  className="block w-full py-2.5 bg-teal-500 text-white rounded-lg text-sm font-bold hover:bg-teal-400 transition-colors text-center shadow-sm"
+                >
+                  UPGRADE
+                </Link>
+              </div>
             </div>
           )}
         </div>
