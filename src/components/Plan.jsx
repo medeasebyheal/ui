@@ -126,59 +126,15 @@ function Plan() {
           </p>
         </div>
 
-        {/* Desktop Grid - center when only 3 plans (logged-in) */}
-        <div className={`hidden xl:grid gap-6 xl:gap-8 pt-4 ${isThreePlans ? 'xl:grid-cols-3 max-w-6xl mx-auto' : 'xl:grid-cols-4'}`}>
+        {/* Responsive Grid for All Screens */}
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${
+          isThreePlans 
+            ? 'lg:grid-cols-3 max-w-6xl mx-auto' 
+            : 'lg:grid-cols-2 xl:grid-cols-4'
+        } gap-6 md:gap-8 pt-6`}>
           {plans.map((plan, index) => (
             <PlanCard key={index} plan={plan} onBuyNow={handleBuyNow} />
           ))}
-        </div>
-
-        {/* Tablet/iPad Horizontal Scroll - Visible on md to xl screens */}
-        <div className="hidden md:block xl:hidden relative pt-6">
-          <div className="overflow-x-auto">
-            <div className={`flex gap-6 pb-6 px-4 pt-6 ${isThreePlans ? 'justify-center' : ''}`}>
-              {plans.map((plan, index) => (
-                <div key={index} className="flex-shrink-0 w-[340px] lg:w-[380px]">
-                  <PlanCard plan={plan} onBuyNow={handleBuyNow} />
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Scroll Indicator */}
-          <div className="flex justify-center gap-2 mt-4">
-            {plans.map((_, index) => (
-              <div key={index} className="w-2 h-2 rounded-full bg-primary/30 transition-all"></div>
-            ))}
-          </div>
-          
-          {/* Scroll Hint */}
-          <p className="text-center text-xs text-gray-500 mt-4 font-body">
-            ← Scroll to see all plans →
-          </p>
-        </div>
-
-        {/* Mobile Carousel - Visible only on small screens */}
-        <div className="md:hidden relative px-2 pt-6">
-          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-6 -mx-2 px-2">
-            {plans.map((plan, index) => (
-              <div key={index} className="snap-center flex-shrink-0 w-[90vw] max-w-[380px] pt-4">
-                <PlanCard plan={plan} onBuyNow={handleBuyNow} />
-              </div>
-            ))}
-          </div>
-          
-          {/* Scroll Indicator */}
-          <div className="flex justify-center gap-2 mt-4">
-            {plans.map((_, index) => (
-              <div key={index} className="w-2 h-2 rounded-full bg-primary/30 transition-all"></div>
-            ))}
-          </div>
-          
-          {/* Swipe Hint */}
-          <p className="text-center text-xs text-gray-500 mt-4 font-body">
-            ← Swipe to see more plans →
-          </p>
         </div>
 
         {/* Bottom CTA */}
