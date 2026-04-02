@@ -15,6 +15,8 @@ export default function StudentProfile() {
   const [form, setForm] = useState({
     name: '',
     contact: '',
+    university: '',
+    college: '',
     institution: '',
     year: '',
     rollNumber: '',
@@ -26,6 +28,8 @@ export default function StudentProfile() {
       setForm({
         name: user.name || '',
         contact: user.contact || '',
+        university: user.university || '',
+        college: user.college || '',
         institution: user.academicDetails?.institution || '',
         year: user.academicDetails?.year ?? '',
         rollNumber: user.academicDetails?.rollNumber || '',
@@ -70,6 +74,8 @@ export default function StudentProfile() {
       await api.patch('/auth/profile', {
         name: form.name.trim(),
         contact: form.contact.trim() || '',
+        university: form.university.trim() || '',
+        college: form.college.trim() || '',
         academicDetails: {
           institution: form.institution.trim() || '',
           year: form.year ? Number(form.year) : undefined,
@@ -259,8 +265,11 @@ export default function StudentProfile() {
                   <Building2 className="w-5 h-5 text-slate-500" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Institution</p>
-                  <p className="text-slate-700 dark:text-slate-200 font-medium">{institution}</p>
+                  <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">University / College</p>
+                  <p className="text-slate-700 dark:text-slate-200 font-medium whitespace-pre-wrap">
+                    {user?.university || institution}
+                    {user?.college ? `\n${user.college}` : ''}
+                  </p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -414,6 +423,27 @@ export default function StudentProfile() {
                   onChange={(e) => setForm((f) => ({ ...f, contact: e.target.value }))}
                   className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="Phone or contact"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">University</label>
+                <input
+                  type="text"
+                  required
+                  value={form.university}
+                  onChange={(e) => setForm((f) => ({ ...f, university: e.target.value }))}
+                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="University"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">College (Optional)</label>
+                <input
+                  type="text"
+                  value={form.college}
+                  onChange={(e) => setForm((f) => ({ ...f, college: e.target.value }))}
+                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="College"
                 />
               </div>
               <div>

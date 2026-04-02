@@ -254,7 +254,8 @@ export default function AdminUsers() {
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">{u.contact || '—'}</td>
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 capitalize">{u.role || '—'}</td>
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
-                      <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{u.academicDetails?.institution || '—'}</div>
+                      <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{u.university || u.academicDetails?.institution || '—'}</div>
+                      {u.college && <div className="text-[11px] text-slate-500 dark:text-slate-400 mb-1 leading-tight">{u.college}</div>}
                       <div className="text-xs text-slate-500 dark:text-slate-400">
                         {u.academicDetails?.year ? `MS ${u.academicDetails.year}` : ''}
                         {u.academicDetails?.rollNumber ? (u.academicDetails?.year ? ` • ${u.academicDetails.rollNumber}` : u.academicDetails.rollNumber) : ''}
@@ -419,6 +420,18 @@ export default function AdminUsers() {
                 <div>
                   <dt className="text-slate-500 dark:text-slate-400">Contact</dt>
                   <dd className="font-medium text-slate-900 dark:text-slate-100">{viewUser.contact}</dd>
+                </div>
+              )}
+              {viewUser.university && (
+                <div>
+                  <dt className="text-slate-500 dark:text-slate-400">University</dt>
+                  <dd className="font-medium text-slate-900 dark:text-slate-100">{viewUser.university}</dd>
+                </div>
+              )}
+              {viewUser.college && (
+                <div>
+                  <dt className="text-slate-500 dark:text-slate-400">College</dt>
+                  <dd className="font-medium text-slate-900 dark:text-slate-100">{viewUser.college}</dd>
                 </div>
               )}
               <div>
