@@ -82,7 +82,7 @@ export default function StudentOspeAttempt() {
       .get(`/ospes/${ospeId}`)
       .then(({ data }) => {
         setOspe(data);
-        setTimerSeconds((data.timeLimit || 5) * 60);
+        setTimerSeconds(5 * 60);
         if (data) {
           recordRecentView({
             type: 'ospe',
@@ -110,6 +110,12 @@ export default function StudentOspeAttempt() {
     }, 1000);
     return () => clearInterval(id);
   }, [ospe, submitted]);
+
+  useEffect(() => {
+    if (ospe && !submitted) {
+      setTimerSeconds(5 * 60);
+    }
+  }, [currentStationIndex, ospe, submitted]);
 
   const station = stations[currentStationIndex];
   const totalStations = stations.length;
@@ -174,9 +180,13 @@ export default function StudentOspeAttempt() {
 
   useEffect(() => {
     if (timerSeconds === 0 && !submitted && !submitting) {
-      handleSubmitAttempt();
+      if (isLastStation) {
+        handleSubmitAttempt();
+      } else {
+        setCurrentStationIndex((prev) => prev + 1);
+      }
     }
-  }, [timerSeconds, submitted, submitting, handleSubmitAttempt]);
+  }, [timerSeconds, submitted, submitting, isLastStation, handleSubmitAttempt]);
  
   // When the EaseGPT modal is opened, trigger the initial message send once the chat mounts
   useEffect(() => {

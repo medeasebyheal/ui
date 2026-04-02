@@ -14,7 +14,7 @@ const WAVE_SVG = (
 export default function RegisterPage() {
   const [searchParams] = useSearchParams();
   const returnUrl = searchParams.get('returnUrl');
-  const [form, setForm] = useState({ name: '', email: '', password: '', contact: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', contact: '', university: '', college: '' });
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [pendingVerification, setPendingVerification] = useState(false);
@@ -33,6 +33,7 @@ export default function RegisterPage() {
     if (!form.contact.trim()) { toast.error('Contact number is required'); return; }
     const contactDigits = form.contact.replace(/\D/g, '');
     if (contactDigits.length < 10) { toast.error('Enter a valid contact number'); return; }
+    if (!form.university.trim()) { toast.error('University is required'); return; }
     if (!form.password) { toast.error('Password is required'); return; }
     if (form.password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
 
@@ -257,6 +258,25 @@ export default function RegisterPage() {
                     value={form.contact}
                     onChange={(e) => setForm((f) => ({ ...f, contact: e.target.value }))}
                     autoComplete="tel"
+                  />
+                </div>
+                <div className="relative group">
+                  <input
+                    className="w-full bg-transparent border-0 border-b-2 border-white/30 text-white placeholder-white/70 py-3 px-1 focus:outline-none focus:border-white transition-all duration-300 rounded-none text-lg"
+                    placeholder="University"
+                    type="text"
+                    required
+                    value={form.university}
+                    onChange={(e) => setForm((f) => ({ ...f, university: e.target.value }))}
+                  />
+                </div>
+                <div className="relative group">
+                  <input
+                    className="w-full bg-transparent border-0 border-b-2 border-white/30 text-white placeholder-white/70 py-3 px-1 focus:outline-none focus:border-white transition-all duration-300 rounded-none text-lg"
+                    placeholder="Medical College"
+                    type="text"
+                    value={form.college}
+                    onChange={(e) => setForm((f) => ({ ...f, college: e.target.value }))}
                   />
                 </div>
                 <div className="relative group">
