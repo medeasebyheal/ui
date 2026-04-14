@@ -10,11 +10,13 @@ const PACKAGE_TYPES = [
   { value: 'year_half_part2', label: 'Half Year - Part 2', badge: 'blue' },
   { value: 'year_full', label: 'Full Year', badge: 'purple' },
   { value: 'master_proff', label: 'Proff Buster', badge: 'amber' },
+  { value: 'single_module', label: 'Single Module Package', badge: 'green' },
   // Free-trial variants
   { value: 'year_half_part1-free', label: 'Half Year - Part 1 (Free Trial)', badge: 'blue' },
   { value: 'year_half_part2-free', label: 'Half Year - Part 2 (Free Trial)', badge: 'blue' },
   { value: 'year_full-free', label: 'Full Year (Free Trial)', badge: 'purple' },
   { value: 'master_proff-free', label: 'Proff Buster (Free Trial)', badge: 'amber' },
+  { value: 'single_module-free', label: 'Single Module Package (Free Trial)', badge: 'green' },
 ];
 
 const PER_PAGE = 10;
@@ -30,6 +32,7 @@ function typeBadgeClass(badge) {
     blue: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
     purple: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
     amber: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+    green: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   };
   return map[badge] || 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300';
 }
@@ -219,7 +222,7 @@ export default function AdminPackages() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
-                        {pkg.type === 'master_proff' ? '—' : `Year ${pkg.year ?? '—'}${pkg.part != null ? `, Part ${pkg.part}` : ''}`}
+                        {pkg.type === 'master_proff' || pkg.type.startsWith('single_module') ? '—' : `Year ${pkg.year ?? '—'}${pkg.part != null ? `, Part ${pkg.part}` : ''}`}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
                         <div className="flex items-center gap-1">
@@ -374,10 +377,12 @@ function PackageForm({ package: pkg, years, modulesByYear, onSave, onClose }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const isMasterProff = type === 'master_proff';
+  const isMasterProff = type === 'master_proff' || type === 'master_proff-free';
+  const isSingleModule = type === 'single_module' || type === 'single_module-free';
 
   const toggleModule = (id) => {
     setModuleIds((prev) => {
+      if (isSingleModule) return new Set([id]);
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -388,6 +393,12 @@ function PackageForm({ package: pkg, years, modulesByYear, onSave, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    
+    if (isSingleModule && moduleIds.size !== 1) {
+      setError('A Single Module Package must have exactly one module associated.');
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
@@ -397,9 +408,9 @@ function PackageForm({ package: pkg, years, modulesByYear, onSave, onClose }) {
         description: description.trim(),
         moduleIds: Array.from(moduleIds),
       };
-      if (!isMasterProff) {
+      if (!isMasterProff && !isSingleModule) {
         payload.year = Number(year) || 1;
-        payload.part = type === 'year_full' ? null : Number(part) || 1;
+        payload.part = type === 'year_full' || type === 'year_full-free' ? null : Number(part) || 1;
       } else {
         payload.year = null;
         payload.part = null;
@@ -445,7 +456,7 @@ function PackageForm({ package: pkg, years, modulesByYear, onSave, onClose }) {
           </select>
         </div>
 
-        {!isMasterProff && (
+        {!isMasterProff && !isSingleModule && (
           <>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Year</label>
@@ -497,10 +508,11 @@ function PackageForm({ package: pkg, years, modulesByYear, onSave, onClose }) {
                     {mods.map((m) => (
                       <label key={m._id} className="flex items-center gap-2 cursor-pointer">
                         <input
-                          type="checkbox"
+                          type={isSingleModule ? "radio" : "checkbox"}
+                          name="module_selection"
                           checked={moduleIds.has(m._id)}
                           onChange={() => toggleModule(m._id)}
-                          className="rounded border-slate-300 text-primary focus:ring-primary"
+                          className={`rounded border-slate-300 text-primary focus:ring-primary ${isSingleModule ? "rounded-full" : ""}`}
                         />
                         <span className="text-sm text-slate-800 dark:text-slate-200">{m.name}</span>
                       </label>

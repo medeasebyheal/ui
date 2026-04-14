@@ -68,7 +68,19 @@ export default function SubjectDetailPage() {
         setSubject(sub);
         // API may return paginated { topics, page, limit } or an array
         setTopics(Array.isArray(tops) ? tops : (Array.isArray(tops?.topics) ? tops.topics : []));
-        const list = Array.isArray(lectures) ? lectures : [];
+        const list = Array.isArray(lectures) ? [...lectures] : [];
+        if (sub?.videoUrls?.length) {
+          sub.videoUrls.forEach((url, i) => {
+            // Check if this URL is already in the oneShotLectures to avoid duplicates
+            if (!list.some(l => l.youtubeUrl === url)) {
+              list.push({
+                _id: `ext-${i}-${sub._id}`,
+                title: `Explanatory Video ${i + 1}`,
+                youtubeUrl: url
+              });
+            }
+          });
+        }
         setOneShotLectures(list);
         setSelectedLecture(list[0] || null);
         setOneShotVideoPlaying(false);
@@ -335,7 +347,7 @@ export default function SubjectDetailPage() {
               <div className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
                 <Video className="w-5 h-5" />
               </div>
-              <h2 className="text-2xl font-bold font-heading">One Shot Lectures</h2>
+              <h2 className="text-2xl font-bold font-heading">Subject Lectures & Videos</h2>
             </div>
           </div>
 

@@ -13,7 +13,7 @@ export function ProgramForm({ program, onSave, onClose }) {
       else await api.post('/admin/programs', { name });
       onSave?.();
       onClose?.();
-    } catch (_) {}
+    } catch (_) { }
     setSaving(false);
   };
   return (
@@ -57,7 +57,7 @@ export function YearForm({ year, onSave, onClose, programId: programIdProp }) {
       else await api.post('/admin/years', payload);
       onSave?.();
       onClose?.();
-    } catch (_) {}
+    } catch (_) { }
     setSaving(false);
   };
   return (
@@ -110,7 +110,7 @@ export function ModuleForm({ yearId, module, onSave, onClose }) {
       form.append('image', file);
       const { data } = await api.post('/admin/upload-image', form);
       setImageUrl(data.url);
-    } catch (_) {}
+    } catch (_) { }
     setUploading(false);
     e.target.value = '';
   };
@@ -124,7 +124,7 @@ export function ModuleForm({ yearId, module, onSave, onClose }) {
       else await api.post(`/admin/years/${yearId}/modules`, payload);
       onSave?.();
       onClose?.();
-    } catch (_) {}
+    } catch (_) { }
     setSaving(false);
   };
   return (
@@ -167,6 +167,7 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
   const [initialLectureUrl, setInitialLectureUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [videoUrls, setVideoUrls] = useState(subject?.videoUrls ?? ['']);
 
   useEffect(() => {
     if (!subject?._id) return;
@@ -182,7 +183,7 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
         setInitialLectureTitle(t);
         setInitialLectureUrl(u);
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }, [subject?._id]);
 
   const handleFileChange = async (e) => {
@@ -194,7 +195,7 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
       form.append('image', file);
       const { data } = await api.post('/admin/upload-image', form);
       setImageUrl(data.url);
-    } catch (_) {}
+    } catch (_) { }
     setUploading(false);
     e.target.value = '';
   };
@@ -209,6 +210,7 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
       const payload = {
         name: (name || '').trim(),
         imageUrl: trimmedImage || null,
+        videoUrls: videoUrls.map(u => u.trim()).filter(Boolean),
       };
       let subjectId = subject?._id;
       if (subjectId) {
@@ -232,7 +234,7 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
       }
       onSave?.();
       onClose?.();
-    } catch (_) {}
+    } catch (_) { }
     setSaving(false);
   };
   return (
@@ -262,6 +264,40 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
           <label className="block text-sm font-medium text-gray-700 mb-1">One shot lecture YouTube URL (optional)</label>
           <input type="text" value={oneShotYoutubeUrl} onChange={(e) => setOneShotYoutubeUrl(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." />
         </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Additional Explanatory Videos (YouTube URLs)</label>
+          <div className="space-y-2">
+            {videoUrls.map((url, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  type="text"
+                  value={url}
+                  onChange={(e) => {
+                    const newUrls = [...videoUrls];
+                    newUrls[index] = e.target.value;
+                    setVideoUrls(newUrls);
+                  }}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+                <button
+                  type="button"
+                  onClick={() => setVideoUrls(videoUrls.filter((_, i) => i !== index))}
+                  className="px-3 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => setVideoUrls([...videoUrls, ''])}
+            className="mt-2 text-sm text-primary font-medium hover:underline flex items-center gap-1"
+          >
+            + Add another video
+          </button>
+        </div>
         <div className="flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
           <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">Save</button>
@@ -274,7 +310,11 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
 export function TopicForm({ subjectId, topic, onSave, onClose }) {
   const [name, setName] = useState(topic?.name ?? '');
   const [imageUrl, setImageUrl] = useState(topic?.imageUrl ?? '');
-  const [videoUrl, setVideoUrl] = useState(topic?.videoUrl ?? '');
+  const [videoUrls, setVideoUrls] = useState(() => {
+    if (topic?.videoUrls?.length) return topic.videoUrls;
+    if (topic?.videoUrl) return [topic.videoUrl];
+    return [''];
+  });
   const [content, setContent] = useState(topic?.content ?? '');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -288,7 +328,7 @@ export function TopicForm({ subjectId, topic, onSave, onClose }) {
       form.append('image', file);
       const { data } = await api.post('/admin/upload-image', form);
       setImageUrl(data.url);
-    } catch (_) {}
+    } catch (_) { }
     setUploading(false);
     e.target.value = '';
   };
@@ -298,26 +338,21 @@ export function TopicForm({ subjectId, topic, onSave, onClose }) {
     setSaving(true);
     try {
       const trimmedImage = (imageUrl || '').trim();
-      const trimmedVideo = (videoUrl || '').trim();
+      const validVideos = videoUrls.map(u => u.trim()).filter(Boolean);
       const payload = {
         name: (name || '').trim(),
         imageUrl: trimmedImage || null,
-        videoUrl: trimmedVideo || null,
+        videoUrls: validVideos,
         content: (content || '').trim() || undefined,
       };
       if (topic?._id) {
         await api.put(`/admin/topics/${topic._id}`, payload);
       } else {
-        await api.post(`/admin/subjects/${subjectId}/topics`, {
-          name: payload.name,
-          imageUrl: trimmedImage || undefined,
-          videoUrl: trimmedVideo || undefined,
-          content: payload.content,
-        });
+        await api.post(`/admin/subjects/${subjectId}/topics`, payload);
       }
       onSave?.();
       onClose?.();
-    } catch (_) {}
+    } catch (_) { }
     setSaving(false);
   };
   return (
@@ -340,14 +375,39 @@ export function TopicForm({ subjectId, topic, onSave, onClose }) {
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Topic explanatory video (YouTube URL)</label>
-          <input
-            type="text"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-            placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
-          />
+          <label className="block text-sm font-medium text-gray-700 mb-1">Topic explanatory videos (YouTube URLs)</label>
+          <div className="space-y-2">
+            {videoUrls.map((url, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  type="text"
+                  value={url}
+                  onChange={(e) => {
+                    const newUrls = [...videoUrls];
+                    newUrls[index] = e.target.value;
+                    setVideoUrls(newUrls);
+                  }}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+                <button
+                  type="button"
+                  onClick={() => setVideoUrls(videoUrls.filter((_, i) => i !== index))}
+                  className="px-3 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
+                  title="Remove video"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => setVideoUrls([...videoUrls, ''])}
+            className="mt-2 text-sm text-primary font-medium hover:underline flex items-center gap-1"
+          >
+            + Add another video
+          </button>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Content (optional)</label>

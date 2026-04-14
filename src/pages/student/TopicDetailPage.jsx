@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, HelpCircle, PlayCircle, Play, Share2, CheckCircle, FileText, Link as LinkIcon, Download, Loader2, FileQuestion, Eye   } from 'lucide-react';
+import { ChevronRight, HelpCircle, PlayCircle, Play, Share2, CheckCircle, FileText, Link as LinkIcon, Download, Loader2, FileQuestion, Eye } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { recordRecentView } from '../../utils/recentViews';
@@ -19,7 +19,8 @@ export default function TopicDetailPage() {
   const [canUseFreeTrialForThisTopic, setCanUseFreeTrialForThisTopic] = useState(false);
   const [useFreeTrial, setUseFreeTrial] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
- 
+  const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
+
   const [loading, setLoading] = useState(true);
   const [resources, setResources] = useState([]);
   const [bookmarkedMcqs, setBookmarkedMcqs] = useState([]); // array of bookmark objects { _id, mcq }
@@ -143,8 +144,11 @@ export default function TopicDetailPage() {
   }
 
   const total = mcqs.length;
-  const oneShotEmbedUrl = topic?.videoUrl ? getYouTubeEmbedUrl(topic.videoUrl) : null;
-  const thumbnailUrl = topic?.imageUrl || (topic?.videoUrl ? getYouTubeThumbnail(topic.videoUrl) : null) || LECTURE_PREVIEW_FALLBACK;
+  const allVideoUrls = topic?.videoUrls?.length ? topic.videoUrls : [topic?.videoUrl].filter(Boolean);
+  const currentVideoUrl = allVideoUrls[selectedVideoIndex];
+  const hasVideos = allVideoUrls.length > 0;
+  const currentEmbedUrl = currentVideoUrl ? getYouTubeEmbedUrl(currentVideoUrl) : null;
+  const thumbnailUrl = topic?.imageUrl || (currentVideoUrl ? getYouTubeThumbnail(currentVideoUrl) : null) || LECTURE_PREVIEW_FALLBACK;
   const moduleName = topic.subject?.module?.name || 'Module';
   const subjectName = topic.subject?.name || 'Subject';
   const quizPageUrl = `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topicId}/quiz`;
@@ -188,10 +192,10 @@ export default function TopicDetailPage() {
               className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group select-none"
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
             >
-              {videoPlaying && oneShotEmbedUrl ? (
+              {videoPlaying && currentEmbedUrl ? (
                 <ControlledYouTubePlayer
-                  youtubeUrl={topic.videoUrl}
-                  title={topic.name}
+                  youtubeUrl={currentVideoUrl}
+                  title={`${topic.name} - Part ${selectedVideoIndex + 1}`}
                   className="absolute inset-0 w-full h-full rounded-2xl"
                 />
               ) : (
@@ -202,7 +206,7 @@ export default function TopicDetailPage() {
                     src={thumbnailUrl}
                     onError={(e) => { e.target.src = LECTURE_PREVIEW_FALLBACK; }}
                   />
-                  {oneShotEmbedUrl ? (
+                  {currentEmbedUrl ? (
                     <button
                       type="button"
                       onClick={() => setVideoPlaying(true)}
@@ -218,6 +222,27 @@ export default function TopicDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Video Multi-part Switcher */}
+            {allVideoUrls.length > 1 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {allVideoUrls.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setSelectedVideoIndex(idx);
+                      setVideoPlaying(false);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${selectedVideoIndex === idx
+                      ? 'bg-primary text-white shadow-md'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:border-primary/50'
+                      }`}
+                  >
+                    Part {idx + 1}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Title & Actions */}
             <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -275,13 +300,13 @@ export default function TopicDetailPage() {
                 <FileText className="w-5 h-5 text-primary" />
                 Resources
               </h3>
-             
+
               {resources.length === 0 ? (
                 <p className="text-sm text-slate-500">No resources for this topic yet.</p>
               ) : (
                 <ul className="space-y-3">
                   {resources.map((res) => (
-                  <li key={res._id}>
+                    <li key={res._id}>
                       <div
                         onClick={(e) => {
                           // make the whole resource row clickable for PDFs (and links)
@@ -337,7 +362,7 @@ export default function TopicDetailPage() {
                 <FileText className="w-5 h-5 text-primary" />
                 Bookmarked MCQs
               </h3>
-             
+
               {bookmarkedMcqs.length === 0 ? (
                 <p className="text-sm text-slate-500">No bookmarked MCQs for this topic yet.</p>
               ) : (

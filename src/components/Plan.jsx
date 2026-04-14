@@ -64,6 +64,25 @@ export const PLAN_DATA = [
       highlighted: false
     },
     {
+      planKey: 'single-module',
+      name: "Single Module",
+      price: "1000",
+      originalPrice: null,
+      duration: "Module Access",
+      description: "Unlock exactly one module",
+      badge: "FOCUSED",
+      features: [
+        { name: "Specific Module MCQ Database", available: true },
+        { name: "Module OSPE Practice", available: true },
+        { name: "Module One Shot Videos", available: true },
+        { name: "Module Recorded Lectures", available: true },
+        { name: "Books, Slides & Past Papers", available: true },
+        { name: "Other modules", available: false },
+        { name: "EaseGPT Full Access", available: false },
+      ],
+      highlighted: false
+    },
+    {
       planKey: 'master-proff',
       name: "Proff Buster",
       price: "Coming Soon",

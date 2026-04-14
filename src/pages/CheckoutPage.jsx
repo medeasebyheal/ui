@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import { toast } from 'react-hot-toast';
 
-const PLAN_KEYS = ['half-year', 'full-year', 'master-proff'];
+const PLAN_KEYS = ['half-year', 'full-year', 'master-proff', 'single-module'];
 
 export default function CheckoutPage() {
   const [searchParams] = useSearchParams();
@@ -21,6 +21,7 @@ export default function CheckoutPage() {
 
   const [year, setYear] = useState(1);
   const [part, setPart] = useState(1);
+  const [selectedSingleModuleId, setSelectedSingleModuleId] = useState('');
   const [academic, setAcademic] = useState({
     institution: '',
     college: '',
@@ -40,6 +41,10 @@ export default function CheckoutPage() {
   const yearsFromPackages = useMemo(() => {
     const ys = [...new Set(packages.filter((p) => p.year != null).map((p) => p.year))];
     return ys.sort((a, b) => a - b);
+  }, [packages]);
+
+  const singleModulePackages = useMemo(() => {
+    return packages.filter(p => p.type === 'single_module' || p.type === 'single_module-free');
   }, [packages]);
 
   const validate = () => {
@@ -100,12 +105,21 @@ export default function CheckoutPage() {
   }, [receipt]);
 
   useEffect(() => {
-    if (planKey !== 'master-proff' && yearsFromPackages.length > 0 && !yearsFromPackages.includes(year)) {
+    if (planKey !== 'master-proff' && planKey !== 'single-module' && yearsFromPackages.length > 0 && !yearsFromPackages.includes(year)) {
       setYear(yearsFromPackages[0]);
     }
   }, [yearsFromPackages, year, planKey]);
 
+  useEffect(() => {
+    if (planKey === 'single-module' && singleModulePackages.length > 0 && !selectedSingleModuleId) {
+      setSelectedSingleModuleId(singleModulePackages[0]._id);
+    }
+  }, [planKey, singleModulePackages, selectedSingleModuleId]);
+
   const resolvePackage = () => {
+    if (planKey === 'single-module') {
+      return packages.find((p) => p._id === selectedSingleModuleId) || null;
+    }
     if (planKey === 'master-proff') {
       return packages.find((p) => p.type === 'master_proff');
     }
@@ -196,19 +210,27 @@ export default function CheckoutPage() {
       const pkgType = pkg.type;
 
       // Duplicate exact package
-      if (userPackages.some((up) => up.package && up.package.year === pkgYear && up.package.type === pkgType)) {
+      if (userPackages.some((up) => up.package && String(up.package._id) === String(pkg._id))) {
         setError('You already have this package active.');
         return;
       }
-      // If trying to buy full-year but user has a half for same year -> block
-      if (pkgType === 'year_full' && userPackages.some((up) => up.package && up.package.year === pkgYear && (up.package.type === 'year_half_part1' || up.package.type === 'year_half_part2'))) {
-        setError('Cannot upgrade to full-year when a half-year package is active.');
-        return;
-      }
-      // If trying to buy a half but user already has full-year for same year -> block
-      if ((pkgType === 'year_half_part1' || pkgType === 'year_half_part2') && userPackages.some((up) => up.package && up.package.year === pkgYear && up.package.type === 'year_full')) {
-        setError('You already have the full-year package for this year.');
-        return;
+      
+      if (!pkgType.startsWith('single_module')) {
+        // Prevent duplicate year/type
+        if (userPackages.some((up) => up.package && up.package.year === pkgYear && up.package.type === pkgType)) {
+          setError('You already have this package active.');
+          return;
+        }
+        // If trying to buy full-year but user has a half for same year -> block
+        if (pkgType === 'year_full' && userPackages.some((up) => up.package && up.package.year === pkgYear && (up.package.type === 'year_half_part1' || up.package.type === 'year_half_part2'))) {
+          setError('Cannot upgrade to full-year when a half-year package is active.');
+          return;
+        }
+        // If trying to buy a half but user already has full-year for same year -> block
+        if ((pkgType === 'year_half_part1' || pkgType === 'year_half_part2') && userPackages.some((up) => up.package && up.package.year === pkgYear && up.package.type === 'year_full')) {
+          setError('You already have the full-year package for this year.');
+          return;
+        }
       }
     } catch (err) {
       // if anything goes wrong reading user packages, allow server to enforce rules
@@ -299,8 +321,26 @@ export default function CheckoutPage() {
               </h2>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-gray-700 font-medium">{pkg?.name ?? (planKey === 'master-proff' ? 'Proff Buster' : planKey === 'half-year' ? 'Half Year' : 'Full Year')}</p>
-              {planKey !== 'master-proff' && (
+              <p className="text-gray-700 font-medium">{pkg?.name ?? (planKey === 'master-proff' ? 'Proff Buster' : planKey === 'single-module' ? 'Single Module Package' : planKey === 'half-year' ? 'Half Year' : 'Full Year')}</p>
+              {planKey === 'single-module' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Select Module</label>
+                  <select
+                    value={selectedSingleModuleId}
+                    onChange={(e) => setSelectedSingleModuleId(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  >
+                    {singleModulePackages.length === 0 ? (
+                      <option value="">No modules available</option>
+                    ) : (
+                      singleModulePackages.map(p => (
+                        <option key={p._id} value={p._id}>{p.name}</option>
+                      ))
+                    )}
+                  </select>
+                </div>
+              )}
+              {planKey !== 'master-proff' && planKey !== 'single-module' && (
                 <>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Select year</label>
