@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, HelpCircle, PlayCircle, Play, Share2, CheckCircle, FileText, Link as LinkIcon, Download, Loader2, FileQuestion, Eye } from 'lucide-react';
+import { ChevronRight, HelpCircle, PlayCircle, Play, Share2, CheckCircle, FileText, Link as LinkIcon, Download, Loader2, FileQuestion, Eye, Film } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { recordRecentView } from '../../utils/recentViews';
@@ -144,7 +144,7 @@ export default function TopicDetailPage() {
   }
 
   const total = mcqs.length;
-  const allVideoUrls = topic?.videoUrls?.length ? topic.videoUrls : [topic?.videoUrl].filter(Boolean);
+  const allVideoUrls = [topic?.videoUrl, ...(topic?.videoUrls || [])].filter(Boolean);
   const currentVideoUrl = allVideoUrls[selectedVideoIndex];
   const hasVideos = allVideoUrls.length > 0;
   const currentEmbedUrl = currentVideoUrl ? getYouTubeEmbedUrl(currentVideoUrl) : null;
@@ -223,24 +223,42 @@ export default function TopicDetailPage() {
               )}
             </div>
 
-            {/* Video Multi-part Switcher */}
+            {/* Video Multi-part Switcher / Playlist */}
             {allVideoUrls.length > 1 && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {allVideoUrls.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      setSelectedVideoIndex(idx);
-                      setVideoPlaying(false);
-                    }}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${selectedVideoIndex === idx
-                      ? 'bg-primary text-white shadow-md'
-                      : 'bg-white text-slate-600 border border-slate-200 hover:border-primary/50'
-                      }`}
-                  >
-                    Part {idx + 1}
-                  </button>
-                ))}
+              <div className="mt-6 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+                <div className="bg-slate-50 px-5 py-4 border-b border-slate-200 flex items-center gap-2">
+                  <Film className="w-5 h-5 text-primary" />
+                  <h3 className="font-bold text-slate-900">Playlist</h3>
+                </div>
+                <ul className="divide-y divide-slate-100 max-h-80 overflow-y-auto custom-scrollbar">
+                  {allVideoUrls.map((url, idx) => (
+                    <li key={idx}>
+                      <button
+                        onClick={() => {
+                          setSelectedVideoIndex(idx);
+                          setVideoPlaying(false);
+                        }}
+                        className={`w-full text-left px-5 py-4 flex items-center gap-4 transition-colors ${
+                          selectedVideoIndex === idx
+                            ? 'bg-primary/5 border-l-4 border-primary'
+                            : 'hover:bg-slate-50 border-l-4 border-transparent'
+                        }`}
+                      >
+                        <div className={`p-2 rounded-lg flex-shrink-0 ${selectedVideoIndex === idx ? 'bg-primary/20 text-primary' : 'bg-slate-100 text-slate-400'}`}>
+                          <PlayCircle className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-semibold text-sm ${selectedVideoIndex === idx ? 'text-primary' : 'text-slate-700'}`}>
+                            {idx === 0 ? 'Main Lecture' : `Additional Video ${idx}`}
+                          </p>
+                          <p className="text-xs text-slate-500 truncate mt-0.5">
+                            {idx === 0 ? topic.name : 'Supplementary content'}
+                          </p>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 

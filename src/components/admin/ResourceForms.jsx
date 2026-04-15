@@ -310,11 +310,8 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
 export function TopicForm({ subjectId, topic, onSave, onClose }) {
   const [name, setName] = useState(topic?.name ?? '');
   const [imageUrl, setImageUrl] = useState(topic?.imageUrl ?? '');
-  const [videoUrls, setVideoUrls] = useState(() => {
-    if (topic?.videoUrls?.length) return topic.videoUrls;
-    if (topic?.videoUrl) return [topic.videoUrl];
-    return [''];
-  });
+  const [videoUrl, setVideoUrl] = useState(topic?.videoUrl ?? '');
+  const [videoUrls, setVideoUrls] = useState(topic?.videoUrls ?? ['']);
   const [content, setContent] = useState(topic?.content ?? '');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -342,6 +339,7 @@ export function TopicForm({ subjectId, topic, onSave, onClose }) {
       const payload = {
         name: (name || '').trim(),
         imageUrl: trimmedImage || null,
+        videoUrl: (videoUrl || '').trim() || undefined,
         videoUrls: validVideos,
         content: (content || '').trim() || undefined,
       };
@@ -375,7 +373,17 @@ export function TopicForm({ subjectId, topic, onSave, onClose }) {
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Topic explanatory videos (YouTube URLs)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Topic Main Video (YouTube URL)</label>
+          <input
+            type="text"
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            placeholder="https://www.youtube.com/watch?v=..."
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Other Videos (YouTube URLs)</label>
           <div className="space-y-2">
             {videoUrls.map((url, index) => (
               <div key={index} className="flex gap-2">

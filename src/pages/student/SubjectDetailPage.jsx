@@ -69,8 +69,9 @@ export default function SubjectDetailPage() {
         // API may return paginated { topics, page, limit } or an array
         setTopics(Array.isArray(tops) ? tops : (Array.isArray(tops?.topics) ? tops.topics : []));
         const list = Array.isArray(lectures) ? [...lectures] : [];
-        if (sub?.videoUrls?.length) {
-          sub.videoUrls.forEach((url, i) => {
+        const allSubjectVideoUrls = [sub?.videoUrl, ...(sub?.videoUrls || [])].filter(Boolean);
+        if (allSubjectVideoUrls.length) {
+          allSubjectVideoUrls.forEach((url, i) => {
             // Check if this URL is already in the oneShotLectures to avoid duplicates
             if (!list.some(l => l.youtubeUrl === url)) {
               list.push({
@@ -235,8 +236,8 @@ export default function SubjectDetailPage() {
                 key={s._id}
                 to={`/student/modules/${moduleId}/subjects/${s._id}`}
                 className={`shrink-0 px-6 py-2.5 rounded-full font-medium transition-all active:scale-95 ${isActive
-                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                  ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                   }`}
               >
                 {s.name}
@@ -283,7 +284,7 @@ export default function SubjectDetailPage() {
                         `Study ${topic.name} with MCQs and explanatory video.`}
                       {(topic.content?.length || 0) > 100 ? '…' : ''}
                     </p>
-                   
+
                     <div className="flex gap-3">
                       <button
                         type="button"
@@ -293,8 +294,8 @@ export default function SubjectDetailPage() {
                           navigate(`/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}/quiz`);
                         }}
                         className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors ${accessible
-                            ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600'
-                            : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
+                          ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600'
+                          : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
                           }`}
                       >
                         <HelpCircle className="w-5 h-5" />
@@ -308,8 +309,8 @@ export default function SubjectDetailPage() {
                           navigate(`/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}`);
                         }}
                         className={`flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all ${accessible
-                            ? 'bg-primary text-white hover:bg-teal-700 shadow-lg shadow-primary/20'
-                            : 'bg-slate-200 dark:bg-slate-600 text-slate-500 cursor-not-allowed'
+                          ? 'bg-primary text-white hover:bg-teal-700 shadow-lg shadow-primary/20'
+                          : 'bg-slate-200 dark:bg-slate-600 text-slate-500 cursor-not-allowed'
                           }`}
                       >
                         <PlayCircle className="w-5 h-5" />
@@ -424,8 +425,8 @@ export default function SubjectDetailPage() {
                           setOneShotVideoPlaying(false);
                         }}
                         className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all group text-left ${selectedLecture?._id === lecture._id
-                            ? 'bg-primary/10 dark:bg-primary/20 border-primary/30'
-                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-primary/30'
+                          ? 'bg-primary/10 dark:bg-primary/20 border-primary/30'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-primary/30'
                           }`}
                       >
                         <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400">

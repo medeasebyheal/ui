@@ -148,6 +148,15 @@ export default function StudentResources() {
 
   const hasModuleAccess = (moduleId) => enrolledModuleIds.has(String(moduleId));
 
+  const hasSingleModulePackage = useMemo(() => {
+    if (!user?.packages?.length) return false;
+    return user.packages.some((up) => {
+      if (!up || up.status !== 'active') return false;
+      const type = up.package?.type || '';
+      return type.includes('single_module');
+    });
+  }, [user?.packages]);
+
   useEffect(() => {
     const t = setInterval(() => {
       setStudyTipIndex((i) => (i + 1) % MBBS_STUDY_TIPS.length);
@@ -349,7 +358,20 @@ export default function StudentResources() {
               ? modulesByYear[year._id]
               : undefined;
             const modulesForYear = (yearModules || []);
+            
+            let visibleModules = modulesForYear.filter((mod) => matchSearch(mod.name) || matchSearch(mod.description));
+            if (hasSingleModulePackage) {
+              visibleModules = visibleModules.filter((mod) => {
+                const modId = String(mod._id);
+                const isFreeTrialAccessible = freeTrialModuleIds.has(modId);
+                const locked = (!hasModuleAccess(mod._id) && !isFreeTrialAccessible) || !user?.packages?.length;
+                return !locked;
+              });
+            }
+
             // show the year even if user doesn't have access; we'll mark modules as locked when needed
+            // However if we filtered all modules out (e.g. for single-module subscribers), hide the year
+            if (yearModules !== undefined && visibleModules.length === 0 && modulesForYear.length > 0) return null;
             if (yearModules !== undefined && modulesForYear.length === 0) return null;
 
             return (
@@ -364,9 +386,7 @@ export default function StudentResources() {
                     <p className="text-slate-500 dark:text-slate-400 animate-pulse">Loading modules…</p>
                   </div>
                 ) : (
-                  modulesForYear
-                    .filter((mod) => matchSearch(mod.name) || matchSearch(mod.description))
-                    .map((mod, modIdx) => {
+                  visibleModules.map((mod, modIdx) => {
                       const modId = String(mod._id);
                       const isExpanded = expandedModules[modId];
                       const subjects = subjectsByModule[modId] || [];
