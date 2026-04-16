@@ -51,6 +51,10 @@ export default function SubjectDetailPage() {
   const [error, setError] = useState(null);
   const [selectedLecture, setSelectedLecture] = useState(null);
   const [oneShotVideoPlaying, setOneShotVideoPlaying] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalTopics, setTotalTopics] = useState(0);
 
   useProtectedContent();
 
@@ -67,7 +71,12 @@ export default function SubjectDetailPage() {
         if (cancelled) return;
         setSubject(sub);
         // API may return paginated { topics, page, limit } or an array
-        setTopics(Array.isArray(tops) ? tops : (Array.isArray(tops?.topics) ? tops.topics : []));
+        const fetchedTopics = Array.isArray(tops) ? tops : (Array.isArray(tops?.topics) ? tops.topics : []);
+        setTopics(fetchedTopics);
+        if (tops?.totalPages) setTotalPages(tops.totalPages);
+        if (tops?.total !== undefined) setTotalTopics(tops.total);
+        else setTotalTopics(fetchedTopics.length);
+        setPage(1);
         const list = Array.isArray(lectures) ? [...lectures] : [];
         const allSubjectVideoUrls = [sub?.videoUrl, ...(sub?.videoUrls || [])].filter(Boolean);
         if (allSubjectVideoUrls.length) {
@@ -109,6 +118,27 @@ export default function SubjectDetailPage() {
       });
     return () => { cancelled = true; };
   }, [subjectId, moduleId]);
+
+  const loadMoreTopics = async () => {
+    if (loadingMore || page >= totalPages) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const res = await api.get(`/content/subjects/${subjectId}/topics?page=${nextPage}`);
+      const newTopics = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.topics) ? res.data.topics : []);
+      setTopics(prev => {
+        const existingIds = new Set(prev.map(t => t._id));
+        const filteredNew = newTopics.filter(t => !existingIds.has(t._id));
+        return [...prev, ...filteredNew];
+      });
+      setPage(nextPage);
+      if (res.data?.totalPages) setTotalPages(res.data.totalPages);
+    } catch (err) {
+      console.error('Failed to load more topics', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const hasModuleAccess = useMemo(() => {
     const ids = new Set();
@@ -217,7 +247,7 @@ export default function SubjectDetailPage() {
                 assessments designed for medical professionals.
               </p>
               <p className="mt-3 text-white/80 text-sm font-medium">
-                Total Topics: <span className="font-bold text-white">{sortedTopics.length}</span>
+                Total Topics: <span className="font-bold text-white">{totalTopics}</span>
               </p>
             </div>
             <div className="flex items-center gap-4 flex-shrink-0">
@@ -340,6 +370,19 @@ export default function SubjectDetailPage() {
             })
           )}
         </div>
+
+        {/* Load More Button */}
+        {page < totalPages && (
+          <div className="flex justify-center mt-10">
+            <button
+              onClick={loadMoreTopics}
+              disabled={loadingMore}
+              className="px-6 py-2.5 bg-primary/10 text-primary hover:bg-primary/20 dark:bg-primary/20 dark:hover:bg-primary/30 font-semibold rounded-xl transition-all flex items-center gap-2 shadow-sm"
+            >
+              {loadingMore ? 'Loading More Topics...' : 'Load More Topics'}
+            </button>
+          </div>
+        )}
 
         {/* One Shot Lectures */}
         <section className="mt-16">

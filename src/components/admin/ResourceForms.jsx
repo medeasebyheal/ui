@@ -95,6 +95,7 @@ export function YearForm({ year, onSave, onClose, programId: programIdProp }) {
 export function ModuleForm({ yearId, module, onSave, onClose }) {
   const [name, setName] = useState(module?.name ?? '');
   const [imageUrl, setImageUrl] = useState(module?.imageUrl ?? '');
+  const [universityType, setUniversityType] = useState(module?.universityType ?? 'Other');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -119,7 +120,7 @@ export function ModuleForm({ yearId, module, onSave, onClose }) {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = { name, imageUrl: imageUrl.trim() || undefined };
+      const payload = { name, imageUrl: imageUrl.trim() || undefined, universityType };
       if (module?._id) await api.put(`/admin/modules/${module._id}`, payload);
       else await api.post(`/admin/years/${yearId}/modules`, payload);
       onSave?.();
@@ -133,6 +134,18 @@ export function ModuleForm({ yearId, module, onSave, onClose }) {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
           <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" placeholder="e.g. Foundation Module" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">University Type</label>
+          <select
+            value={universityType}
+            onChange={(e) => setUniversityType(e.target.value)}
+            className="w-full px-3 py-2 border rounded-lg bg-white"
+          >
+            <option value="Other">Other</option>
+            <option value="DOW/KMU">DOW/KMU</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">Differentiates modules for college-specific checkout filtering.</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>

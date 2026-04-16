@@ -7,6 +7,14 @@ import { toast } from 'react-hot-toast';
 
 const PLAN_KEYS = ['half-year', 'full-year', 'master-proff', 'single-module'];
 
+const getUniversityType = (collegeName) => {
+  const name = (collegeName || '').toUpperCase();
+  if (['DOW', 'KMU', 'DMC', 'KMDC'].some(c => name.includes(c))) {
+    return 'DOW/KMU';
+  }
+  return 'Other';
+};
+
 export default function CheckoutPage() {
   const [searchParams] = useSearchParams();
   const planKey = searchParams.get('plan');
@@ -43,9 +51,17 @@ export default function CheckoutPage() {
     return ys.sort((a, b) => a - b);
   }, [packages]);
 
+  const universityType = useMemo(() => getUniversityType(academic.college), [academic.college]);
+
   const singleModulePackages = useMemo(() => {
-    return packages.filter(p => p.type === 'single_module' || p.type === 'single_module-free');
-  }, [packages]);
+    return packages.filter(p => {
+      const isSingle = p.type === 'single_module' || p.type === 'single_module-free';
+      if (!isSingle) return false;
+      const mod = p.moduleIds?.[0];
+      const modUnivType = typeof mod === 'object' ? (mod.universityType || 'Other') : 'Other';
+      return modUnivType === universityType;
+    });
+  }, [packages, universityType]);
 
   const validate = () => {
     const errs = {};
@@ -124,11 +140,14 @@ export default function CheckoutPage() {
       return packages.find((p) => p.type === 'master_proff');
     }
     if (planKey === 'half-year') {
-      const type = part === 1 ? 'year_half_part1' : 'year_half_part2';
+      const type = universityType === 'DOW/KMU' 
+        ? 'dow_kmu_half_year' 
+        : (part === 1 ? 'year_half_part1' : 'year_half_part2');
       return packages.find((p) => p.type === type && p.year === year);
     }
     if (planKey === 'full-year') {
-      return packages.find((p) => p.type === 'year_full' && p.year === year);
+      const type = universityType === 'DOW/KMU' ? 'dow_kmu_full_year' : 'year_full';
+      return packages.find((p) => p.type === type && p.year === year);
     }
     return null;
   };
@@ -312,12 +331,76 @@ export default function CheckoutPage() {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left column - Form */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Section 1: Package selection */}
+          {/* Section 1: Med school details */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+              <h2 className="font-heading font-semibold text-gray-900 flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" />
+                1. Med school details
+              </h2>
+            </div>
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Institution <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  value={academic.institution}
+                  onChange={(e) => { setAcademic((a) => ({ ...a, institution: e.target.value })); setFieldErrors((e2) => ({ ...e2, institution: '' })); }}
+                  required
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.institution ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="e.g. JSMU"
+                />
+                {fieldErrors.institution && <p className="text-xs text-red-600 mt-1">{fieldErrors.institution}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">College <span className="text-red-500">*</span></label>
+                <select
+                  value={academic.college}
+                  onChange={(e) => { setAcademic((a) => ({ ...a, college: e.target.value })); setFieldErrors((e2) => ({ ...e2, college: '' })); }}
+                  required
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.college ? 'border-red-500' : 'border-gray-300'}`}
+                >
+                  <option value="">Select College</option>
+                  <option value="DOW">DOW</option>
+                  <option value="KMU">KMU</option>
+                  <option value="DMC">DMC</option>
+                  <option value="KMDC">KMDC</option>
+                  <option value="Other">Other</option>
+                </select>
+                {fieldErrors.college && <p className="text-xs text-red-600 mt-1">{fieldErrors.college}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Roll number <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  value={academic.rollNumber}
+                  onChange={(e) => { setAcademic((a) => ({ ...a, rollNumber: e.target.value })); setFieldErrors((e2) => ({ ...e2, rollNumber: '' })); }}
+                  required
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.rollNumber ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {fieldErrors.rollNumber && <p className="text-xs text-red-600 mt-1">{fieldErrors.rollNumber}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Batch <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  value={academic.batch}
+                  onChange={(e) => { setAcademic((a) => ({ ...a, batch: e.target.value })); setFieldErrors((e2) => ({ ...e2, batch: '' })); }}
+                  required
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.batch ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="e.g. 2024"
+                />
+                {fieldErrors.batch && <p className="text-xs text-red-600 mt-1">{fieldErrors.batch}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Package selection */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h2 className="font-heading font-semibold text-gray-900 flex items-center gap-2">
                 <Package className="w-5 h-5 text-primary" />
-                1. Your package
+                2. Your package
               </h2>
             </div>
             <div className="p-6 space-y-4">
@@ -389,64 +472,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Section 2: Med school details */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-              <h2 className="font-heading font-semibold text-gray-900 flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" />
-                2. Med school details
-              </h2>
-            </div>
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Institution <span className="text-red-500">*</span></label>
-                <input
-                  type="text"
-                  value={academic.institution}
-                  onChange={(e) => { setAcademic((a) => ({ ...a, institution: e.target.value })); setFieldErrors((e2) => ({ ...e2, institution: '' })); }}
-                  required
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.institution ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="e.g. JSMU"
-                />
-                {fieldErrors.institution && <p className="text-xs text-red-600 mt-1">{fieldErrors.institution}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">College <span className="text-red-500">*</span></label>
-                <input
-                  type="text"
-                  value={academic.college}
-                  onChange={(e) => { setAcademic((a) => ({ ...a, college: e.target.value })); setFieldErrors((e2) => ({ ...e2, college: '' })); }}
-                  required
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.college ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="e.g. FJMC"
-                />
-                {fieldErrors.college && <p className="text-xs text-red-600 mt-1">{fieldErrors.college}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Roll number <span className="text-red-500">*</span></label>
-                <input
-                  type="text"
-                  value={academic.rollNumber}
-                  onChange={(e) => { setAcademic((a) => ({ ...a, rollNumber: e.target.value })); setFieldErrors((e2) => ({ ...e2, rollNumber: '' })); }}
-                  required
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.rollNumber ? 'border-red-500' : 'border-gray-300'}`}
-                />
-                {fieldErrors.rollNumber && <p className="text-xs text-red-600 mt-1">{fieldErrors.rollNumber}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Batch <span className="text-red-500">*</span></label>
-                <input
-                  type="text"
-                  value={academic.batch}
-                  onChange={(e) => { setAcademic((a) => ({ ...a, batch: e.target.value })); setFieldErrors((e2) => ({ ...e2, batch: '' })); }}
-                  required
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.batch ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="e.g. 2024"
-                />
-                {fieldErrors.batch && <p className="text-xs text-red-600 mt-1">{fieldErrors.batch}</p>}
-              </div>
-            </div>
-          </div>
+
 
           {/* Section 3: Payment */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">

@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Download, SlidersHorizontal, ArrowUpDown, CheckCircle, CircleSlash, Pencil, Trash2, ArrowRight } from 'lucide-react';
+import { Plus, Search, Download, SlidersHorizontal, ArrowUpDown, CheckCircle, CircleSlash, Pencil, Trash2, ArrowRight, Copy } from 'lucide-react';
+import toast from 'react-hot-toast';
 import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import Modal from '../../../components/admin/Modal';
@@ -36,6 +37,7 @@ export default function TopicsList() {
   const [page, setPage] = useState(1);
   const [subjectFilter, setSubjectFilter] = useState('');
   const [sortBy, setSortBy] = useState('recent');
+  const [copyTarget, setCopyTarget] = useState(null);
 
   const load = () =>
     api
@@ -98,9 +100,12 @@ export default function TopicsList() {
   const handleDelete = async (id) => {
     try {
       await api.delete(`/admin/topics/${id}`);
+      toast.success('Topic deleted successfully');
       load();
       setDeleteConfirm(null);
-    } catch (_) {}
+    } catch (_) {
+      toast.error('Failed to delete topic');
+    }
   };
 
   if (loading) {
@@ -277,6 +282,14 @@ export default function TopicsList() {
                                 <ArrowRight className="w-4 h-4" />
                               </Link>
                             )}
+                            <button
+                              type="button"
+                              onClick={() => setCopyTarget(topic)}
+                              className="p-1.5 text-slate-400 hover:text-primary hover:bg-sky-50 dark:hover:bg-sky-500/10 rounded-md transition-colors"
+                              title="Copy to Another Subject"
+                            >
+                              <Copy className="w-5 h-5" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -364,6 +377,18 @@ export default function TopicsList() {
         onConfirm={() => deleteConfirm && handleDelete(deleteConfirm._id)}
         danger
       />
+
+      {copyTarget && (
+        <CopyTopicModal
+          topic={copyTarget}
+          subjects={subjects}
+          onClose={() => setCopyTarget(null)}
+          onSuccess={() => {
+            load();
+            setCopyTarget(null);
+          }}
+        />
+      )}
     </>
   );
 }
@@ -494,3 +519,66 @@ function AddTopicForm({ subjects, onSave, onClose }) {
     </Modal>
   );
 }
+
+function CopyTopicModal({ topic, subjects, onClose, onSuccess }) {
+  const [targetSubjectId, setTargetSubjectId] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleCopy = async () => {
+    if (!targetSubjectId) return setError('Please select a target subject');
+    setSaving(true);
+    try {
+      await api.post(`/admin/topics/${topic._id}/copy`, { targetSubjectId });
+      toast.success('Topic copied successfully');
+      onSuccess();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to copy topic');
+      toast.error('Failed to copy topic');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const sortedSubjects = [...subjects].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+  return (
+    <Modal open onClose={onClose} title={`Copy "${topic.name}"`}>
+      <div className="space-y-4">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          This will create an independent copy of this topic, including all its MCQs and resources, in the selected subject.
+        </p>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Target Subject *</label>
+          <select
+            value={targetSubjectId}
+            onChange={(e) => setTargetSubjectId(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+          >
+            <option value="">Select Subject</option>
+            {sortedSubjects.map((s) => (
+              <option key={s._id} value={s._id}>
+                {s.name} {s.module?.name ? `(${s.module.name})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+        {error && <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>}
+        <div className="flex justify-end gap-3 pt-2">
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleCopy}
+            disabled={saving || !targetSubjectId}
+            className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-50"
+          >
+            {saving ? 'Copying...' : 'Copy Topic'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+

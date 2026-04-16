@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Droplet, Heart, Wind, Plus, Search, ChevronDown, SlidersHorizontal, Pencil, Trash2, ArrowRight, Calendar, ClipboardList } from 'lucide-react';
+import { BookOpen, Droplet, Heart, Wind, Plus, Search, ChevronDown, SlidersHorizontal, Pencil, Trash2, ArrowRight, Calendar, ClipboardList, Copy } from 'lucide-react';
+import toast from 'react-hot-toast';
 import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import Modal from '../../../components/admin/Modal';
@@ -44,6 +45,7 @@ export default function ModulesList() {
   const [yearFilter, setYearFilter] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [duplicating, setDuplicating] = useState(null);
 
   const load = () =>
     api
@@ -59,7 +61,7 @@ export default function ModulesList() {
   const yearsSorted = useMemo(() => [...years].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)), [years]);
 
   const filteredModules = useMemo(() => {
-    let list = modules;
+    let list = [...modules].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     if (yearFilter) {
       list = list.filter((mod) => (mod.year?._id || mod.year) === yearFilter);
     }
@@ -92,6 +94,19 @@ export default function ModulesList() {
       load();
       setDeleteConfirm(null);
     } catch (_) {}
+  };
+
+  const handleDuplicate = async (id) => {
+    try {
+      setDuplicating(id);
+      await api.post(`/admin/modules/${id}/duplicate`);
+      toast.success('Module duplicated successfully');
+      load();
+    } catch (_) {
+      toast.error('Failed to duplicate module');
+    } finally {
+      setDuplicating(null);
+    }
   };
 
   const avgModulesPerYear = useMemo(() => {
@@ -254,6 +269,15 @@ export default function ModulesList() {
                             >
                               <Trash2 className="w-5 h-5" />
                             </button>
+                            <button
+                              type="button"
+                              disabled={duplicating === mod._id}
+                              onClick={() => handleDuplicate(mod._id)}
+                              className={`p-2 rounded-lg transition-all ${duplicating === mod._id ? 'text-primary animate-pulse' : 'text-slate-400 hover:text-primary hover:bg-sky-50 dark:hover:bg-sky-500/10'}`}
+                              title="Duplicate Module"
+                            >
+                              <Copy className="w-5 h-5" />
+                            </button>
                             {yearId && (
                               <Link
                                 to={`/admin/resources/years/${yearId}/modules/${mod._id}`}
@@ -370,6 +394,7 @@ function AddModuleForm({ years, onSave, onClose }) {
   const [yearId, setYearId] = useState('');
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [universityType, setUniversityType] = useState('Other');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -385,6 +410,7 @@ function AddModuleForm({ years, onSave, onClose }) {
       await api.post(`/admin/years/${yearId}/modules`, {
         name: name.trim(),
         imageUrl: imageUrl.trim() || undefined,
+        universityType,
       });
       onSave?.();
       onClose?.();
@@ -428,6 +454,17 @@ function AddModuleForm({ years, onSave, onClose }) {
             className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:text-white"
             placeholder="e.g. Foundation Module"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">University Type</label>
+          <select
+            value={universityType}
+            onChange={(e) => setUniversityType(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-primary"
+          >
+            <option value="Other">Other</option>
+            <option value="DOW/KMU">DOW/KMU</option>
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Image URL</label>

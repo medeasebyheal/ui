@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { FlaskConical, Brain, BookOpen, Pill, Plus, Search, LayoutGrid, List, Pencil, Trash2, ArrowRight, BookMarked, HelpCircle } from 'lucide-react';
+import { FlaskConical, Brain, BookOpen, Pill, Plus, Search, LayoutGrid, List, Pencil, Trash2, ArrowRight, BookMarked, HelpCircle, Copy } from 'lucide-react';
+import toast from 'react-hot-toast';
 import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import Modal from '../../../components/admin/Modal';
@@ -32,6 +33,7 @@ export default function SubjectsList() {
   const [moduleFilter, setModuleFilter] = useState('');
   const [listView, setListView] = useState(true);
   const [stats, setStats] = useState({ topicCount: null, mcqCount: null });
+  const [copyTarget, setCopyTarget] = useState(null);
 
   const load = () =>
     api
@@ -54,7 +56,7 @@ export default function SubjectsList() {
   };
 
   const filtered = useMemo(() => {
-    let list = subjects;
+    let list = [...subjects].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     if (moduleFilter) {
       list = list.filter((s) => (s.module?._id || s.module) === moduleFilter);
     }
@@ -90,15 +92,18 @@ export default function SubjectsList() {
     api.get('/admin/dashboard').then(({ data }) => {
       if (data?.topicCount != null) setStats((s) => ({ ...s, topicCount: data.topicCount }));
       if (data?.mcqCount != null) setStats((s) => ({ ...s, mcqCount: data.mcqCount }));
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   const handleDelete = async (id) => {
     try {
       await api.delete(`/admin/subjects/${id}`);
+      toast.success('Subject deleted successfully');
       load();
       setDeleteConfirm(null);
-    } catch (_) {}
+    } catch (_) {
+      toast.error('Failed to delete subject');
+    }
   };
 
   if (loading) {
@@ -247,6 +252,14 @@ export default function SubjectsList() {
                                   Open <ArrowRight className="w-4 h-4" />
                                 </Link>
                               )}
+                              <button
+                                type="button"
+                                onClick={() => setCopyTarget(sub)}
+                                className="p-2 text-slate-400 hover:text-primary hover:bg-sky-50 dark:hover:bg-sky-500/10 rounded-lg transition-all"
+                                title="Copy to Another Module"
+                              >
+                                <Copy className="w-5 h-5" />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -319,6 +332,9 @@ export default function SubjectsList() {
                             Open <ArrowRight className="w-4 h-4" />
                           </Link>
                         )}
+                        <button type="button" onClick={() => setCopyTarget(sub)} className="p-1.5 text-slate-400 hover:text-primary rounded-lg" title="Copy to Another Module">
+                          <Copy className="w-5 h-5" />
+                        </button>
                       </div>
                     </div>
                   );
@@ -396,6 +412,18 @@ export default function SubjectsList() {
         onConfirm={() => deleteConfirm && handleDelete(deleteConfirm._id)}
         danger
       />
+
+      {copyTarget && (
+        <CopySubjectModal
+          subject={copyTarget}
+          modules={modules}
+          onClose={() => setCopyTarget(null)}
+          onSuccess={() => {
+            load();
+            setCopyTarget(null);
+          }}
+        />
+      )}
     </>
   );
 }
@@ -419,7 +447,7 @@ function AddSubjectForm({ modules, onSave, onClose }) {
       form.append('image', file);
       const { data } = await api.post('/admin/upload-image', form);
       setImageUrl(data.url);
-    } catch (_) {}
+    } catch (_) { }
     setUploading(false);
     e.target.value = '';
   };
@@ -531,3 +559,66 @@ function AddSubjectForm({ modules, onSave, onClose }) {
     </Modal>
   );
 }
+
+function CopySubjectModal({ subject, modules, onClose, onSuccess }) {
+  const [targetModuleId, setTargetModuleId] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleCopy = async () => {
+    if (!targetModuleId) return setError('Please select a target module');
+    setSaving(true);
+    try {
+      await api.post(`/admin/subjects/${subject._id}/copy`, { targetModuleId });
+      toast.success('Subject copied successfully');
+      onSuccess();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to copy subject');
+      toast.error('Failed to copy subject');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const sortedModules = [...modules].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+  return (
+    <Modal open onClose={onClose} title={`Copy "${subject.name}"`}>
+      <div className="space-y-4">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          This will create an independent copy of this subject, including all topics and MCQs, in the selected module.
+        </p>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Target Module *</label>
+          <select
+            value={targetModuleId}
+            onChange={(e) => setTargetModuleId(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+          >
+            <option value="">Select Module</option>
+            {sortedModules.map((m) => (
+              <option key={m._id} value={m._id}>
+                {m.name} {m.year?.name ? `(${m.year.name})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+        {error && <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>}
+        <div className="flex justify-end gap-3 pt-2">
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleCopy}
+            disabled={saving || !targetModuleId}
+            className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-50"
+          >
+            {saving ? 'Copying...' : 'Copy Subject'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+

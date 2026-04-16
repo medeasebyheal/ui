@@ -26,6 +26,14 @@ import api from '../../api/client';
 import { getRecentViews } from '../../utils/recentViews';
 import EmptyPackageCTA from '../../components/EmptyPackageCTA';
 
+const getUniversityType = (collegeName) => {
+  const name = (collegeName || '').toUpperCase();
+  if (['DOW', 'KMU', 'DMC', 'KMDC'].some(c => name.includes(c))) {
+    return 'DOW/KMU';
+  }
+  return 'Other';
+};
+
 const SUBJECT_ICONS = [Accessibility, Activity, FlaskConical, Dna, Syringe, BarChart3];
 const SUBJECT_COLORS = [
   { ring: 'ring-teal-500/20', accent: 'text-primary', hover: 'hover:border-primary' },
@@ -358,8 +366,16 @@ export default function StudentResources() {
               ? modulesByYear[year._id]
               : undefined;
             const modulesForYear = (yearModules || []);
-            
-            let visibleModules = modulesForYear.filter((mod) => matchSearch(mod.name) || matchSearch(mod.description));
+
+            const userCollege = user?.college || user?.academicDetails?.college || 'Other';
+            const userUnivType = getUniversityType(userCollege);
+
+            let visibleModules = modulesForYear.filter((mod) => {
+              const modUnivType = mod.universityType || 'Other';
+              if (modUnivType !== userUnivType) return false;
+              return matchSearch(mod.name) || matchSearch(mod.description);
+            });
+
             if (hasSingleModulePackage) {
               visibleModules = visibleModules.filter((mod) => {
                 const modId = String(mod._id);
@@ -387,172 +403,172 @@ export default function StudentResources() {
                   </div>
                 ) : (
                   visibleModules.map((mod, modIdx) => {
-                      const modId = String(mod._id);
-                      const isExpanded = expandedModules[modId];
-                      const subjects = subjectsByModule[modId] || [];
-                      const loading = loadingSubjects[modId];
-                      const ospes = ospesByModule[modId] || [];
-                      const moduleImage = mod.imageUrl || PLACEHOLDER_IMAGES.module;
-                      const isFreeTrialAccessible = freeTrialModuleIds.has(modId);
-                      const locked = (!hasModuleAccess(mod._id) && !isFreeTrialAccessible) || !user?.packages?.length;
+                    const modId = String(mod._id);
+                    const isExpanded = expandedModules[modId];
+                    const subjects = subjectsByModule[modId] || [];
+                    const loading = loadingSubjects[modId];
+                    const ospes = ospesByModule[modId] || [];
+                    const moduleImage = mod.imageUrl || PLACEHOLDER_IMAGES.module;
+                    const isFreeTrialAccessible = freeTrialModuleIds.has(modId);
+                    const locked = (!hasModuleAccess(mod._id) && !isFreeTrialAccessible) || !user?.packages?.length;
 
-                      return (
-                        <div
-                          key={mod._id}
-                          className="bg-white dark:bg-[#1E293B] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden mb-10 relative"
-                        >
-                          {/* Module hero (clickable -> module detail) */}
-                          {locked ? (
-                            <div className="relative h-48 group block pointer-events-none">
-                              <img
-                                src={moduleImage}
-                                alt=""
-                                className="w-full h-full object-cover opacity-60"
-                                loading="lazy"
-                                decoding="async"
-                                onError={(e) => {
-                                  e.target.src = PLACEHOLDER_IMAGES.module;
-                                }}
-                              />
-                              <div className="absolute inset-0 bg-black/40 flex flex-col justify-center items-center p-6 lg:p-8 text-center">
-                                <span className="text-white  bg-[#0D9488]/90 p-4 rounded-full text-xl font-semibold mb-2"><LockIcon className="w-10 h-10" /></span>
+                    return (
+                      <div
+                        key={mod._id}
+                        className="bg-white dark:bg-[#1E293B] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden mb-10 relative"
+                      >
+                        {/* Module hero (clickable -> module detail) */}
+                        {locked ? (
+                          <div className="relative h-48 group block pointer-events-none">
+                            <img
+                              src={moduleImage}
+                              alt=""
+                              className="w-full h-full object-cover opacity-60"
+                              loading="lazy"
+                              decoding="async"
+                              onError={(e) => {
+                                e.target.src = PLACEHOLDER_IMAGES.module;
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/40 flex flex-col justify-center items-center p-6 lg:p-8 text-center">
+                              <span className="text-white  bg-[#0D9488]/90 p-4 rounded-full text-xl font-semibold mb-2"><LockIcon className="w-10 h-10" /></span>
 
-                              </div>
-                              <div className="absolute inset-0 bg-gradient-to-r from-slate-900/40 to-transparent flex flex-col justify-end p-6 lg:p-8">
-                                <div className="flex justify-between items-end w-full gap-4">
-                                  <div>
-                                    <span className="bg-[#0D9488]/90 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-2 inline-block">
-                                      {year.name}
-                                    </span>
-                                    <h4 className="text-2xl lg:text-3xl font-bold text-white">{mod.name}</h4>
-                                    <p className="text-slate-200 text-sm mt-1 line-clamp-1">
-                                      {mod.description || 'Subjects and topics'}
-                                    </p>
-                                  </div>
+                            </div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/40 to-transparent flex flex-col justify-end p-6 lg:p-8">
+                              <div className="flex justify-between items-end w-full gap-4">
+                                <div>
+                                  <span className="bg-[#0D9488]/90 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-2 inline-block">
+                                    {year.name}
+                                  </span>
+                                  <h4 className="text-2xl lg:text-3xl font-bold text-white">{mod.name}</h4>
+                                  <p className="text-slate-200 text-sm mt-1 line-clamp-1">
+                                    {mod.description || 'Subjects and topics'}
+                                  </p>
                                 </div>
                               </div>
                             </div>
-                          ) : (
-                            <Link to={`/student/modules/${mod._id}`} className="relative h-48 group block">
-                              <img
-                                src={moduleImage}
-                                alt=""
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                                decoding="async"
-                                onError={(e) => {
-                                  e.target.src = PLACEHOLDER_IMAGES.module;
-                                }}
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 to-transparent flex flex-col justify-end p-6 lg:p-8">
-                                <div className="flex justify-between items-end w-full gap-4">
-                                  <div>
-                                    <span className="bg-[#0D9488]/90 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-2 inline-block">
-                                      {year.name}
-                                    </span>
-                                    <h4 className="text-2xl lg:text-3xl font-bold text-white">{mod.name}</h4>
-                                    <p className="text-slate-200 text-sm mt-1 line-clamp-1">
-                                      {mod.description || 'Subjects and topics'}
-                                    </p>
-                                  </div>
+                          </div>
+                        ) : (
+                          <Link to={`/student/modules/${mod._id}`} className="relative h-48 group block">
+                            <img
+                              src={moduleImage}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                              onError={(e) => {
+                                e.target.src = PLACEHOLDER_IMAGES.module;
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 to-transparent flex flex-col justify-end p-6 lg:p-8">
+                              <div className="flex justify-between items-end w-full gap-4">
+                                <div>
+                                  <span className="bg-[#0D9488]/90 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-2 inline-block">
+                                    {year.name}
+                                  </span>
+                                  <h4 className="text-2xl lg:text-3xl font-bold text-white">{mod.name}</h4>
+                                  <p className="text-slate-200 text-sm mt-1 line-clamp-1">
+                                    {mod.description || 'Subjects and topics'}
+                                  </p>
                                 </div>
                               </div>
-                            </Link>
-                          )}
+                            </div>
+                          </Link>
+                        )}
 
-                          <div className="p-6 lg:p-8">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (!locked) toggleModule(modId);
-                              }}
-                              className={`flex items-center gap-2 font-semibold mb-6 ${locked ? 'text-slate-400 cursor-not-allowed' : 'text-[#0D9488] hover:underline'}`}
-                              title={locked ? 'Subscribe to access this module' : ''}
-                            >
-                              {isExpanded ? 'Hide subjects' : locked ? 'Locked — Subscribe to access' : 'Browse subjects & topics'}
-                              <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                            </button>
+                        <div className="p-6 lg:p-8">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!locked) toggleModule(modId);
+                            }}
+                            className={`flex items-center gap-2 font-semibold mb-6 ${locked ? 'text-slate-400 cursor-not-allowed' : 'text-[#0D9488] hover:underline'}`}
+                            title={locked ? 'Subscribe to access this module' : ''}
+                          >
+                            {isExpanded ? 'Hide subjects' : locked ? 'Locked — Subscribe to access' : 'Browse subjects & topics'}
+                            <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                          </button>
 
-                            {isExpanded && !locked && (
-                              <div className="space-y-10">
-                                {loading && (
-                                  <p className="text-slate-500 dark:text-slate-400 text-sm py-8 text-center">Loading subjects and topics…</p>
-                                )}
-                                {!loading && subjects.length === 0 && (
-                                  <p className="text-slate-500 dark:text-slate-400 text-sm py-8 text-center">No subjects in this module yet.</p>
-                                )}
-                                {!loading && (
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {subjects.map((sub, subIdx) => {
-                                      const subjectUrl = `/student/modules/${mod._id}/subjects/${sub._id}`;
-                                      const img = sub.imageUrl || PLACEHOLDER_IMAGES.subject;
-                                      return (
+                          {isExpanded && !locked && (
+                            <div className="space-y-10">
+                              {loading && (
+                                <p className="text-slate-500 dark:text-slate-400 text-sm py-8 text-center">Loading subjects and topics…</p>
+                              )}
+                              {!loading && subjects.length === 0 && (
+                                <p className="text-slate-500 dark:text-slate-400 text-sm py-8 text-center">No subjects in this module yet.</p>
+                              )}
+                              {!loading && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                  {subjects.map((sub, subIdx) => {
+                                    const subjectUrl = `/student/modules/${mod._id}/subjects/${sub._id}`;
+                                    const img = sub.imageUrl || PLACEHOLDER_IMAGES.subject;
+                                    return (
+                                      <Link
+                                        key={sub._id}
+                                        to={subjectUrl}
+                                        className="group relative bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-md transition-all"
+                                      >
+                                        <div className="h-40 w-full relative bg-slate-100 dark:bg-slate-800">
+                                          <img
+                                            src={img}
+                                            alt={sub.name}
+                                            className="w-full h-full object-cover"
+                                            loading="lazy"
+                                            decoding="async"
+                                            onError={(e) => {
+                                              e.target.src = PLACEHOLDER_IMAGES.subject;
+                                            }}
+                                          />
+                                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                                            <h5 className="text-white font-semibold text-lg line-clamp-1">{sub.name}</h5>
+                                          </div>
+                                        </div>
+                                        <div className="p-4">
+                                          <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{sub.description || ''}</div>
+                                        </div>
+                                      </Link>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {/* OSPE block: once per module */}
+                              {!loading && ospes.length > 0 && (
+                                <div className="pt-8 mt-8 border-t border-slate-100 dark:border-slate-800">
+                                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">OSPE Practice</p>
+                                  {!hasModuleAccess(mod._id) ? (
+                                    <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center gap-3">
+                                      <LockIcon className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">OSPE practice is locked in free trial.</p>
+                                    </div>
+                                  ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                      {ospes.map((ospe) => (
                                         <Link
-                                          key={sub._id}
-                                          to={subjectUrl}
-                                          className="group relative bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-md transition-all"
+                                          key={ospe._id}
+                                          to={`/student/ospes/${ospe._id}`}
+                                          className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/40 hover:border-[#0D9488] transition-all"
                                         >
-                                          <div className="h-40 w-full relative bg-slate-100 dark:bg-slate-800">
-                                            <img
-                                              src={img}
-                                              alt={sub.name}
-                                              className="w-full h-full object-cover"
-                                              loading="lazy"
-                                              decoding="async"
-                                              onError={(e) => {
-                                                e.target.src = PLACEHOLDER_IMAGES.subject;
-                                              }}
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-                                              <h5 className="text-white font-semibold text-lg line-clamp-1">{sub.name}</h5>
-                                            </div>
+                                          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+                                            <FileText className="w-5 h-5" />
                                           </div>
-                                          <div className="p-4">
-                                            <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{sub.description || ''}</div>
+                                          <div className="min-w-0 flex-1">
+                                            <h6 className="font-semibold text-slate-900 dark:text-white truncate">{ospe.name}</h6>
+                                            <p className="text-xs text-slate-500 truncate">{ospe.description || 'Practice exam'}</p>
                                           </div>
+                                          <span className="text-xs font-bold text-[#0D9488] shrink-0">Start</span>
                                         </Link>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-
-                                {/* OSPE block: once per module */}
-                                {!loading && ospes.length > 0 && (
-                                  <div className="pt-8 mt-8 border-t border-slate-100 dark:border-slate-800">
-                                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">OSPE Practice</p>
-                                    {!hasModuleAccess(mod._id) ? (
-                                      <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center gap-3">
-                                        <LockIcon className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                                        <p className="text-sm font-medium text-amber-800 dark:text-amber-200">OSPE practice is locked in free trial.</p>
-                                      </div>
-                                    ) : (
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {ospes.map((ospe) => (
-                                          <Link
-                                            key={ospe._id}
-                                            to={`/student/ospes/${ospe._id}`}
-                                            className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/40 hover:border-[#0D9488] transition-all"
-                                          >
-                                            <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
-                                              <FileText className="w-5 h-5" />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                              <h6 className="font-semibold text-slate-900 dark:text-white truncate">{ospe.name}</h6>
-                                              <p className="text-xs text-slate-500 truncate">{ospe.description || 'Practice exam'}</p>
-                                            </div>
-                                            <span className="text-xs font-bold text-[#0D9488] shrink-0">Start</span>
-                                          </Link>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      );
-                    })
+                      </div>
+                    );
+                  })
                 )}
               </div>
             );

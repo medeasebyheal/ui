@@ -44,7 +44,7 @@ export default function SubjectTopics() {
       await api.delete(`/admin/subjects/${subjectId}/one-shot-lectures/${lectureId}`);
       loadOneShotLectures();
       setLectureDeleteConfirm(null);
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const handleDelete = async (id) => {
@@ -52,7 +52,7 @@ export default function SubjectTopics() {
       await api.delete(`/admin/topics/${id}`);
       loadTopics();
       setDeleteConfirm(null);
-    } catch (_) {}
+    } catch (_) { }
   };
 
   if (loading) return <div className="flex items-center justify-center py-12"><div className="animate-pulse text-gray-500">Loading...</div></div>;
@@ -89,7 +89,7 @@ export default function SubjectTopics() {
                 </div>
                 <div className="min-w-0">
                   <span className="font-medium text-gray-900 group-hover:text-primary block truncate">{topic.name}</span>
-                  {topic.videoUrl && <span className="text-xs text-gray-500">Has explanatory video</span>}
+                  {topic.videoUrl || topic.videoUrls.length > 0 && <span className="text-xs text-gray-500">Has explanatory video</span>}
                 </div>
               </Link>
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -198,7 +198,7 @@ function OneShotLectureForm({ lecture, subjectId, onSave, onClose }) {
       }
       onSave?.();
       onClose?.();
-    } catch (_) {}
+    } catch (_) { }
     setSaving(false);
   };
 
