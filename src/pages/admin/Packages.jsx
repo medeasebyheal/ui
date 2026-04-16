@@ -11,12 +11,16 @@ const PACKAGE_TYPES = [
   { value: 'year_full', label: 'Full Year', badge: 'purple' },
   { value: 'master_proff', label: 'Proff Buster', badge: 'amber' },
   { value: 'single_module', label: 'Single Module Package', badge: 'green' },
+  { value: 'dow_kmu_half_year', label: 'Dow KMU - Half Year', badge: 'blue' },
+  { value: 'dow_kmu_full_year', label: 'Dow KMU - Full Year', badge: 'purple' },
   // Free-trial variants
   { value: 'year_half_part1-free', label: 'Half Year - Part 1 (Free Trial)', badge: 'blue' },
   { value: 'year_half_part2-free', label: 'Half Year - Part 2 (Free Trial)', badge: 'blue' },
   { value: 'year_full-free', label: 'Full Year (Free Trial)', badge: 'purple' },
   { value: 'master_proff-free', label: 'Proff Buster (Free Trial)', badge: 'amber' },
   { value: 'single_module-free', label: 'Single Module Package (Free Trial)', badge: 'green' },
+  { value: 'dow_kmu_half_year-free', label: 'Dow KMU - Half Year (Free Trial)', badge: 'blue' },
+  { value: 'dow_kmu_full_year-free', label: 'Dow KMU - Full Year (Free Trial)', badge: 'purple' },
 ];
 
 const PER_PAGE = 10;
@@ -120,7 +124,7 @@ export default function AdminPackages() {
       await api.delete(`/admin/packages/${id}`);
       loadPackages();
       setDeleteConfirm(null);
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const start = totalFiltered === 0 ? 0 : (page - 1) * PER_PAGE + 1;
@@ -393,7 +397,7 @@ function PackageForm({ package: pkg, years, modulesByYear, onSave, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     if (isSingleModule && moduleIds.size !== 1) {
       setError('A Single Module Package must have exactly one module associated.');
       return;
@@ -410,7 +414,8 @@ function PackageForm({ package: pkg, years, modulesByYear, onSave, onClose }) {
       };
       if (!isMasterProff && !isSingleModule) {
         payload.year = Number(year) || 1;
-        payload.part = type === 'year_full' || type === 'year_full-free' ? null : Number(part) || 1;
+        const isFull = type === 'year_full' || type === 'year_full-free' || type === 'dow_kmu_full_year' || type === 'dow_kmu_full_year-free';
+        payload.part = isFull ? null : Number(part) || 1;
       } else {
         payload.year = null;
         payload.part = null;
@@ -481,7 +486,7 @@ function PackageForm({ package: pkg, years, modulesByYear, onSave, onClose }) {
                 )}
               </select>
             </div>
-            {type !== 'year_full' && (
+            {type !== 'year_full' && type !== 'year_full-free' && type !== 'dow_kmu_full_year' && type !== 'dow_kmu_full_year-free' && (
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Part</label>
                 <select

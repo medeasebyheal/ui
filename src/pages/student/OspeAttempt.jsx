@@ -174,7 +174,7 @@ export default function StudentOspeAttempt() {
         };
         frame();
       }
-    } catch (_) {}
+    } catch (_) { }
     setSubmitting(false);
   }, [flatList, answers, ospeId, totalQuestions]);
 
@@ -187,7 +187,7 @@ export default function StudentOspeAttempt() {
       }
     }
   }, [timerSeconds, submitted, submitting, isLastStation, handleSubmitAttempt]);
- 
+
   // When the EaseGPT modal is opened, trigger the initial message send once the chat mounts
   useEffect(() => {
     if (!showEaseGPT) return;
@@ -358,18 +358,16 @@ export default function StudentOspeAttempt() {
                 return (
                   <div
                     key={si}
-                    className={`border rounded-xl overflow-hidden cursor-pointer transition-all ${
-                      isExpanded ? 'border-primary shadow-lg' : 'border-primary/20 hover:border-primary/30'
-                    } bg-white`}
+                    className={`border rounded-xl overflow-hidden cursor-pointer transition-all ${isExpanded ? 'border-primary shadow-lg' : 'border-primary/20 hover:border-primary/30'
+                      } bg-white`}
                   >
                     <div
                       className="p-5 flex items-center gap-4"
                       onClick={() => setExpandedReview(isExpanded ? null : si)}
                     >
                       <div
-                        className={`h-10 w-10 rounded-full flex items-center justify-center font-bold ${
-                          hasError ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'
-                        }`}
+                        className={`h-10 w-10 rounded-full flex items-center justify-center font-bold ${hasError ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'
+                          }`}
                       >
                         {si + 1}
                       </div>
@@ -426,33 +424,33 @@ export default function StudentOspeAttempt() {
                                       <p className="text-sm font-medium">{correctAns || '—'}</p>
                                     </div>
                                   </div>
-                              <div className="mt-2">
-                                <p className="text-xs text-slate-500 mb-1.5">Get AI feedback to rate your answer and understand the key concept.</p>
-                                <button
-                                  type="button"
-                                  className="text-primary font-semibold text-sm inline-flex items-center gap-2"
-                                  onClick={() => {
-                                    setEasegptOptions({
-                                      mode: 'ospe',
-                                      ospeId,
-                                      questionIndex: gi,
-                                      contextOverride: {
-                                        questionText: q.questionText,
-                                        options: isMcq ? (q.options || []) : undefined,
-                                        correctIndex: q.correctIndex,
-                                        selectedIndex: ans?.selectedIndex,
-                                        explanation: q.expectedAnswer,
-                                        studentAnswer: ans?.writtenAnswer,
-                                        imageDescription: (q.imageDescription || s.imageDescription || '').trim(),
-                                      },
-                                    });
-                                    setShowEaseGPT(true);
-                                  }}
-                                >
-                                  <Sparkles className="w-4 h-4 text-primary" />
-                                  Analyze with EaseGPT
-                                </button>
-                              </div>
+                                  <div className="mt-2">
+                                    <p className="text-xs text-slate-500 mb-1.5">Get AI feedback to rate your answer and understand the key concept.</p>
+                                    <button
+                                      type="button"
+                                      className="text-primary font-semibold text-sm inline-flex items-center gap-2"
+                                      onClick={() => {
+                                        setEasegptOptions({
+                                          mode: 'ospe',
+                                          ospeId,
+                                          questionIndex: gi,
+                                          contextOverride: {
+                                            questionText: q.questionText,
+                                            options: isMcq ? (q.options || []) : undefined,
+                                            correctIndex: q.correctIndex,
+                                            selectedIndex: ans?.selectedIndex,
+                                            explanation: q.expectedAnswer,
+                                            studentAnswer: ans?.writtenAnswer,
+                                            imageDescription: (q.imageDescription || s.imageDescription || '').trim(),
+                                          },
+                                        });
+                                        setShowEaseGPT(true);
+                                      }}
+                                    >
+                                      <Sparkles className="w-4 h-4 text-primary" />
+                                      Analyze with EaseGPT
+                                    </button>
+                                  </div>
                                   {q.expectedAnswer && !isMcq && (
                                     <div className="p-4 bg-slate-100 rounded-xl">
                                       <h5 className="font-bold flex items-center gap-2 mb-2 text-slate-700">
@@ -530,9 +528,8 @@ export default function StudentOspeAttempt() {
             </div>
             <div className="flex items-center gap-4">
               <div
-                className={`flex items-center gap-2 px-4 py-2 rounded-full border ${
-                  timerSeconds < 120 ? 'bg-rose-50 border-rose-200' : 'bg-slate-50 border-slate-200'
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border ${timerSeconds < 120 ? 'bg-rose-50 border-rose-200' : 'bg-slate-50 border-slate-200'
+                  }`}
               >
                 <Timer className={`w-5 h-5 ${timerSeconds < 120 ? 'text-rose-500' : 'text-slate-500'}`} />
                 <span className={`font-mono font-bold ${timerSeconds < 120 ? 'text-rose-600' : 'text-slate-700'}`}>
@@ -591,17 +588,17 @@ export default function StudentOspeAttempt() {
                           alt={`Station ${currentStationIndex + 1}`}
                           className="w-full aspect-square object-contain transition-transform duration-300 group-hover:scale-105 mx-auto block"
                         />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 p-3 rounded-full shadow-lg">
-                          <ZoomIn className="w-6 h-6 text-primary" />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 p-3 rounded-full shadow-lg">
+                            <ZoomIn className="w-6 h-6 text-primary" />
+                          </div>
+                        </div>
+                        <div className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] uppercase tracking-wider px-2 py-1 rounded font-bold">
+                          Fig. {currentStationIndex + 1}
                         </div>
                       </div>
-                      <div className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] uppercase tracking-wider px-2 py-1 rounded font-bold">
-                        Fig. {currentStationIndex + 1}
-                      </div>
+                      <p className="text-xs text-slate-500 italic text-center">Click image to zoom</p>
                     </div>
-                    <p className="text-xs text-slate-500 italic text-center">Click image to zoom</p>
-                  </div>
                   </div>
                 )}
 

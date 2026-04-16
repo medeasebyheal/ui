@@ -373,20 +373,19 @@ export default function StudentResources() {
             let visibleModules = modulesForYear.filter((mod) => {
               const modUnivType = mod.universityType || 'Other';
               if (modUnivType !== userUnivType) return false;
+
+              // Only show modules the user actually has access to if they have an active plan/trial
+              if (hasPackages || showFreeTrialIndicator) {
+                const modId = String(mod._id);
+                const isFreeTrialAccessible = freeTrialModuleIds.has(modId);
+                const hasAccess = hasModuleAccess(modId) || isFreeTrialAccessible;
+                if (!hasAccess) return false;
+              }
+
               return matchSearch(mod.name) || matchSearch(mod.description);
             });
 
-            if (hasSingleModulePackage) {
-              visibleModules = visibleModules.filter((mod) => {
-                const modId = String(mod._id);
-                const isFreeTrialAccessible = freeTrialModuleIds.has(modId);
-                const locked = (!hasModuleAccess(mod._id) && !isFreeTrialAccessible) || !user?.packages?.length;
-                return !locked;
-              });
-            }
-
-            // show the year even if user doesn't have access; we'll mark modules as locked when needed
-            // However if we filtered all modules out (e.g. for single-module subscribers), hide the year
+            // If we filtered all modules out (e.g. for specific package subscribers), hide the year
             if (yearModules !== undefined && visibleModules.length === 0 && modulesForYear.length > 0) return null;
             if (yearModules !== undefined && modulesForYear.length === 0) return null;
 
