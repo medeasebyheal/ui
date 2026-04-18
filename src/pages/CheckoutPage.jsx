@@ -7,9 +7,8 @@ import { toast } from 'react-hot-toast';
 
 const PLAN_KEYS = ['half-year', 'full-year', 'master-proff', 'single-module'];
 
-const getUniversityType = (collegeName) => {
-  const name = (collegeName || '').toUpperCase();
-  if (['DOW', 'KMU', 'DMC', 'KMDC'].some(c => name.includes(c))) {
+const getUniversityType = (institution) => {
+  if (institution === 'DUHS/KMU/LUMHS/ZU') {
     return 'DOW/KMU';
   }
   return 'Other';
@@ -51,7 +50,7 @@ export default function CheckoutPage() {
     return ys.sort((a, b) => a - b);
   }, [packages]);
 
-  const universityType = useMemo(() => getUniversityType(academic.college), [academic.college]);
+  const universityType = useMemo(() => getUniversityType(academic.institution), [academic.institution]);
 
   const singleModulePackages = useMemo(() => {
     return packages.filter(p => {
@@ -342,31 +341,28 @@ export default function CheckoutPage() {
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Institution <span className="text-red-500">*</span></label>
-                <input
-                  type="text"
+                <select
                   value={academic.institution}
                   onChange={(e) => { setAcademic((a) => ({ ...a, institution: e.target.value })); setFieldErrors((e2) => ({ ...e2, institution: '' })); }}
                   required
                   className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.institution ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="e.g. JSMU"
-                />
+                >
+                  <option value="">Select Institution</option>
+                  <option value="JSMU & AFFILIATES">JSMU & AFFILIATES</option>
+                  <option value="DUHS/KMU/LUMHS/ZU">DUHS/KMU/LUMHS/ZU</option>
+                </select>
                 {fieldErrors.institution && <p className="text-xs text-red-600 mt-1">{fieldErrors.institution}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">College <span className="text-red-500">*</span></label>
-                <select
+                <input
+                  type="text"
                   value={academic.college}
                   onChange={(e) => { setAcademic((a) => ({ ...a, college: e.target.value })); setFieldErrors((e2) => ({ ...e2, college: '' })); }}
                   required
                   className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.college ? 'border-red-500' : 'border-gray-300'}`}
-                >
-                  <option value="">Select College</option>
-                  <option value="DOW">DOW</option>
-                  <option value="KMU">KMU</option>
-                  <option value="DMC">DMC</option>
-                  <option value="KMDC">KMDC</option>
-                  <option value="Other">Other</option>
-                </select>
+                  placeholder="e.g. Dow Medical College"
+                />
                 {fieldErrors.college && <p className="text-xs text-red-600 mt-1">{fieldErrors.college}</p>}
               </div>
               <div>

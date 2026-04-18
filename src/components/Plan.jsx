@@ -5,104 +5,104 @@ import { useAuth } from '../context/AuthContext';
 import AuthModal from './AuthModal';
 
 export const PLAN_DATA = [
-    {
-      planKey: 'free-trial',
-      name: "Free Trial",
-      price: "0",
-      originalPrice: null,
-      promoPrice: null,
-      duration: "7 Days",
-      description: "Try before you commit",
-      badge: "STARTER",
-      features: [
-        { name: "High-Yield MCQ Quizzes", available: true },
-        { name: "Limited OSPE Practice", available: true },
-        { name: "Community Support", available: true },
-        { name: "One Shot Videos", available: false },
-        { name: "Recorded Lectures", available: false },
-        { name: "Books, Slides & Past Papers", available: false },
-      ],
-      highlighted: false
-    },
-    {
-      planKey: 'half-year',
-      name: "Half Year",
-      price: "2250",
-      originalPrice: "3000",
-      duration: "6 Months",
-      description: "Part 1 or Part 2 per year",
-      badge: "POPULAR",
-      features: [
-        { name: "Full MCQ Database", available: true },
-        { name: "Complete OSPE Practice", available: true },
-        { name: "One Shot Videos", available: true },
-        { name: "Recorded Lectures", available: true },
-        { name: "Books, Slides & Past Papers", available: true },
-        { name: "MS 1–3 Part 1 & 2 modules", available: true },
-        { name: "EaseGPT", available: true },
-      ],
-      highlighted: true
-    },
-    {
-      planKey: 'full-year',
-      name: "Full Year",
-      price: "4000",
-      originalPrice: "4500",
-      duration: "12 Months",
-      description: "Complete year coverage",
-      badge: "BEST VALUE",
-      features: [
-        { name: "Full MCQ Database", available: true },
-        { name: "Complete OSPE Practice", available: true },
-        { name: "One Shot Videos", available: true },
-        { name: "Recorded Lectures", available: true },
-        { name: "Books, Slides & Past Papers", available: true },
-        { name: "All MS 1, 2 & 3 modules", available: true },
-        { name: "Priority Support", available: true },
-        { name: "EaseGPT", available: true },
-      ],
-      highlighted: false
-    },
-    {
-      planKey: 'single-module',
-      name: "Single Module",
-      price: "1000",
-      originalPrice: null,
-      duration: "Module Access",
-      description: "Unlock exactly one module",
-      badge: "FOCUSED",
-      features: [
-        { name: "Specific Module MCQ Database", available: true },
-        { name: "Module OSPE Practice", available: true },
-        { name: "Module One Shot Videos", available: true },
-        { name: "Module Recorded Lectures", available: true },
-        { name: "Books, Slides & Past Papers", available: true },
-        { name: "Other modules", available: false },
-        { name: "EaseGPT Full Access", available: false },
-      ],
-      highlighted: false
-    },
-    {
-      planKey: 'master-proff',
-      name: "Proff Buster",
-      price: "Coming Soon",
-      
-      duration: "MS 1",
-      description: "Papers 1–4",
-      badge: "PREMIUM",
-      features: [
-        { name: "Paper 1, 2, 3 & 4", available: true },
-        { name: "Full MCQ Database", available: true },
-        { name: "Complete OSPE Practice", available: true },
-        { name: "Unlimited One Shot Videos", available: true },
-        { name: "All Recorded Lectures", available: true },
-        { name: "Premium Resources", available: true },
-        { name: "24/7 Priority Support", available: true },
-        { name: "EaseGPT Full Access", available: true },
-      ],
-      highlighted: false
-    }
-  ];
+  {
+    planKey: 'free-trial',
+    name: "Free Trial",
+    price: "0",
+    originalPrice: null,
+    promoPrice: null,
+    duration: "7 Days",
+    description: "Try before you commit",
+    badge: "STARTER",
+    features: [
+      { name: "High-Yield MCQ Quizzes", available: true },
+      { name: "Limited OSPE Practice", available: true },
+      { name: "Community Support", available: true },
+      { name: "One Shot Videos", available: false },
+      { name: "Recorded Lectures", available: false },
+      { name: "Books, Slides & Past Papers", available: false },
+    ],
+    highlighted: false
+  },
+  {
+    planKey: 'half-year',
+    name: "Half Year",
+    price: "2250",
+    originalPrice: "3000",
+    duration: "6 Months",
+    description: "Part 1 or Part 2 per year",
+    badge: "POPULAR",
+    features: [
+      { name: "Full MCQ Database", available: true },
+      { name: "Complete OSPE Practice", available: true },
+      { name: "One Shot Videos", available: true },
+      { name: "Recorded Lectures", available: true },
+      { name: "Books, Slides & Past Papers", available: true },
+      { name: "MS 1–3 Part 1 & 2 modules", available: true },
+      { name: "EaseGPT", available: true },
+    ],
+    highlighted: true
+  },
+  {
+    planKey: 'full-year',
+    name: "Full Year",
+    price: "4000",
+    originalPrice: "4500",
+    duration: "12 Months",
+    description: "Complete year coverage",
+    badge: "BEST VALUE",
+    features: [
+      { name: "Full MCQ Database", available: true },
+      { name: "Complete OSPE Practice", available: true },
+      { name: "One Shot Videos", available: true },
+      { name: "Recorded Lectures", available: true },
+      { name: "Books, Slides & Past Papers", available: true },
+      { name: "All MS 1, 2 & 3 modules", available: true },
+      { name: "Priority Support", available: true },
+      { name: "EaseGPT", available: true },
+    ],
+    highlighted: false
+  },
+  {
+    planKey: 'single-module',
+    name: "Single Module",
+    price: "1000",
+    originalPrice: null,
+    duration: "Module Access",
+    description: "Unlock exactly one module",
+    badge: "FOCUSED",
+    features: [
+      { name: "Specific Module MCQ Database", available: true },
+      { name: "Module OSPE Practice", available: true },
+      { name: "Module One Shot Videos", available: true },
+      { name: "Module Recorded Lectures", available: true },
+      { name: "Books, Slides & Past Papers", available: true },
+      { name: "EaseGPT Full Access", available: true },
+      { name: "Other modules", available: false },
+    ],
+    highlighted: false
+  },
+  {
+    planKey: 'master-proff',
+    name: "Proff Buster",
+    price: "Coming Soon",
+
+    duration: "MS 1",
+    description: "Papers 1–4",
+    badge: "PREMIUM",
+    features: [
+      { name: "Paper 1, 2, 3 & 4", available: true },
+      { name: "Full MCQ Database", available: true },
+      { name: "Complete OSPE Practice", available: true },
+      { name: "Unlimited One Shot Videos", available: true },
+      { name: "All Recorded Lectures", available: true },
+      { name: "Premium Resources", available: true },
+      { name: "24/7 Priority Support", available: true },
+      { name: "EaseGPT Full Access", available: true },
+    ],
+    highlighted: false
+  }
+];
 
 function Plan() {
   const { user } = useAuth();
@@ -135,22 +135,21 @@ function Plan() {
               Pricing Plans
             </span>
           </div>
-          
+
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-heading font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6 px-4">
             Choose Your <span className="text-primary">Success Plan</span>
           </h2>
-          
+
           <p className="text-gray-600 font-body text-sm sm:text-base md:text-lg lg:text-xl max-w-3xl mx-auto leading-relaxed px-4">
             Flexible plans designed for every medical student's journey. Start with a free trial or go premium for complete access.
           </p>
         </div>
 
         {/* Responsive Grid for All Screens */}
-        <div className={`grid grid-cols-1 md:grid-cols-2 ${
-          isThreePlans 
-            ? 'lg:grid-cols-3 max-w-6xl mx-auto' 
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${isThreePlans
+            ? 'lg:grid-cols-3 max-w-6xl mx-auto'
             : 'lg:grid-cols-2 xl:grid-cols-4'
-        } gap-6 md:gap-8 pt-6`}>
+          } gap-6 md:gap-8 pt-6`}>
           {plans.map((plan, index) => (
             <PlanCard key={index} plan={plan} onBuyNow={handleBuyNow} />
           ))}
@@ -171,27 +170,24 @@ function Plan() {
 export function PlanCard({ plan, ctaText, ctaTo, isLink = false, onBuyNow }) {
   const displayPrice = plan.price;
   return (
-    <div className={`relative rounded-3xl p-6 sm:p-8 transition-all duration-300 h-full flex flex-col ${
-      plan.highlighted 
-        ? 'bg-gradient-to-br from-primary to-primary/90 text-white shadow-2xl scale-105 border-4 border-primary' 
+    <div className={`relative rounded-3xl p-6 sm:p-8 transition-all duration-300 h-full flex flex-col ${plan.highlighted
+        ? 'bg-gradient-to-br from-primary to-primary/90 text-white shadow-2xl scale-105 border-4 border-primary'
         : 'bg-white border-2 border-gray-200 hover:border-primary/50 hover:shadow-xl'
-    }`}>
+      }`}>
       {/* Badge */}
       {plan.badge && (
-        <div className={`absolute -top-3 right-6 px-4 py-1 rounded-full text-xs font-bold shadow-lg ${
-          plan.highlighted 
-            ? 'bg-white text-primary' 
+        <div className={`absolute -top-3 right-6 px-4 py-1 rounded-full text-xs font-bold shadow-lg ${plan.highlighted
+            ? 'bg-white text-primary'
             : 'bg-gradient-to-r from-primary to-primary/80 text-white'
-        }`}>
+          }`}>
           {plan.badge}
         </div>
       )}
 
       {/* Plan Header */}
       <div className="mb-6">
-        <h3 className={`text-2xl sm:text-3xl font-heading font-bold mb-2 ${
-          plan.highlighted ? 'text-white' : 'text-gray-900'
-        }`}>
+        <h3 className={`text-2xl sm:text-3xl font-heading font-bold mb-2 ${plan.highlighted ? 'text-white' : 'text-gray-900'
+          }`}>
           {plan.name}
         </h3>
         <p className={`text-sm ${plan.highlighted ? 'text-white/90' : 'text-gray-600'}`}>
@@ -207,9 +203,8 @@ export function PlanCard({ plan, ctaText, ctaTo, isLink = false, onBuyNow }) {
           </p>
         )}
         <div className="flex items-baseline gap-2 flex-wrap">
-          <span className={`text-4xl sm:text-5xl font-heading font-bold ${
-            plan.highlighted ? 'text-white' : 'text-gray-900'
-          }`}>
+          <span className={`text-4xl sm:text-5xl font-heading font-bold ${plan.highlighted ? 'text-white' : 'text-gray-900'
+            }`}>
             {displayPrice === "Coming Soon" ? "Coming Soon" : displayPrice === "0" ? "Free" : ["—", "Contact", "TBD"].includes(displayPrice) ? displayPrice : `₨${displayPrice}`}
           </span>
           {displayPrice !== "Coming Soon" && displayPrice !== "0" && !["—", "Contact", "TBD"].includes(displayPrice) && (
@@ -237,61 +232,55 @@ export function PlanCard({ plan, ctaText, ctaTo, isLink = false, onBuyNow }) {
         <button
           type="button"
           onClick={() => onBuyNow(plan)}
-          className={`w-full py-3 rounded-lg font-heading font-semibold text-base mb-6 transition-all duration-300 transform hover:scale-105 ${
-            plan.highlighted
+          className={`w-full py-3 rounded-lg font-heading font-semibold text-base mb-6 transition-all duration-300 transform hover:scale-105 ${plan.highlighted
               ? 'bg-white text-primary hover:bg-gray-50 shadow-lg'
               : 'bg-gradient-to-r from-primary to-primary/90 text-white hover:shadow-lg'
-          }`}
+            }`}
         >
           {plan.price === "0" ? "Start Free Trial" : "Buy Now"}
         </button>
       ) : isLink && ctaTo ? (
         <Link
           to={ctaTo}
-          className={`block w-full py-3 rounded-lg font-heading font-semibold text-base mb-6 transition-all duration-300 transform hover:scale-105 text-center ${
-            plan.highlighted
+          className={`block w-full py-3 rounded-lg font-heading font-semibold text-base mb-6 transition-all duration-300 transform hover:scale-105 text-center ${plan.highlighted
               ? 'bg-white text-primary hover:bg-gray-50 shadow-lg'
               : 'bg-gradient-to-r from-primary to-primary/90 text-white hover:shadow-lg'
-          }`}
+            }`}
         >
           {ctaText || (plan.price === "0" ? "Start Free Trial" : "Buy Now")}
         </Link>
       ) : (
-        <button className={`w-full py-3 rounded-lg font-heading font-semibold text-base mb-6 transition-all duration-300 transform hover:scale-105 ${
-          plan.highlighted 
-            ? 'bg-white text-primary hover:bg-gray-50 shadow-lg' 
+        <button className={`w-full py-3 rounded-lg font-heading font-semibold text-base mb-6 transition-all duration-300 transform hover:scale-105 ${plan.highlighted
+            ? 'bg-white text-primary hover:bg-gray-50 shadow-lg'
             : 'bg-gradient-to-r from-primary to-primary/90 text-white hover:shadow-lg'
-        }`}>
+          }`}>
           {plan.price === "0" ? "Start Free Trial" : "Buy Now"}
         </button>
       )}
 
       {/* Features List */}
       <div className="flex-grow">
-        <p className={`text-sm font-semibold mb-4 ${
-          plan.highlighted ? 'text-white/90' : 'text-gray-700'
-        }`}>
+        <p className={`text-sm font-semibold mb-4 ${plan.highlighted ? 'text-white/90' : 'text-gray-700'
+          }`}>
           What's included:
         </p>
         <ul className="space-y-3">
           {plan.features.map((feature, idx) => (
             <li key={idx} className="flex items-start gap-3">
-              <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${
-                feature.available 
+              <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${feature.available
                   ? plan.highlighted ? 'bg-white/20' : 'bg-primary/10'
                   : 'bg-gray-100'
-              }`}>
+                }`}>
                 {feature.available ? (
                   <Check className={`w-3 h-3 ${plan.highlighted ? 'text-white' : 'text-primary'}`} />
                 ) : (
                   <X className="w-3 h-3 text-gray-400" />
                 )}
               </div>
-              <span className={`text-sm ${
-                feature.available 
+              <span className={`text-sm ${feature.available
                   ? plan.highlighted ? 'text-white' : 'text-gray-700'
                   : 'text-gray-400 line-through'
-              }`}>
+                }`}>
                 {feature.name}
               </span>
             </li>
