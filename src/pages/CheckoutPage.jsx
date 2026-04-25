@@ -23,7 +23,6 @@ export default function CheckoutPage() {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
 
   const [year, setYear] = useState(1);
@@ -62,13 +61,32 @@ export default function CheckoutPage() {
     });
   }, [packages, universityType]);
 
+  const validateField = (name, value) => {
+    let error = '';
+    if (name === 'college' && value.trim().length > 0 && (value.trim().length < 2 || value.trim().length > 50)) {
+      error = 'Please enter college name between 2 to 50 characters';
+    }
+    if (name === 'rollNumber' && value.trim().length > 0 && (value.trim().length < 2 || value.trim().length > 50)) {
+      error = 'Please enter a valid roll number (2-50 characters)';
+    }
+    if (name === 'batch' && value.trim().length > 0 && (value.trim().length < 2 || value.trim().length > 50)) {
+      error = 'Please enter a valid batch (2-50 characters)';
+    }
+    setFieldErrors((prev) => ({ ...prev, [name]: error }));
+  };
+
   const validate = () => {
     const errs = {};
     if (!academic.institution?.trim()) errs.institution = 'Institution is required';
+    
     if (!academic.college?.trim()) errs.college = 'College is required';
+    else if (academic.college.trim().length < 2 || academic.college.trim().length > 50) errs.college = 'Please enter college name between 2 to 50 characters';
+    
     if (!academic.rollNumber?.trim()) errs.rollNumber = 'Roll number is required';
+    else if (academic.rollNumber.trim().length < 2 || academic.rollNumber.trim().length > 50) errs.rollNumber = 'Please enter a valid roll number (2-50 characters)';
+    
     if (!academic.batch?.trim()) errs.batch = 'Batch is required';
-    else if (!/^\d{4}$/.test(academic.batch.trim())) errs.batch = 'Batch must be a 4-digit year (e.g. 2024)';
+    else if (academic.batch.trim().length < 2 || academic.batch.trim().length > 50) errs.batch = 'Please enter a valid batch (2-50 characters)';
 
     if (!receipt) errs.receipt = 'Please upload receipt';
     else if (receipt.size > MAX_RECEIPT_SIZE) errs.receipt = 'Receipt must be under 5MB';
@@ -85,8 +103,14 @@ export default function CheckoutPage() {
   const isAcademicComplete = Boolean(
     academic.institution?.trim() &&
     academic.college?.trim() &&
+    academic.college.trim().length >= 2 &&
+    academic.college.trim().length <= 50 &&
     academic.rollNumber?.trim() &&
-    /^\d{4}$/.test(String(academic.batch || '').trim()) &&
+    academic.rollNumber.trim().length >= 2 &&
+    academic.rollNumber.trim().length <= 50 &&
+    academic.batch?.trim() &&
+    academic.batch.trim().length >= 2 &&
+    academic.batch.trim().length <= 50 &&
     receipt
   );
 
@@ -169,7 +193,6 @@ export default function CheckoutPage() {
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) return;
     setPromoLoading(true);
-    setError('');
     try {
       const { data } = await api.post('/promo-codes/validate', {
         code: promoCode.trim(),
@@ -194,7 +217,6 @@ export default function CheckoutPage() {
     } catch (err) {
       setPromoApplied(null);
       const msg = err.response?.data?.message || 'Invalid promo code';
-      setError(msg);
       toast.error(msg);
     } finally {
       setPromoLoading(false);
@@ -204,21 +226,18 @@ export default function CheckoutPage() {
   const handleRemovePromo = () => {
     setPromoApplied(null);
     setPromoCode('');
-    setError('');
     toast.success('Promo removed');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setFieldErrors({});
     if (!validate()) {
-      setError('Please fill all required fields correctly.');
       return;
     }
     const pkg = resolvePackage();
     if (!pkg) {
-      setError('Package not available for selected year/part. Contact admin.');
+      toast.error('Package not available for selected year/part. Contact admin.');
       return;
     }
     // Client-side guard: check user's active packages to prevent duplicate/upgrade purchases
@@ -229,24 +248,24 @@ export default function CheckoutPage() {
 
       // Duplicate exact package
       if (userPackages.some((up) => up.package && String(up.package._id) === String(pkg._id))) {
-        setError('You already have this package active.');
+        toast.error('You already have this package active.');
         return;
       }
       
       if (!pkgType.startsWith('single_module')) {
         // Prevent duplicate year/type
         if (userPackages.some((up) => up.package && up.package.year === pkgYear && up.package.type === pkgType)) {
-          setError('You already have this package active.');
+          toast.error('You already have this package active.');
           return;
         }
         // If trying to buy full-year but user has a half for same year -> block
         if (pkgType === 'year_full' && userPackages.some((up) => up.package && up.package.year === pkgYear && (up.package.type === 'year_half_part1' || up.package.type === 'year_half_part2'))) {
-          setError('Cannot upgrade to full-year when a half-year package is active.');
+          toast.error('Cannot upgrade to full-year when a half-year package is active.');
           return;
         }
         // If trying to buy a half but user already has full-year for same year -> block
         if ((pkgType === 'year_half_part1' || pkgType === 'year_half_part2') && userPackages.some((up) => up.package && up.package.year === pkgYear && up.package.type === 'year_full')) {
-          setError('You already have the full-year package for this year.');
+          toast.error('You already have the full-year package for this year.');
           return;
         }
       }
@@ -289,7 +308,6 @@ export default function CheckoutPage() {
       const status = err.response?.status;
       const serverMsg = err.response?.data?.message;
       const baseMsg = serverMsg || 'Payment upload failed';
-      setError(baseMsg);
       if (!status || status >= 500) {
         toast.error(`${baseMsg}. Please try again in a few minutes. If the issue persists contact support.`);
       } else {
@@ -358,9 +376,13 @@ export default function CheckoutPage() {
                 <input
                   type="text"
                   value={academic.college}
-                  onChange={(e) => { setAcademic((a) => ({ ...a, college: e.target.value })); setFieldErrors((e2) => ({ ...e2, college: '' })); }}
+                  onChange={(e) => { 
+                    const val = e.target.value;
+                    setAcademic((a) => ({ ...a, college: val })); 
+                    validateField('college', val); 
+                  }}
                   required
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.college ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors ${fieldErrors.college ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300'}`}
                   placeholder="e.g. Dow Medical College"
                 />
                 {fieldErrors.college && <p className="text-xs text-red-600 mt-1">{fieldErrors.college}</p>}
@@ -370,9 +392,13 @@ export default function CheckoutPage() {
                 <input
                   type="text"
                   value={academic.rollNumber}
-                  onChange={(e) => { setAcademic((a) => ({ ...a, rollNumber: e.target.value })); setFieldErrors((e2) => ({ ...e2, rollNumber: '' })); }}
+                  onChange={(e) => { 
+                    const val = e.target.value;
+                    setAcademic((a) => ({ ...a, rollNumber: val })); 
+                    validateField('rollNumber', val); 
+                  }}
                   required
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.rollNumber ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors ${fieldErrors.rollNumber ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300'}`}
                 />
                 {fieldErrors.rollNumber && <p className="text-xs text-red-600 mt-1">{fieldErrors.rollNumber}</p>}
               </div>
@@ -381,9 +407,13 @@ export default function CheckoutPage() {
                 <input
                   type="text"
                   value={academic.batch}
-                  onChange={(e) => { setAcademic((a) => ({ ...a, batch: e.target.value })); setFieldErrors((e2) => ({ ...e2, batch: '' })); }}
+                  onChange={(e) => { 
+                    const val = e.target.value;
+                    setAcademic((a) => ({ ...a, batch: val })); 
+                    validateField('batch', val); 
+                  }}
                   required
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.batch ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors ${fieldErrors.batch ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300'}`}
                   placeholder="e.g. 2024"
                 />
                 {fieldErrors.batch && <p className="text-xs text-red-600 mt-1">{fieldErrors.batch}</p>}
@@ -633,7 +663,6 @@ export default function CheckoutPage() {
             <p className="text-sm text-gray-500 mb-4">
               10% of your payment supports charitable initiatives.
             </p>
-            {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
             <button
               type="submit"
               disabled={submitting || !resolvePackage() || !isAcademicComplete}

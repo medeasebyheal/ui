@@ -13,6 +13,8 @@ export default function AdminDashboard() {
   const [removeFifthResult, setRemoveFifthResult] = useState(null);
   const [activateTrialLoading, setActivateTrialLoading] = useState(false);
   const [activateTrialResult, setActivateTrialResult] = useState(null);
+  const [cleanLoading, setCleanLoading] = useState(false);
+  const [cleanResult, setCleanResult] = useState(null);
 
   useEffect(() => {
     api
@@ -51,6 +53,23 @@ export default function AdminDashboard() {
         })
       )
       .finally(() => setActivateTrialLoading(false));
+  };
+
+  const handleCleanMcqs = () => {
+    if (cleanLoading) return;
+    setCleanResult(null);
+    setCleanLoading(true);
+    api
+      .post('/admin/mcqs/clean-options')
+      .then(({ data: res }) => {
+        setCleanResult(res);
+      })
+      .catch((err) =>
+        setCleanResult({
+          error: err.response?.data?.message || err.message || 'Request failed',
+        })
+      )
+      .finally(() => setCleanLoading(false));
   };
 
   const stats = data || {};
@@ -209,11 +228,10 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{u.email}</td>
                       <td className="px-6 py-4">
                         <span
-                          className={`px-2 py-1 text-xs font-bold rounded-lg flex items-center gap-1 w-fit ${
-                            u.isVerified
+                          className={`px-2 py-1 text-xs font-bold rounded-lg flex items-center gap-1 w-fit ${u.isVerified
                               ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
                               : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
-                          }`}
+                            }`}
                         >
                           {u.isVerified ? <BadgeCheck className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
                           {u.isVerified ? 'Yes' : 'No'}
@@ -244,13 +262,12 @@ export default function AdminDashboard() {
                 recentPayments.slice(0, 5).map((p) => (
                   <div key={p._id} className="flex items-start gap-4">
                     <div
-                      className={`p-2 rounded-lg ${
-                        p.status === 'approved'
+                      className={`p-2 rounded-lg ${p.status === 'approved'
                           ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
                           : p.status === 'rejected'
                             ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'
                             : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
-                      }`}
+                        }`}
                     >
                       <Receipt className="w-5 h-5" />
                     </div>
@@ -262,13 +279,12 @@ export default function AdminDashboard() {
                       <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{p.package?.name || '—'}</p>
                       <div className="flex items-center justify-between pt-2">
                         <span
-                          className={`text-[10px] font-bold uppercase ${
-                            p.status === 'approved'
+                          className={`text-[10px] font-bold uppercase ${p.status === 'approved'
                               ? 'text-emerald-600 dark:text-emerald-400'
                               : p.status === 'rejected'
                                 ? 'text-rose-600 dark:text-rose-400'
                                 : 'text-amber-600 dark:text-amber-400'
-                          }`}
+                            }`}
                         >
                           {p.status}
                         </span>
@@ -323,11 +339,10 @@ export default function AdminDashboard() {
                 </button>
                 {activateTrialResult && (
                   <p
-                    className={`mt-2 text-sm font-medium ${
-                      activateTrialResult.error
+                    className={`mt-2 text-sm font-medium ${activateTrialResult.error
                         ? 'text-rose-600 dark:text-rose-400'
                         : 'text-emerald-600 dark:text-emerald-400'
-                    }`}
+                      }`}
                   >
                     {activateTrialResult.error ||
                       `Done. Created ${activateTrialResult.created ?? 0} free-trial UserPackage records.`}
@@ -339,17 +354,17 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* MCQ Maintenance - commented out from UI
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+      {/* MCQ Maintenance */}
+      {/* <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
           <Wrench className="w-5 h-5 text-slate-500 dark:text-slate-400" />
           MCQ Maintenance
         </h3>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Remove the 5th option from any MCQs that have more than 4 options (e.g. when &quot;Correct Answer: C&quot; was saved as option E).
+          Remove the 5th option from any MCQs that have more than 4 options, and clean up &quot;✔️&quot; or &quot;(correct)&quot; tags from options.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-4">
-          <button
+          {/* <button
             type="button"
             onClick={handleRemoveFifthOption}
             disabled={removeFifthLoading}
@@ -361,10 +376,22 @@ export default function AdminDashboard() {
             <span className={`text-sm font-medium ${removeFifthResult.error ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
               {removeFifthResult.error || (removeFifthResult.updated === 0 ? removeFifthResult.message : `${removeFifthResult.message} (correctIndex fixed for ${removeFifthResult.correctedIndex ?? 0})`)}
             </span>
+          )} */}
+      {/* <button
+            type="button"
+            onClick={handleCleanMcqs}
+            disabled={cleanLoading}
+            className="px-4 py-2 bg-teal-500 hover:bg-teal-600 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+          >
+            {cleanLoading ? 'Running…' : 'Clean MCQ Options'}
+          </button>
+          {cleanResult && (
+            <span className={`text-sm font-medium ${cleanResult.error ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+              {cleanResult.error || cleanResult.message}
+            </span>
           )}
         </div>
-      </div>
-      */}
+      </div> */}
 
       {/* CTA Banner */}
       <div className="bg-gradient-to-r from-teal-500 to-primary p-8 rounded-3xl text-white flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
