@@ -89,7 +89,7 @@ export default function SubjectTopics() {
                 </div>
                 <div className="min-w-0">
                   <span className="font-medium text-gray-900 group-hover:text-primary block truncate">{topic.name}</span>
-                  {topic.videoUrl || topic.videoUrls.length > 0 && <span className="text-xs text-gray-500">Has explanatory video</span>}
+                  {(topic.videoUrl || (topic.videoUrls && topic.videoUrls.length > 0)) && <span className="text-xs text-gray-500">Has explanatory video</span>}
                 </div>
               </Link>
               <div className="flex items-center gap-2 flex-shrink-0">

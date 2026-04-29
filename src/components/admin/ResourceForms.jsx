@@ -352,9 +352,9 @@ export function TopicForm({ subjectId, topic, onSave, onClose }) {
       const payload = {
         name: (name || '').trim(),
         imageUrl: trimmedImage || null,
-        videoUrl: (videoUrl || '').trim() || undefined,
+        videoUrl: (videoUrl || '').trim(),
         videoUrls: validVideos,
-        content: (content || '').trim() || undefined,
+        content: (content || '').trim(),
       };
       if (topic?._id) {
         await api.put(`/admin/topics/${topic._id}`, payload);

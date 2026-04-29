@@ -147,6 +147,7 @@ export default function TopicDetailPage() {
   const allVideoUrls = [topic?.videoUrl, ...(topic?.videoUrls || [])].filter(Boolean);
   const currentVideoUrl = allVideoUrls[selectedVideoIndex];
   const hasVideos = allVideoUrls.length > 0;
+  console.log(allVideoUrls)
   const currentEmbedUrl = currentVideoUrl ? getYouTubeEmbedUrl(currentVideoUrl) : null;
   const thumbnailUrl = topic?.imageUrl || (currentVideoUrl ? getYouTubeThumbnail(currentVideoUrl) : null) || LECTURE_PREVIEW_FALLBACK;
   const moduleName = topic.subject?.module?.name || 'Module';
@@ -188,40 +189,42 @@ export default function TopicDetailPage() {
             </div>
 
             {/* Video Player - Second */}
-            <div
-              className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group select-none"
-              onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
-            >
-              {videoPlaying && currentEmbedUrl ? (
-                <ControlledYouTubePlayer
-                  youtubeUrl={currentVideoUrl}
-                  title={`${topic.name} - Part ${selectedVideoIndex + 1}`}
-                  className="absolute inset-0 w-full h-full rounded-2xl"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <img
-                    alt="Lecture Preview"
-                    className="w-full h-full object-cover opacity-60"
-                    src={thumbnailUrl}
-                    onError={(e) => { e.target.src = LECTURE_PREVIEW_FALLBACK; }}
+            {hasVideos && (
+              <div
+                className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group select-none"
+                onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              >
+                {videoPlaying && currentEmbedUrl ? (
+                  <ControlledYouTubePlayer
+                    youtubeUrl={currentVideoUrl}
+                    title={`${topic.name} - Part ${selectedVideoIndex + 1}`}
+                    className="absolute inset-0 w-full h-full rounded-2xl"
                   />
-                  {currentEmbedUrl ? (
-                    <button
-                      type="button"
-                      onClick={() => setVideoPlaying(true)}
-                      className="absolute w-20 h-20 bg-primary/90 rounded-full flex items-center justify-center text-white shadow-xl hover:scale-110 transition-transform cursor-pointer"
-                    >
-                      <Play className="w-10 h-10" />
-                    </button>
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50">
-                      <p className="text-white/80 text-sm">No video available for this topic</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <img
+                      alt="Lecture Preview"
+                      className="w-full h-full object-cover opacity-60"
+                      src={thumbnailUrl}
+                      onError={(e) => { e.target.src = LECTURE_PREVIEW_FALLBACK; }}
+                    />
+                    {currentEmbedUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => setVideoPlaying(true)}
+                        className="absolute w-20 h-20 bg-primary/90 rounded-full flex items-center justify-center text-white shadow-xl hover:scale-110 transition-transform cursor-pointer"
+                      >
+                        <Play className="w-10 h-10" />
+                      </button>
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50">
+                        <p className="text-white/80 text-sm">No video available for this topic</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Video Multi-part Switcher / Playlist */}
             {allVideoUrls.length > 1 && (
@@ -238,11 +241,10 @@ export default function TopicDetailPage() {
                           setSelectedVideoIndex(idx);
                           setVideoPlaying(false);
                         }}
-                        className={`w-full text-left px-5 py-4 flex items-center gap-4 transition-colors ${
-                          selectedVideoIndex === idx
+                        className={`w-full text-left px-5 py-4 flex items-center gap-4 transition-colors ${selectedVideoIndex === idx
                             ? 'bg-primary/5 border-l-4 border-primary'
                             : 'hover:bg-slate-50 border-l-4 border-transparent'
-                        }`}
+                          }`}
                       >
                         <div className={`p-2 rounded-lg flex-shrink-0 ${selectedVideoIndex === idx ? 'bg-primary/20 text-primary' : 'bg-slate-100 text-slate-400'}`}>
                           <PlayCircle className="w-5 h-5" />

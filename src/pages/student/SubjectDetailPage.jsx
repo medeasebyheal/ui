@@ -15,6 +15,9 @@ import {
   Lock,
   Film,
   ArrowRight,
+  Link2,
+  Link2Icon,
+  ExternalLink,
 } from 'lucide-react';
 import ControlledYouTubePlayer from '../../components/student/ControlledYouTubePlayer';
 import { useAuth } from '../../context/AuthContext';
@@ -290,6 +293,7 @@ export default function SubjectDetailPage() {
               const accessible = hasModuleAccess || (isFirstTopic && freeTrialModuleIds.has(String(moduleId)));
               const topicImageUrl = topic.imageUrl || TOPIC_PLACEHOLDER_IMAGE;
 
+
               const cardChildren = (
                 <>
                   <div className="aspect-[4/3] bg-slate-100 dark:bg-slate-700/50 relative overflow-hidden">
@@ -321,30 +325,15 @@ export default function SubjectDetailPage() {
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!accessible) return;
-                          navigate(`/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}/quiz`);
-                        }}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors ${accessible
-                          ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600'
-                          : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
-                          }`}
-                      >
-                        <HelpCircle className="w-5 h-5" />
-                        MCQs
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!accessible) return;
                           navigate(`/student/modules/${moduleId}/subjects/${subjectId}/topics/${topic._id}`);
                         }}
-                        className={`flex-[2] flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all ${accessible
+                        className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all ${accessible
                           ? 'bg-primary text-white hover:bg-teal-700 shadow-lg shadow-primary/20'
                           : 'bg-slate-200 dark:bg-slate-600 text-slate-500 cursor-not-allowed'
                           }`}
                       >
-                        <PlayCircle className="w-5 h-5" />
-                        Explanatory Video
+                        <ExternalLink className="w-5 h-5" />
+                        View Topic
                       </button>
                     </div>
                   </div>

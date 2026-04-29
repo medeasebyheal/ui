@@ -287,8 +287,8 @@ export default function StudentResources() {
   }, [user]);
 
   return (
-    <div className="flex flex-1 min-w-0 w-full bg-[#F8FAFC] dark:bg-[#0F172A]">
-      <div className="flex-1 min-w-0 p-6 lg:p-8 overflow-y-auto custom-scrollbar">
+    <div className="flex flex-col xl:flex-row flex-1 min-w-0 w-full bg-[#F8FAFC] dark:bg-[#0F172A] overflow-y-auto xl:overflow-hidden">
+      <div className="xl:flex-1 w-full min-w-0 p-6 lg:p-8 xl:overflow-y-auto custom-scrollbar">
         {/* Header */}
 
 
@@ -582,7 +582,7 @@ export default function StudentResources() {
       </div>
 
       {/* Right sidebar */}
-      <aside className="hidden xl:flex w-80 flex-shrink-0 flex-col border-l border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-8 overflow-y-auto custom-scrollbar">
+      <aside className="flex w-full xl:w-80 flex-shrink-0 flex-col border-t xl:border-t-0 xl:border-l border-slate-100 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-6 lg:p-8 xl:overflow-y-auto custom-scrollbar">
         <div className="space-y-8">
           <div className="text-center pb-8 border-b border-slate-100 dark:border-slate-800">
             <div className="relative inline-block mb-4">
