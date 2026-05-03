@@ -15,6 +15,7 @@ export default function TopicDetailPage() {
   const { user, refreshUser } = useAuth();
   const [topic, setTopic] = useState(null);
   const [mcqs, setMcqs] = useState([]);
+  const [mcqSets, setMcqSets] = useState([]);
   const [hasAccess, setHasAccess] = useState(false);
   const [canUseFreeTrialForThisTopic, setCanUseFreeTrialForThisTopic] = useState(false);
   const [useFreeTrial, setUseFreeTrial] = useState(false);
@@ -60,6 +61,7 @@ export default function TopicDetailPage() {
         if (cancelled) return;
         setTopic(data.topic);
         setMcqs(data.mcqs || []);
+        setMcqSets(data.mcqSets || []);
         setHasAccess(data.hasAccess);
         setCanUseFreeTrialForThisTopic(!!data.canUseFreeTrialForThisTopic);
         if (data.usedFreeTrial) refreshUser();
@@ -175,16 +177,33 @@ export default function TopicDetailPage() {
                 <HelpCircle className="w-8 h-8 text-primary" />
                 Practice MCQs
               </h3>
-              {total === 0 ? (
+              {mcqSets.length === 0 ? (
                 <p className="text-slate-500 py-4">No MCQs for this topic yet.</p>
               ) : (
-                <Link
-                  to={quizPageUrl}
-                  className="flex items-center justify-center gap-2 w-full py-4 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
-                >
-                  <PlayCircle className="w-5 h-5" />
-                  Take Topic Quiz — {total} question{total !== 1 ? 's' : ''}
-                </Link>
+                <div className="space-y-3">
+                  {mcqSets.map((set, i) => (
+                    <Link
+                      key={set.name}
+                      to={`${quizPageUrl}?set=${encodeURIComponent(set.name)}`}
+                      className="flex items-center justify-between p-4 rounded-xl bg-white border border-primary/20 hover:border-primary/50 hover:shadow-md transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                          <PlayCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900">
+                            {set.name === 'Default' ? 'General Practice' : `${set.name} Quiz`}
+                          </h4>
+                          <p className="text-sm text-slate-500">
+                            {set.mcqs.length} question{set.mcqs.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-primary transition-colors" />
+                    </Link>
+                  ))}
+                </div>
               )}
             </div>
 

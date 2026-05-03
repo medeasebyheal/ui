@@ -57,7 +57,7 @@ export default function CheckoutPage() {
       if (!isSingle) return false;
       const mod = p.moduleIds?.[0];
       const modUnivType = typeof mod === 'object' ? (mod.universityType || 'Other') : 'Other';
-      return modUnivType === universityType;
+      return modUnivType === 'Both' || modUnivType === universityType;
     });
   }, [packages, universityType]);
 
@@ -361,7 +361,13 @@ export default function CheckoutPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Institution <span className="text-red-500">*</span></label>
                 <select
                   value={academic.institution}
-                  onChange={(e) => { setAcademic((a) => ({ ...a, institution: e.target.value })); setFieldErrors((e2) => ({ ...e2, institution: '' })); }}
+                  onChange={(e) => { 
+                    setAcademic((a) => ({ ...a, institution: e.target.value })); 
+                    setFieldErrors((e2) => ({ ...e2, institution: '' })); 
+                    setYear(1);
+                    setPart(1);
+                    setSelectedSingleModuleId('');
+                  }}
                   required
                   className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${fieldErrors.institution ? 'border-red-500' : 'border-gray-300'}`}
                 >

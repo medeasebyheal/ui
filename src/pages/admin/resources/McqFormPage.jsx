@@ -22,6 +22,7 @@ export default function McqFormPage() {
   const [correctIndex, setCorrectIndex] = useState(0);
   const [explanation, setExplanation] = useState('');
   const [type, setType] = useState('text');
+  const [mcqSet, setMcqSet] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -49,6 +50,7 @@ export default function McqFormPage() {
           setCorrectIndex(data.correctIndex ?? 0);
           setExplanation(data.explanation || '');
           setType(data.type || 'text');
+          setMcqSet(data.mcqSet || '');
           setImageUrl(data.imageUrl || '');
         }
       } catch (e) {
@@ -92,6 +94,7 @@ export default function McqFormPage() {
         correctIndex,
         explanation,
         type,
+        mcqSet: mcqSet.trim(),
         imageUrl: type === 'image' ? imageUrl : undefined,
       };
       if (isEdit) {
@@ -155,6 +158,18 @@ export default function McqFormPage() {
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Set Name (Optional)</label>
+            <input
+              type="text"
+              value={mcqSet}
+              onChange={(e) => setMcqSet(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+              placeholder="e.g. Anatomy Practice Set 1"
+            />
+            <p className="text-xs text-gray-500 mt-1">If left blank, this MCQ will be placed in the "Default" set.</p>
           </div>
 
           <div>

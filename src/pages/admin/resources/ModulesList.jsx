@@ -462,8 +462,9 @@ function AddModuleForm({ years, onSave, onClose }) {
             onChange={(e) => setUniversityType(e.target.value)}
             className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-primary"
           >
-            <option value="Other">Other</option>
+            <option value="Other">Other (JSMU & Others)</option>
             <option value="DOW/KMU">DOW/KMU</option>
+            <option value="Both">Both (All Universities)</option>
           </select>
         </div>
         <div>

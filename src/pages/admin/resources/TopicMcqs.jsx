@@ -85,6 +85,22 @@ export default function TopicMcqs() {
     { label: topic.name, path: null },
   ];
 
+  const groupedMcqs = {};
+  mcqs.forEach(mcq => {
+    const setName = mcq.mcqSet?.trim() || 'Default';
+    if (!groupedMcqs[setName]) groupedMcqs[setName] = [];
+    groupedMcqs[setName].push(mcq);
+  });
+  
+  const mcqSets = Object.keys(groupedMcqs).map(name => ({
+    name,
+    mcqs: groupedMcqs[name]
+  })).sort((a, b) => {
+    if (a.name === 'Default') return -1;
+    if (b.name === 'Default') return 1;
+    return a.name.localeCompare(b.name);
+  });
+
   return (
     <>
       <ResourceBreadcrumb items={breadcrumbItems} />
@@ -169,28 +185,36 @@ export default function TopicMcqs() {
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="font-heading font-semibold text-gray-900">MCQs ({mcqs.length})</h2>
         </div>
-        <ul className="divide-y divide-gray-100">
-          {mcqs.map((mcq, i) => (
-            <li key={mcq._id} className="p-4 hover:bg-gray-50/50 flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3 min-w-0 flex-1">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 text-sm font-medium text-primary">
-                  {i + 1}
-                </div>
-                <div className="min-w-0">
-                  <p className="font-medium text-gray-900 line-clamp-2">{mcq.question}</p>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className="inline-block text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">{mcq.type}</span>
+        {mcqSets.map((set, setIndex) => (
+          <div key={set.name} className={setIndex > 0 ? "border-t border-gray-200" : ""}>
+            <div className="bg-gray-50/50 px-4 py-2 border-b border-gray-100">
+              <span className="font-medium text-gray-700 text-sm">{set.name} Set</span>
+              <span className="ml-2 text-xs text-gray-400">({set.mcqs.length} questions)</span>
+            </div>
+            <ul className="divide-y divide-gray-100">
+              {set.mcqs.map((mcq, i) => (
+                <li key={mcq._id} className="p-4 hover:bg-gray-50/50 flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 text-sm font-medium text-primary">
+                      {i + 1}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 line-clamp-2">{mcq.question}</p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className="inline-block text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">{mcq.type}</span>
+                      </div>
+                      {mcq.explanation && <p className="text-sm text-gray-500 mt-1 line-clamp-1">{mcq.explanation}</p>}
+                    </div>
                   </div>
-                  {mcq.explanation && <p className="text-sm text-gray-500 mt-1 line-clamp-1">{mcq.explanation}</p>}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Link to={`${basePath(yearId, moduleId, subjectId, topicId)}/mcqs/${mcq._id}/edit`} className="p-2 text-gray-500 hover:text-primary rounded-lg" title="Edit"><Pencil className="w-4 h-4" /></Link>
-                <button type="button" onClick={() => setDeleteConfirm(mcq)} className="p-2 text-gray-500 hover:text-red-600 rounded-lg" title="Delete"><Trash2 className="w-4 h-4" /></button>
-              </div>
-            </li>
-          ))}
-        </ul>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Link to={`${basePath(yearId, moduleId, subjectId, topicId)}/mcqs/${mcq._id}/edit`} className="p-2 text-gray-500 hover:text-primary rounded-lg" title="Edit"><Pencil className="w-4 h-4" /></Link>
+                    <button type="button" onClick={() => setDeleteConfirm(mcq)} className="p-2 text-gray-500 hover:text-red-600 rounded-lg" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
         {mcqs.length === 0 && (
           <div className="text-center py-16 bg-gray-50/50">
             <HelpCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />

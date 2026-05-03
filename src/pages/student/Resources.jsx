@@ -372,7 +372,7 @@ export default function StudentResources() {
 
             let visibleModules = modulesForYear.filter((mod) => {
               const modUnivType = mod.universityType || 'Other';
-              if (modUnivType !== userUnivType) return false;
+              if (modUnivType !== 'Both' && modUnivType !== userUnivType) return false;
 
               // Only show modules the user actually has access to if they have an active plan/trial
               if (hasPackages || showFreeTrialIndicator) {

@@ -27,7 +27,8 @@ export default function BulkMcqPage() {
   const [meta, setMeta] = useState({ year: null, module: null, subject: null, topic: null });
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
-  const [type, setType] = useState('text');
+  const [mcqSet, setMcqSet] = useState('');
+  const [type, setType] = useState('guess_until_correct');
   const [preview, setPreview] = useState(null);
   const [parseLoading, setParseLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
@@ -80,7 +81,7 @@ export default function BulkMcqPage() {
     setImportResult(null);
     try {
       // send parsed MCQs from preview to backend to avoid re-parsing
-      const { data } = await api.post(`/admin/topics/${topicId}/mcqs/bulk`, { mcqs: preview.mcqs, type });
+      const { data } = await api.post(`/admin/topics/${topicId}/mcqs/bulk`, { mcqs: preview.mcqs, type, mcqSet: mcqSet.trim() });
       setImportResult({ success: true, created: data.created, errors: data.errors, partialBlockIndices: data.partialBlockIndices || [], source: data.source, usage: data.usage });
       if (data.created > 0) {
         setText('');
@@ -135,6 +136,17 @@ export default function BulkMcqPage() {
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Left: paste and parse */}
         <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Set Name (Optional)</label>
+            <input
+              type="text"
+              value={mcqSet}
+              onChange={(e) => setMcqSet(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+              placeholder="e.g. Anatomy Practice Set 1"
+            />
+            <p className="text-xs text-gray-500 mt-1">If left blank, these MCQs will be placed in the "Default" set.</p>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Type for all MCQs</label>
             <select

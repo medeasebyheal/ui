@@ -142,8 +142,9 @@ export function ModuleForm({ yearId, module, onSave, onClose }) {
             onChange={(e) => setUniversityType(e.target.value)}
             className="w-full px-3 py-2 border rounded-lg bg-white"
           >
-            <option value="Other">Other</option>
+            <option value="Other">Other (JSMU & Others)</option>
             <option value="DOW/KMU">DOW/KMU</option>
+            <option value="Both">Both (All Universities)</option>
           </select>
           <p className="text-xs text-gray-500 mt-1">Differentiates modules for college-specific checkout filtering.</p>
         </div>

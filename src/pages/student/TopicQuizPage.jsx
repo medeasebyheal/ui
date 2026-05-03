@@ -42,6 +42,8 @@ export default function TopicQuizPage() {
     return () => clearInterval(interval);
   }, [quizStartTime]);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   useEffect(() => {
     let cancelled = false;
     const url = `/content/topics/${topicId}?includeMcqs=true${useFreeTrial ? '&useFreeTrial=true' : ''}`;
@@ -49,7 +51,13 @@ export default function TopicQuizPage() {
       .then(({ data }) => {
         if (cancelled) return;
         setTopic(data.topic);
-        setMcqs(data.mcqs || []);
+        const allMcqs = data.mcqs || [];
+        const targetSet = searchParams.get('set');
+        if (targetSet) {
+          setMcqs(allMcqs.filter(m => (m.mcqSet?.trim() || 'Default') === targetSet));
+        } else {
+          setMcqs(allMcqs);
+        }
         setHasAccess(data.hasAccess);
         setCanUseFreeTrialForThisTopic(!!data.canUseFreeTrialForThisTopic);
         if (data.usedFreeTrial) refreshUser();
@@ -61,10 +69,9 @@ export default function TopicQuizPage() {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [topicId, useFreeTrial, refreshUser]);
+  }, [topicId, useFreeTrial, refreshUser, searchParams]);
 
   // If link contains ?scrollTo=mcqId, navigate to that question once mcqs loaded
-  const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
     const scrollToId = searchParams.get('scrollTo');
     if (!scrollToId) return;
@@ -122,19 +129,33 @@ export default function TopicQuizPage() {
   };
 
   const handleSelectOption = async (index) => {
-    if (result != null || !mcqs[currentIndex] || submitting) return;
+    const mcq = mcqs[currentIndex];
+    if (!mcq || submitting) return;
+
+    const isGuessUntilCorrect = mcq.type === 'guess_until_correct';
+
+    if (result != null) {
+      if (result.correct) return;
+      if (!isGuessUntilCorrect) return;
+      if (isGuessUntilCorrect && result.guessedIndices?.includes(index)) return;
+    }
+
     setSelected(index);
     setSubmitting(true);
     setExplanationOpen(false);
 
     try {
-      const mcq = mcqs[currentIndex];
+      const isCorrect = Number(index) === Number(mcq.correctIndex);
+      const prevGuessed = result?.guessedIndices || [];
+      const newGuessed = [...prevGuessed, index];
+
       const localResult = {
-        correct: Number(index) === Number(mcq.correctIndex),
+        correct: isCorrect,
         correctIndex: mcq.correctIndex,
         explanation: mcq.explanation || undefined,
         selectedIndex: index,
         mcqId: mcq._id,
+        guessedIndices: newGuessed,
       };
       setResult(localResult);
       setAnswerResults((prev) => ({ ...prev, [currentIndex]: localResult }));
@@ -510,9 +531,9 @@ export default function TopicQuizPage() {
               <span className="mx-2">/</span>
               <Link to={`/student/modules/${moduleId}/subjects/${subjectId}`} className="hover:text-primary">{subjectName}</Link>
               <span className="mx-2">/</span>
-              <span className="text-slate-900 font-medium">{topic.name} Quiz</span>
+              <span className="text-slate-900 font-medium">{topic.name} {searchParams.get('set') && searchParams.get('set') !== 'Default' ? `- ${searchParams.get('set')}` : 'Quiz'}</span>
             </nav>
-            <h1 className="text-2xl font-display font-extrabold text-slate-900">{topic.name} Quiz</h1>
+            <h1 className="text-2xl font-display font-extrabold text-slate-900">{topic.name} {searchParams.get('set') && searchParams.get('set') !== 'Default' ? `- ${searchParams.get('set')}` : 'Quiz'}</h1>
           </div>
           <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-2xl shadow-sm border border-primary/20">
             <Timer className="w-5 h-5 text-primary" />
@@ -638,9 +659,13 @@ export default function TopicQuizPage() {
                   <div className="space-y-4">
                     {(mcq?.options || []).map((opt, i) => {
                       const correctIndex = result?.correctIndex ?? -1;
-                      const showCorrect = result != null && correctIndex === i;
-                      const showWrong = result != null && selected === i && !result.correct;
-                      const disabled = result != null;
+                      const isGuessUntilCorrect = mcq?.type === 'guess_until_correct';
+                      const showCorrect = result != null && correctIndex === i && (result.correct || !isGuessUntilCorrect);
+                      const isGuessed = result?.guessedIndices?.includes(i);
+                      const showWrong = isGuessUntilCorrect 
+                        ? (isGuessed && i !== correctIndex)
+                        : (result != null && selected === i && !result.correct);
+                      const disabled = result?.correct || (!isGuessUntilCorrect && result != null) || (isGuessUntilCorrect && isGuessed);
                       const isSelected = selected === i;
                       let labelClass = 'flex items-center gap-4 p-3 sm:p-5 rounded-2xl border-2 cursor-pointer transition-all ';
                       if (showCorrect) labelClass += 'border-success-green bg-success-green/10 ';
