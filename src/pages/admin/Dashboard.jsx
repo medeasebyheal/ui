@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Download, Users, Wallet, AlertTriangle, BookOpen, HelpCircle, BadgeCheck, Clock, Pencil, Receipt, PlusCircle, FileEdit, GraduationCap, Wrench } from 'lucide-react';
 import api from '../../api/client';
+import AnalyticsDashboard from './AnalyticsDashboard';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -124,6 +125,8 @@ export default function AdminDashboard() {
           Export Report
         </button>
       </div>
+
+      <AnalyticsDashboard />
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -248,8 +251,8 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4">
                         <span
                           className={`px-2 py-1 text-xs font-bold rounded-lg flex items-center gap-1 w-fit ${u.isVerified
-                              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                              : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
                             }`}
                         >
                           {u.isVerified ? <BadgeCheck className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
@@ -282,10 +285,10 @@ export default function AdminDashboard() {
                   <div key={p._id} className="flex items-start gap-4">
                     <div
                       className={`p-2 rounded-lg ${p.status === 'approved'
-                          ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                          : p.status === 'rejected'
-                            ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'
-                            : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
+                        ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                        : p.status === 'rejected'
+                          ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'
+                          : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
                         }`}
                     >
                       <Receipt className="w-5 h-5" />
@@ -299,10 +302,10 @@ export default function AdminDashboard() {
                       <div className="flex items-center justify-between pt-2">
                         <span
                           className={`text-[10px] font-bold uppercase ${p.status === 'approved'
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : p.status === 'rejected'
-                                ? 'text-rose-600 dark:text-rose-400'
-                                : 'text-amber-600 dark:text-amber-400'
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : p.status === 'rejected'
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : 'text-amber-600 dark:text-amber-400'
                             }`}
                         >
                           {p.status}
@@ -334,7 +337,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {isSuperAdmin && (
+        {/* {isSuperAdmin && (
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
             <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
@@ -394,7 +397,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        )}
+        )} */}
       </div>
 
       {/* MCQ Maintenance */}

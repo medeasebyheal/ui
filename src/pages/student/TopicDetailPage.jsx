@@ -76,6 +76,12 @@ export default function TopicDetailPage() {
             iconBg: 'bg-teal-50 dark:bg-teal-900/30',
             iconColor: 'text-primary',
           });
+
+          // Track visit on backend for KPI analytics
+          api.post('/analytics/track-visit', {
+            contentType: 'topic',
+            contentId: data.topic._id
+          }).catch(err => console.error('Failed to track topic visit', err));
         }
       })
       .catch(() => {
@@ -308,13 +314,8 @@ export default function TopicDetailPage() {
             {/* About Section */}
             <div className="prose prose-slate max-w-none select-none">
               <h3 className="text-lg font-bold mb-4">About this topic</h3>
-              {topic.content ? (
+              {topic.content && (
                 <div dangerouslySetInnerHTML={{ __html: topic.content }} className="text-slate-600 text-sm leading-relaxed" />
-              ) : (
-                <p className="text-slate-600 text-sm leading-relaxed">
-                  This explanatory video covers {topic.name}. Master the key concepts through
-                  the video and reinforce your learning with the related MCQs.
-                </p>
               )}
               {total > 0 && (
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mt-4 text-sm">
@@ -334,15 +335,13 @@ export default function TopicDetailPage() {
           {/* Right Sidebar */}
           <div className="lg:col-span-4 space-y-6">
             {/* Resources */}
-            <div className="bg-white border border-primary/20 rounded-2xl p-6 shadow-sm">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-primary" />
-                Resources
-              </h3>
+            {resources.length > 0 && (
+              <div className="bg-white border border-primary/20 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  Resources
+                </h3>
 
-              {resources.length === 0 ? (
-                <p className="text-sm text-slate-500">No resources for this topic yet.</p>
-              ) : (
                 <ul className="space-y-3">
                   {resources.map((res) => (
                     <li key={res._id}>
@@ -394,17 +393,15 @@ export default function TopicDetailPage() {
                     </li>
                   ))}
                 </ul>
-              )}
-            </div>
-            <div className="bg-white border border-primary/20 rounded-2xl p-6 shadow-sm">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-primary" />
-                Bookmarked MCQs
-              </h3>
+              </div>
+            )}
+            {bookmarkedMcqs.length > 0 && (
+              <div className="bg-white border border-primary/20 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  Bookmarked MCQs
+                </h3>
 
-              {bookmarkedMcqs.length === 0 ? (
-                <p className="text-sm text-slate-500">No bookmarked MCQs for this topic yet.</p>
-              ) : (
                 <ul className="space-y-3">
                   {bookmarkedMcqs.map((b) => {
                     const mcq = b.mcq || {};
@@ -448,8 +445,8 @@ export default function TopicDetailPage() {
                     );
                   })}
                 </ul>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

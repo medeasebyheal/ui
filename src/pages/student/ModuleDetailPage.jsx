@@ -53,6 +53,12 @@ export default function ModuleDetailPage() {
             iconBg: 'bg-primary/10',
             iconColor: 'text-primary',
           });
+
+          // Track visit on backend for KPI analytics
+          api.post('/analytics/track-visit', {
+            contentType: 'module',
+            contentId: mod._id
+          }).catch(err => console.error('Failed to track module visit', err));
         }
       })
       .catch((err) => {

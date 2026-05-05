@@ -110,6 +110,12 @@ export default function SubjectDetailPage() {
             iconBg: 'bg-purple-50 dark:bg-purple-900/30',
             iconColor: 'text-purple-600',
           });
+
+          // Track visit on backend for KPI analytics
+          api.post('/analytics/track-visit', {
+            contentType: 'subject',
+            contentId: sub._id
+          }).catch(err => console.error('Failed to track subject visit', err));
         }
       })
       .catch((err) => {
@@ -374,108 +380,99 @@ export default function SubjectDetailPage() {
         )}
 
         {/* One Shot Lectures */}
-        <section className="mt-16">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
-                <Video className="w-5 h-5" />
+        {(!hasModuleAccess || oneShotLectures.length > 0) && (
+          <section className="mt-16">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+                  <Video className="w-5 h-5" />
+                </div>
+                <h2 className="text-2xl font-bold font-heading">Subject Lectures & Videos</h2>
               </div>
-              <h2 className="text-2xl font-bold font-heading">Subject Lectures & Videos</h2>
             </div>
-          </div>
 
-          {!hasModuleAccess ? (
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-3xl p-8 text-center">
-              <Lock className="w-12 h-12 text-amber-500 mx-auto mb-3" />
-              <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Unlock with a package</h4>
-              <p className="text-slate-600 dark:text-slate-400 mb-4 max-w-sm mx-auto">
-                Purchase a package to access One Shot lectures for this subject.
-              </p>
-              <Link
-                to="/packages"
-                className="inline-flex items-center gap-2 text-primary font-semibold hover:underline"
-              >
-                View packages
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          ) : oneShotLectures.length === 0 ? (
-            <div className="bg-white dark:bg-slate-800/50 rounded-3xl p-12 border border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center text-center">
-              <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
-                <Film className="w-10 h-10 text-slate-300 dark:text-slate-500" />
+            {!hasModuleAccess ? (
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-3xl p-8 text-center">
+                <Lock className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+                <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Unlock with a package</h4>
+                <p className="text-slate-600 dark:text-slate-400 mb-4 max-w-sm mx-auto">
+                  Purchase a package to access One Shot lectures for this subject.
+                </p>
+                <Link
+                  to="/packages"
+                  className="inline-flex items-center gap-2 text-primary font-semibold hover:underline"
+                >
+                  View packages
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
-              <h4 className="text-xl font-semibold mb-2 text-slate-900 dark:text-white">No One Shot Lectures Found</h4>
-              <p className="text-slate-500 dark:text-slate-400 max-w-sm">
-                There are currently no &quot;One Shot&quot; comprehensive review lectures available for this module.
-                Check back soon!
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* Inline embedded player - same style as topic page */}
-              <div
-                className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group select-none"
-                onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
-              >
-                {oneShotVideoPlaying && selectedLecture ? (
-                  <ControlledYouTubePlayer
-                    youtubeUrl={selectedLecture.youtubeUrl}
-                    title={selectedLecture.title}
-                    className="absolute inset-0 w-full h-full rounded-2xl"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <img
-                      alt={selectedLecture?.title || 'One Shot Lecture'}
-                      className="w-full h-full object-cover opacity-60"
-                      src={getYouTubeThumbnail(selectedLecture?.youtubeUrl) || 'logo.png'}
-                      onError={(e) => { e.target.src = 'logo.png'; }}
+            ) : (
+              <>
+                {/* Inline embedded player - same style as topic page */}
+                <div
+                  className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group select-none"
+                  onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                >
+                  {oneShotVideoPlaying && selectedLecture ? (
+                    <ControlledYouTubePlayer
+                      youtubeUrl={selectedLecture.youtubeUrl}
+                      title={selectedLecture.title}
+                      className="absolute inset-0 w-full h-full rounded-2xl"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setOneShotVideoPlaying(true)}
-                      className="absolute w-20 h-20 bg-primary/90 rounded-full flex items-center justify-center text-white shadow-xl hover:scale-110 transition-transform cursor-pointer"
-                      aria-label="Play One Shot Lecture"
-                    >
-                      <PlayCircle className="w-10 h-10" />
-                    </button>
-                  </div>
-                )}
-              </div>
-              {selectedLecture && (
-                <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">{selectedLecture.title}</h3>
-              )}
-              {/* Switch lecture if multiple */}
-              {oneShotLectures.length > 1 && (
-                <ul className="mt-6 space-y-2">
-                  {oneShotLectures.map((lecture) => (
-                    <li key={lecture._id}>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <img
+                        alt={selectedLecture?.title || 'One Shot Lecture'}
+                        className="w-full h-full object-cover opacity-60"
+                        src={getYouTubeThumbnail(selectedLecture?.youtubeUrl) || 'logo.png'}
+                        onError={(e) => { e.target.src = 'logo.png'; }}
+                      />
                       <button
                         type="button"
-                        onClick={() => {
-                          setSelectedLecture(lecture);
-                          setOneShotVideoPlaying(false);
-                        }}
-                        className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all group text-left ${selectedLecture?._id === lecture._id
-                          ? 'bg-primary/10 dark:bg-primary/20 border-primary/30'
-                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-primary/30'
-                          }`}
+                        onClick={() => setOneShotVideoPlaying(true)}
+                        className="absolute w-20 h-20 bg-primary/90 rounded-full flex items-center justify-center text-white shadow-xl hover:scale-110 transition-transform cursor-pointer"
+                        aria-label="Play One Shot Lecture"
                       >
-                        <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400">
-                          <Video className="w-6 h-6" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-slate-900 dark:text-white">{lecture.title}</p>
-                        </div>
-                        <PlayCircle className="w-5 h-5 text-slate-400 flex-shrink-0 group-hover:text-primary transition-colors" />
+                        <PlayCircle className="w-10 h-10" />
                       </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
-          )}
-        </section>
+                    </div>
+                  )}
+                </div>
+                {selectedLecture && (
+                  <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">{selectedLecture.title}</h3>
+                )}
+                {/* Switch lecture if multiple */}
+                {oneShotLectures.length > 1 && (
+                  <ul className="mt-6 space-y-2">
+                    {oneShotLectures.map((lecture) => (
+                      <li key={lecture._id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedLecture(lecture);
+                            setOneShotVideoPlaying(false);
+                          }}
+                          className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all group text-left ${selectedLecture?._id === lecture._id
+                            ? 'bg-primary/10 dark:bg-primary/20 border-primary/30'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-primary/30'
+                            }`}
+                        >
+                          <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400">
+                            <Video className="w-6 h-6" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-slate-900 dark:text-white">{lecture.title}</p>
+                          </div>
+                          <PlayCircle className="w-5 h-5 text-slate-400 flex-shrink-0 group-hover:text-primary transition-colors" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+          </section>
+        )}
 
         {!hasModuleAccess && sortedTopics.length > 0 && (
           <div className="mt-12 p-8 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-3xl text-center">
