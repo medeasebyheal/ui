@@ -15,6 +15,8 @@ export default function AdminDashboard() {
   const [activateTrialResult, setActivateTrialResult] = useState(null);
   const [cleanLoading, setCleanLoading] = useState(false);
   const [cleanResult, setCleanResult] = useState(null);
+  const [migrateTextLoading, setMigrateTextLoading] = useState(false);
+  const [migrateTextResult, setMigrateTextResult] = useState(null);
 
   useEffect(() => {
     api
@@ -70,6 +72,23 @@ export default function AdminDashboard() {
         })
       )
       .finally(() => setCleanLoading(false));
+  };
+
+  const handleMigrateTextToGuess = () => {
+    if (migrateTextLoading) return;
+    setMigrateTextResult(null);
+    setMigrateTextLoading(true);
+    api
+      .post('/admin/mcqs/migrate-text-to-guess')
+      .then(({ data: res }) => {
+        setMigrateTextResult(res);
+      })
+      .catch((err) =>
+        setMigrateTextResult({
+          error: err.response?.data?.message || err.message || 'Request failed',
+        })
+      )
+      .finally(() => setMigrateTextLoading(false));
   };
 
   const stats = data || {};
@@ -346,6 +365,30 @@ export default function AdminDashboard() {
                   >
                     {activateTrialResult.error ||
                       `Done. Created ${activateTrialResult.created ?? 0} free-trial UserPackage records.`}
+                  </p>
+                )}
+              </div>
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+                <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                  Update all existing MCQs with type &quot;text&quot; to &quot;guess_until_correct&quot;.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleMigrateTextToGuess}
+                  disabled={migrateTextLoading}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2"
+                >
+                  <Wrench className="w-4 h-4" />
+                  {migrateTextLoading ? 'Running…' : 'Migrate Text MCQs to Guess'}
+                </button>
+                {migrateTextResult && (
+                  <p
+                    className={`mt-2 text-sm font-medium ${migrateTextResult.error
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : 'text-emerald-600 dark:text-emerald-400'
+                      }`}
+                  >
+                    {migrateTextResult.error || migrateTextResult.message}
                   </p>
                 )}
               </div>
