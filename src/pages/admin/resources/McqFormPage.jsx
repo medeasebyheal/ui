@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 
@@ -14,6 +14,7 @@ const basePath = (y, m, s, t) => `/admin/resources/years/${y}/modules/${m}/subje
 export default function McqFormPage() {
   const { yearId, moduleId, subjectId, topicId, mcqId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isEdit = mcqId && mcqId !== 'new';
   const [loading, setLoading] = useState(isEdit);
   const [meta, setMeta] = useState({ year: null, module: null, subject: null, topic: null });
@@ -22,7 +23,7 @@ export default function McqFormPage() {
   const [correctIndex, setCorrectIndex] = useState(0);
   const [explanation, setExplanation] = useState('');
   const [type, setType] = useState('text');
-  const [mcqSet, setMcqSet] = useState('');
+  const [mcqSet, setMcqSet] = useState(searchParams.get('mcqSet') || '');
   const [imageUrl, setImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);

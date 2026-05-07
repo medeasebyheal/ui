@@ -63,6 +63,7 @@ export default function StudentOspeAttempt() {
   const [result, setResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(5 * 60);
+  const [totalElapsed, setTotalElapsed] = useState(0);
   const [practiceMode, setPracticeMode] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [zoomImageUrl, setZoomImageUrl] = useState(null);
@@ -103,10 +104,8 @@ export default function StudentOspeAttempt() {
   useEffect(() => {
     if (!ospe || submitted) return;
     const id = setInterval(() => {
-      setTimerSeconds((s) => {
-        if (s <= 1) return 0;
-        return s - 1;
-      });
+      setTimerSeconds((s) => (s <= 1 ? 0 : s - 1));
+      setTotalElapsed((prev) => prev + 1);
     }, 1000);
     return () => clearInterval(id);
   }, [ospe, submitted]);
@@ -158,14 +157,18 @@ export default function StudentOspeAttempt() {
     }));
     setSubmitting(true);
     try {
-      const { data } = await api.post('/ospes/attempts', { ospeId, answers: answerList });
+      const { data } = await api.post('/ospes/attempts', { 
+        ospeId, 
+        answers: answerList,
+        timeTakenSeconds: totalElapsed
+      });
       setResult(data);
       setSubmitted(true);
       const getScore = (a) => (a?.correctnessPercentage != null ? a.correctnessPercentage / 100 : (a?.correct ? 1 : 0));
       const totalScore = (data.answers || []).reduce((s, a) => s + getScore(a), 0);
       const pct = totalQuestions > 0 ? (totalScore / totalQuestions) * 100 : 0;
       if (pct >= 80) {
-        const duration = 2000;
+        const duration = 1000;
         const end = Date.now() + duration;
         const frame = () => {
           confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0.3 }, colors: ['#10b981', '#069285', '#e0e7ff'] });

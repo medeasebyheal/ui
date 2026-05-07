@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import { useParseLoadingMessage } from '../../../hooks/useParseLoadingMessage';
@@ -24,10 +24,12 @@ Explanation: The proximal convoluted tubule reabsorbs about 80–90% of filtered
 
 export default function BulkMcqPage() {
   const { yearId, moduleId, subjectId, topicId } = useParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [meta, setMeta] = useState({ year: null, module: null, subject: null, topic: null });
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
-  const [mcqSet, setMcqSet] = useState('');
+  const [mcqSet, setMcqSet] = useState(searchParams.get('mcqSet') || '');
   const [type, setType] = useState('guess_until_correct');
   const [preview, setPreview] = useState(null);
   const [parseLoading, setParseLoading] = useState(false);

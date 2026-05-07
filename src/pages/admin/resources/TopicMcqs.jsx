@@ -21,6 +21,8 @@ export default function TopicMcqs() {
   const [resourceForm, setResourceForm] = useState(null);
   const [resourceDeleteConfirm, setResourceDeleteConfirm] = useState(null);
   const [downloadingResourceId, setDownloadingResourceId] = useState(null);
+  const [setNameToDelete, setSetNameToDelete] = useState(null);
+  const [setRenameForm, setSetRenameForm] = useState(null);
 
   const loadMeta = async () => {
     const [yearsRes, modulesRes, subjectsRes] = await Promise.all([
@@ -47,6 +49,23 @@ export default function TopicMcqs() {
 
   const handleResourceDelete = async (resourceId) => {
     try { await api.delete(`/admin/topics/${topicId}/resources/${resourceId}`); loadTopicResources(); setResourceDeleteConfirm(null); } catch (_) {}
+  };
+
+  const handleRenameSet = async (oldName, newName) => {
+    if (!newName || oldName === newName) return;
+    try {
+      await api.put(`/admin/topics/${topicId}/mcq-sets`, { oldSetName: oldName, newSetName: newName });
+      loadMcqs();
+      setSetRenameForm(null);
+    } catch (_) {}
+  };
+
+  const handleDeleteSet = async (setName) => {
+    try {
+      await api.delete(`/admin/topics/${topicId}/mcq-sets?setName=${encodeURIComponent(setName)}`);
+      loadMcqs();
+      setSetNameToDelete(null);
+    } catch (_) {}
   };
 
   const handleResourceDownload = async (e, res) => {
@@ -187,9 +206,47 @@ export default function TopicMcqs() {
         </div>
         {mcqSets.map((set, setIndex) => (
           <div key={set.name} className={setIndex > 0 ? "border-t border-gray-200" : ""}>
-            <div className="bg-gray-50/50 px-4 py-2 border-b border-gray-100">
-              <span className="font-medium text-gray-700 text-sm">{set.name} Set</span>
-              <span className="ml-2 text-xs text-gray-400">({set.mcqs.length} questions)</span>
+            <div className="bg-gray-50/50 px-4 py-2 border-b border-gray-100 flex items-center justify-between group">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-gray-700 text-sm">{set.name} Set</span>
+                <span className="text-xs text-gray-400">({set.mcqs.length} questions)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link 
+                  to={`${basePath(yearId, moduleId, subjectId, topicId)}/mcqs/bulk?mcqSet=${encodeURIComponent(set.name)}`}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg text-[10px] font-bold uppercase tracking-tight hover:bg-blue-100 transition-colors shadow-sm"
+                  title="Bulk import to this set"
+                >
+                  <Upload className="w-3 h-3" />
+                  <span>Bulk</span>
+                </Link>
+                <Link 
+                  to={`${basePath(yearId, moduleId, subjectId, topicId)}/mcqs/new?mcqSet=${encodeURIComponent(set.name)}`}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[10px] font-bold uppercase tracking-tight hover:bg-emerald-100 transition-colors shadow-sm"
+                  title="Add MCQ to this set"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add</span>
+                </Link>
+                <button 
+                  type="button" 
+                  onClick={() => setSetRenameForm({ oldName: set.name, newName: set.name })}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg text-[10px] font-bold uppercase tracking-tight hover:bg-amber-100 transition-colors shadow-sm"
+                  title="Rename Set"
+                >
+                  <Pencil className="w-3 h-3" />
+                  <span>Rename</span>
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setSetNameToDelete(set.name)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[10px] font-bold uppercase tracking-tight hover:bg-red-100 transition-colors shadow-sm"
+                  title="Delete Set"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Delete</span>
+                </button>
+              </div>
             </div>
             <ul className="divide-y divide-gray-100">
               {set.mcqs.map((mcq, i) => (
@@ -256,6 +313,46 @@ export default function TopicMcqs() {
           onSave={loadTopicResources}
           onClose={() => setResourceForm(null)}
         />
+      )}
+
+      <ConfirmDialog
+        open={!!setNameToDelete}
+        onClose={() => setSetNameToDelete(null)}
+        title="Delete MCQ Set"
+        message={`This will delete all MCQs in the "${setNameToDelete}" set. Are you sure?`}
+        confirmLabel="Delete All"
+        onConfirm={() => setNameToDelete && handleDeleteSet(setNameToDelete)}
+        danger
+      />
+
+      {setRenameForm && (
+        <Modal 
+          open 
+          onClose={() => setSetRenameForm(null)} 
+          title="Rename MCQ Set"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">
+              Enter a new name for the set <strong>"{setRenameForm.oldName}"</strong>. This will update all MCQs in this group.
+            </p>
+            <input 
+              autoFocus
+              value={setRenameForm.newName}
+              onChange={(e) => setSetRenameForm(f => ({ ...f, newName: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+              placeholder="Set Name"
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setSetRenameForm(null)} className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+              <button 
+                onClick={() => handleRenameSet(setRenameForm.oldName, setRenameForm.newName)}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                Rename
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       </>

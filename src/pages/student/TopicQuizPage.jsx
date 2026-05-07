@@ -84,7 +84,7 @@ export default function TopicQuizPage() {
         const sp = new URLSearchParams(searchParams);
         sp.delete('scrollTo');
         setSearchParams(sp, { replace: true });
-      } catch (_) {}
+      } catch (_) { }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mcqs]);
@@ -110,7 +110,7 @@ export default function TopicQuizPage() {
   }, [topicId]);
 
   const triggerConfetti = useCallback(() => {
-    const end = Date.now() + 2500;
+    const end = Date.now() + 500;
     const frame = () => {
       confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0.3 }, colors: ['#10b981', '#069285'] });
       confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 0.7 }, colors: ['#10b981', '#069285'] });
@@ -156,6 +156,8 @@ export default function TopicQuizPage() {
         selectedIndex: index,
         mcqId: mcq._id,
         guessedIndices: newGuessed,
+        firstGuessCorrect: result == null ? isCorrect : result.firstGuessCorrect,
+        firstGuessIndex: result == null ? index : result.firstGuessIndex,
       };
       setResult(localResult);
       setAnswerResults((prev) => ({ ...prev, [currentIndex]: localResult }));
@@ -243,21 +245,22 @@ export default function TopicQuizPage() {
   const handleFinish = () => {
     setSubmittedAtSeconds(elapsedSeconds);
     // submit attempts in background (do not block showing results)
-    submitAllAttempts().catch(() => {});
+    submitAllAttempts().catch(() => { });
     setShowResults(true);
   };
 
-  // Send collected attempts to server in parallel.
   const submitAllAttempts = async () => {
     const attempts = Object.values(answerResults || {}).map((r) => ({
       mcqId: r.mcqId,
-      selectedIndex: r.selectedIndex,
+      selectedIndex: r.firstGuessIndex ?? r.selectedIndex,
     }));
     if (!attempts.length) return;
     try {
-      await Promise.all(
-        attempts.map((a) => api.post('/mcqs/attempts', { mcqId: a.mcqId, selectedIndex: a.selectedIndex }, { skipLoader: true }))
-      );
+      await api.post(`/mcqs/topics/${topicId}/session`, {
+        topicId,
+        attempts,
+        timeTakenSeconds: elapsedSeconds
+      }, { skipLoader: true });
     } catch (_) {
       // swallow errors so UX isn't blocked
     }
@@ -330,7 +333,7 @@ export default function TopicQuizPage() {
   }
 
   if (showResults) {
-    const correctCount = Object.values(answerResults).filter((r) => r?.correct).length;
+    const correctCount = Object.values(answerResults).filter((r) => r?.firstGuessCorrect ?? r?.correct).length;
     const scorePct = total ? ((correctCount / total) * 100).toFixed(1) : '0';
     const circumference = 2 * Math.PI * 28;
     const strokeDashoffset = circumference * (1 - (total ? correctCount / total : 0));
@@ -413,10 +416,11 @@ export default function TopicQuizPage() {
             </h2>
             {mcqs.map((mcq, idx) => {
               const res = answerResults[idx];
-              const correct = res?.correct ?? false;
+              const correct = res?.firstGuessCorrect ?? res?.correct ?? false;
               const answered = res != null;
-              const selectedIndex = res?.selectedIndex ?? -1;
+              const selectedIndex = res?.firstGuessIndex ?? res?.selectedIndex ?? -1;
               const correctIndex = res?.correctIndex ?? mcq.correctIndex ?? 0;
+              const duration = 1000;
               const options = mcq.options || [];
               const badgeClass = correct
                 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
@@ -446,13 +450,12 @@ export default function TopicQuizPage() {
                         return (
                           <div
                             key={i}
-                            className={`flex items-center gap-3 p-4 rounded-xl border ${
-                              isCorrect
-                                ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800/50'
-                                : isUserWrong
-                                  ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800/50'
-                                  : 'border-slate-100 dark:border-slate-700 opacity-60'
-                            }`}
+                            className={`flex items-center gap-3 p-4 rounded-xl border ${isCorrect
+                              ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800/50'
+                              : isUserWrong
+                                ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800/50'
+                                : 'border-slate-100 dark:border-slate-700 opacity-60'
+                              }`}
                           >
                             {isCorrect ? (
                               <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -611,22 +614,20 @@ export default function TopicQuizPage() {
                 <div className="p-4 md:p-12 select-none">
                   <div className="flex items-center justify-between mb-6">
                     <span
-                      className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-                        flaggedQuestions.has(currentIndex)
-                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                          : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
-                      }`}
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${flaggedQuestions.has(currentIndex)
+                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                        : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                        }`}
                     >
                       Question {currentIndex + 1} of {total}
                     </span>
                     <button
                       type="button"
                       onClick={toggleFlag}
-                      className={`flex items-center gap-1 font-semibold transition-colors rounded-lg px-2 py-1 ${
-                        flaggedQuestions.has(currentIndex)
-                          ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50'
-                          : 'text-amber-500 hover:text-amber-600'
-                      }`}
+                      className={`flex items-center gap-1 font-semibold transition-colors rounded-lg px-2 py-1 ${flaggedQuestions.has(currentIndex)
+                        ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50'
+                        : 'text-amber-500 hover:text-amber-600'
+                        }`}
                     >
                       <Flag className="w-5 h-5" />
                       <span>{flaggedQuestions.has(currentIndex) ? 'Unflag Question' : 'Flag Question'}</span>
@@ -634,19 +635,17 @@ export default function TopicQuizPage() {
                     <button
                       type="button"
                       onClick={() => toggleBookmark(mcq._id)}
-                      className={`flex items-center gap-1 font-semibold transition-colors rounded-lg px-2 py-1 ${
-                        bookmarksMap[mcq._id] ? 'bg-primary text-white' : 'text-slate-700 hover:text-primary'
-                      }`}
+                      className={`flex items-center gap-1 font-semibold transition-colors rounded-lg px-2 py-1 ${bookmarksMap[mcq._id] ? 'bg-primary text-white' : 'text-slate-700 hover:text-primary'
+                        }`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 0 0-1 1v18l7-4 7 4V3a1 1 0 0 0-1-1H6z"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2a1 1 0 0 0-1 1v18l7-4 7 4V3a1 1 0 0 0-1-1H6z" /></svg>
                       <span>{bookmarksMap[mcq._id] ? 'Bookmarked' : 'Bookmark'}</span>
                     </button>
                   </div>
                   <div className="mb-10">
                     <h3
-                      className={`text-lg md:text-2xl font-display font-bold leading-relaxed ${
-                        flaggedQuestions.has(currentIndex) ? 'text-amber-600 dark:text-amber-500' : 'text-slate-800 dark:text-slate-200'
-                      }`}
+                      className={`text-lg md:text-2xl font-display font-bold leading-relaxed ${flaggedQuestions.has(currentIndex) ? 'text-amber-600 dark:text-amber-500' : 'text-slate-800 dark:text-slate-200'
+                        }`}
                     >
                       {mcq?.question}
                     </h3>
@@ -662,7 +661,7 @@ export default function TopicQuizPage() {
                       const isGuessUntilCorrect = mcq?.type === 'guess_until_correct';
                       const showCorrect = result != null && correctIndex === i && (result.correct || !isGuessUntilCorrect);
                       const isGuessed = result?.guessedIndices?.includes(i);
-                      const showWrong = isGuessUntilCorrect 
+                      const showWrong = isGuessUntilCorrect
                         ? (isGuessed && i !== correctIndex)
                         : (result != null && selected === i && !result.correct);
                       const disabled = result?.correct || (!isGuessUntilCorrect && result != null) || (isGuessUntilCorrect && isGuessed);
@@ -688,15 +687,14 @@ export default function TopicQuizPage() {
                           />
                           <div className={labelClass}>
                             <div
-                              className={`w-6 h-6 rounded-full border-2 flex-shrink-0 transition-all flex items-center justify-center ${
-                                showCorrect
-                                  ? 'border-success-green bg-success-green'
-                                  : showWrong
-                                    ? 'border-red-400 bg-red-400'
-                                    : isSelected
-                                      ? 'border-primary border-[6px] bg-white'
-                                      : 'border-slate-300'
-                              }`}
+                              className={`w-6 h-6 rounded-full border-2 flex-shrink-0 transition-all flex items-center justify-center ${showCorrect
+                                ? 'border-success-green bg-success-green'
+                                : showWrong
+                                  ? 'border-red-400 bg-red-400'
+                                  : isSelected
+                                    ? 'border-primary border-[6px] bg-white'
+                                    : 'border-slate-300'
+                                }`}
                             >
                               {showCorrect && <Check className="w-4 h-4 text-white" />}
                             </div>

@@ -48,7 +48,7 @@ export default function StudentTopic() {
   }, [topicId, useFreeTrial, refreshUser]);
 
   const triggerConfetti = useCallback(() => {
-    const duration = 2500;
+    const duration = 1000;
     const end = Date.now() + duration;
     const frame = () => {
       confetti({

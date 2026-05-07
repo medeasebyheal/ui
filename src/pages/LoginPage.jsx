@@ -4,6 +4,7 @@ import { Eye, EyeOff, BookOpen, Stethoscope, HeartPulse, Home } from 'lucide-rea
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import { toast } from 'react-hot-toast';
+import { getDeviceId, getDeviceName } from '../utils/device';
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -14,6 +15,8 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [require2FA, setRequire2FA] = useState(false);
+  const [otp, setOtp] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -32,7 +35,19 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const { data } = await api.post('/auth/login', { email: identifier.trim(), password });
+      const { data } = await api.post('/auth/login', { 
+        email: identifier.trim(), 
+        password,
+        deviceId: getDeviceId(),
+        deviceName: getDeviceName()
+      });
+
+      if (data.require2FA) {
+        setRequire2FA(true);
+        toast.success(data.message);
+        return;
+      }
+
       login(data.token, data.user);
       toast.success('Logged in');
       if (rememberMe) {
@@ -52,6 +67,34 @@ export default function LoginPage() {
     }
   };
 
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    if (!otp) {
+      toast.error('Please enter the verification code');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data } = await api.post('/auth/verify-login-2fa', {
+        email: identifier.trim(),
+        otp,
+        deviceId: getDeviceId(),
+        deviceName: getDeviceName()
+      });
+      login(data.token, data.user);
+      toast.success('Device verified and logged in');
+      if (returnUrl && returnUrl.startsWith('/checkout') && data.user.role === 'student') {
+        navigate(returnUrl);
+      } else {
+        navigate(data.user.role === 'admin' ? '/' : '/student/resources');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <main className="w-full flex-1 min-h-screen flex flex-col md:flex-row">
@@ -64,63 +107,96 @@ export default function LoginPage() {
           <div className="relative z-10 w-full max-w-md">
             <h1 className="text-4xl md:text-5xl font-bold mb-2 text-center">Hi !</h1>
             <h2 className="text-3xl md:text-4xl font-semibold opacity-90 text-center">Welcome Back,</h2>
-            <form onSubmit={handleSubmit} className="mt-16 space-y-8">
+            <form onSubmit={require2FA ? handleVerifyOTP : handleSubmit} className="mt-16 space-y-8">
               {error && (
                 <p className="text-red-200 text-sm -mt-4">{error}</p>
               )}
-              <div className="relative group">
-                <input
-                  className="w-full bg-transparent border-0 border-b-2 border-white/40 py-3 px-0 text-white placeholder-white/60 focus:ring-0 focus:border-white transition-colors duration-300 outline-none"
-                  id="identifier"
-                  name="identifier"
-                  placeholder="Username, Email or Phone Number"
-                  type="text"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  required
-                  autoComplete="username"
-                />
-              </div>
-              <div className="relative group">
-                <input
-                  className="w-full bg-transparent border-0 border-b-2 border-white/40 py-3 px-0 pr-10 text-white placeholder-white/60 focus:ring-0 focus:border-white transition-colors duration-300 outline-none"
-                  id="password"
-                  name="password"
-                  placeholder="Password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  className="absolute right-0 top-3 text-white/70 hover:text-white"
-                  onClick={() => setShowPassword((p) => !p)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center space-x-2 cursor-pointer group">
-                  <input
-                    className="rounded-full bg-transparent border-2 border-white/40 text-white focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer group-hover:border-white transition-all"
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                  />
-                  <span className="opacity-90">Remember Me</span>
-                </label>
-                <Link className="opacity-90 hover:opacity-100 hover:underline transition-all" to="/forgot-password">Forgot Password?</Link>
-              </div>
+              
+              {!require2FA ? (
+                <>
+                  <div className="relative group">
+                    <input
+                      className="w-full bg-transparent border-0 border-b-2 border-white/40 py-3 px-0 text-white placeholder-white/60 focus:ring-0 focus:border-white transition-colors duration-300 outline-none"
+                      id="identifier"
+                      name="identifier"
+                      placeholder="Username, Email or Phone Number"
+                      type="text"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      required
+                      autoComplete="username"
+                    />
+                  </div>
+                  <div className="relative group">
+                    <input
+                      className="w-full bg-transparent border-0 border-b-2 border-white/40 py-3 px-0 pr-10 text-white placeholder-white/60 focus:ring-0 focus:border-white transition-colors duration-300 outline-none"
+                      id="password"
+                      name="password"
+                      placeholder="Password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-0 top-3 text-white/70 hover:text-white"
+                      onClick={() => setShowPassword((p) => !p)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <label className="flex items-center space-x-2 cursor-pointer group">
+                      <input
+                        className="rounded-full bg-transparent border-2 border-white/40 text-white focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer group-hover:border-white transition-all"
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                      />
+                      <span className="opacity-90">Remember Me</span>
+                    </label>
+                    <Link className="opacity-90 hover:opacity-100 hover:underline transition-all" to="/forgot-password">Forgot Password?</Link>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-6">
+                  <p className="text-sm text-white/80">
+                    We just sent a 6-digit code to your email. Please enter it below to verify this device.
+                  </p>
+                  <div className="relative group">
+                    <input
+                      className="w-full bg-transparent border-0 border-b-2 border-white/40 py-3 px-0 text-white placeholder-white/60 focus:ring-0 focus:border-white transition-colors duration-300 outline-none text-center text-2xl tracking-[1em]"
+                      id="otp"
+                      name="otp"
+                      placeholder="000000"
+                      type="text"
+                      maxLength={6}
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRequire2FA(false)}
+                    className="text-xs text-white/60 hover:text-white underline block mx-auto"
+                  >
+                    Use a different account
+                  </button>
+                </div>
+              )}
+
               <div className="pt-8">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full max-w-xs mx-auto block bg-[#1DE9B6] hover:bg-[#15D1A4] disabled:opacity-50 text-[#004D40] font-bold py-4 rounded-full shadow-lg shadow-black/10 transform active:scale-95 transition-all text-lg tracking-wide"
+                  className="w-full max-w-xs mx-auto block bg-[#1DE9B6] hover:bg-[#15D1A4] disabled:opacity-50 text-[#004D40] font-bold py-4 rounded-full shadow-lg shadow-black/10 transform active:scale-95 transition-all text-lg tracking-wide uppercase"
                 >
-                  {loading ? 'Logging in…' : 'LOGIN'}
+                  {loading ? 'Processing…' : (require2FA ? 'VERIFY DEVICE' : 'LOGIN')}
                 </button>
               </div>
             </form>

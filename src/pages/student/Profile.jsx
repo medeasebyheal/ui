@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Bell, Loader2, Camera, CheckCircle, Clock, BadgeCheck, User, Mail, Phone, ShieldCheck, GraduationCap, Building2, Calendar, Tag, Users, Package, Stethoscope, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
+import { toast } from 'react-hot-toast';
+import { getDeviceId } from '../../utils/device';
 
 export default function StudentProfile() {
   const { user, refreshUser } = useAuth();
@@ -91,6 +93,19 @@ export default function StudentProfile() {
       setSaving(false);
     }
   };
+
+  const handleRemoveDevice = async (deviceId) => {
+    if (!window.confirm('Are you sure you want to remove this device? Any active sessions on it will be invalidated.')) return;
+    try {
+      await api.delete(`/auth/trusted-devices/${deviceId}`);
+      await refreshUser();
+      toast.success('Device removed');
+    } catch (err) {
+      toast.error('Failed to remove device');
+    }
+  };
+
+  const currentDeviceId = getDeviceId();
 
   const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'Student';
   const initial = (displayName[0] || 'S').toUpperCase();
@@ -373,6 +388,60 @@ export default function StudentProfile() {
                 </Link>
               </div>
             )}
+          </div>
+        </section>
+
+        {/* Device Management Section */}
+        <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-primary/20 dark:border-slate-700 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/30 flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-primary" />
+            <h3 className="font-bold text-slate-800 dark:text-white">Device Security & 2FA</h3>
+          </div>
+          <div className="p-6">
+            <p className="text-sm text-slate-500 mb-6">
+              MedEase uses device-based 2FA to keep your account secure. Only one session is allowed at a time across your trusted devices.
+            </p>
+            <div className="space-y-4">
+              {user?.trustedDevices?.length > 0 ? (
+                user.trustedDevices.map((dev) => (
+                  <div 
+                    key={dev.deviceId}
+                    className={`flex items-center justify-between p-4 rounded-xl border ${
+                      dev.deviceId === currentDeviceId 
+                        ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/20' 
+                        : 'bg-slate-50 dark:bg-slate-700/30 border-slate-100 dark:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-xl ${dev.deviceId === currentDeviceId ? 'bg-primary/10' : 'bg-slate-200 dark:bg-slate-600'}`}>
+                        <ShieldCheck className={`w-6 h-6 ${dev.deviceId === currentDeviceId ? 'text-primary' : 'text-slate-500'}`} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-slate-800 dark:text-white">{dev.name || 'Unknown Device'}</h4>
+                          {dev.deviceId === currentDeviceId && (
+                            <span className="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full font-bold uppercase">Current</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Last used: {new Date(dev.lastUsedAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveDevice(dev.deviceId)}
+                      className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors px-3 py-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                    >
+                      Revoke Trust
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="py-4 text-center text-slate-400 italic text-sm">
+                  No trusted devices recorded.
+                </div>
+              )}
+            </div>
           </div>
         </section>
       </div>
