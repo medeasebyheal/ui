@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  BarChart3, TrendingUp, Users, BrainCircuit, Activity, 
+  BarChart3, TrendingUp, Users, BrainCircuit, Activity,
   CalendarDays, Award, BookOpen, Clock, Search, 
   ChevronLeft, ChevronRight, BarChart, PieChart, 
-  ChevronDown, User as UserIcon
+  ChevronDown, User as UserIcon, X, GraduationCap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api/client';
@@ -17,6 +17,7 @@ export default function AnalyticsDashboard() {
   const [studentReports, setStudentReports] = useState([]);
   const [studentPagination, setStudentPagination] = useState({ page: 1, totalPages: 1 });
   const [studentSearch, setStudentSearch] = useState('');
+  const [studentYear, setStudentYear] = useState(1); // Default to MS1
   const [error, setError] = useState(null);
 
   const [dateFilter, setDateFilter] = useState('monthly'); 
@@ -61,9 +62,9 @@ export default function AnalyticsDashboard() {
     } catch (_) {}
   };
 
-  const fetchStudentReports = async (page = 1) => {
+  const fetchStudentReports = async (page = 1, year = studentYear) => {
     try {
-      const res = await api.get(`/admin/analytics/students?page=${page}&search=${studentSearch}`);
+      const res = await api.get(`/admin/analytics/students?page=${page}&search=${studentSearch}&year=${year}`);
       setStudentReports(res.data.reports);
       setStudentPagination(res.data.pagination);
     } catch (_) {}
@@ -77,8 +78,8 @@ export default function AnalyticsDashboard() {
 
   useEffect(() => {
     if (activeTab === 'mcq') fetchMcqStats();
-    if (activeTab === 'students') fetchStudentReports(studentPagination.page);
-  }, [activeTab]);
+    if (activeTab === 'students') fetchStudentReports(1, studentYear);
+  }, [activeTab, studentYear]);
 
   const handleStudentSearch = (e) => {
     e.preventDefault();
@@ -184,7 +185,9 @@ export default function AnalyticsDashboard() {
                 search={studentSearch}
                 setSearch={setStudentSearch}
                 onSearch={handleStudentSearch}
-                onPageChange={fetchStudentReports}
+                onPageChange={(p) => fetchStudentReports(p, studentYear)}
+                selectedYear={studentYear}
+                onYearChange={setStudentYear}
               />
             )}
           </motion.div>
@@ -361,19 +364,65 @@ function McqStatsSection({ stats }) {
   );
 }
 
-function StudentReportsSection({ reports, pagination, search, setSearch, onSearch, onPageChange }) {
-  const [selectedStudent, setSelectedStudent] = useState(null);
+function StudentReportsSection({ reports, pagination, search, setSearch, onSearch, onPageChange, selectedYear, onYearChange }) {
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [detailedReport, setDetailedReport] = useState(null);
+  const [loadingReport, setLoadingReport] = useState(false);
+  const [reportPage, setReportPage] = useState(1);
+
+  const MS_YEARS = [
+    { id: 1, label: 'MS1' },
+    { id: 2, label: 'MS2' },
+    { id: 3, label: 'MS3' },
+    { id: 4, label: 'MS4' },
+    { id: 5, label: 'MS5' },
+  ];
+
+  const fetchDetailedReport = async (studentId, page = 1) => {
+    setLoadingReport(true);
+    try {
+      const res = await api.get(`/admin/analytics/students/${studentId}?page=${page}`);
+      setDetailedReport(res.data);
+      setReportPage(page);
+    } catch (_) {
+    } finally {
+      setLoadingReport(false);
+    }
+  };
+
+  const handleViewReport = (studentId) => {
+    setSelectedStudentId(studentId);
+    fetchDetailedReport(studentId, 1);
+  };
 
   return (
     <div className="space-y-4">
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+      {/* Year Selection & Search */}
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-hide">
+          {MS_YEARS.map((y) => (
+            <button
+              key={y.id}
+              onClick={() => onYearChange(y.id)}
+              className={`flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all shrink-0 ${
+                selectedYear === y.id
+                  ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                  : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              <GraduationCap className="w-4 h-4" />
+              {y.label}
+            </button>
+          ))}
+        </div>
+
         <form onSubmit={onSearch} className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search students by name or email..."
+            placeholder={`Search ${MS_YEARS.find(y => y.id === selectedYear)?.label} students...`}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm text-slate-900 dark:text-white"
           />
         </form>
@@ -429,17 +478,17 @@ function StudentReportsSection({ reports, pagination, search, setSearch, onSearc
                   </td>
                   <td className="p-4">
                     <button 
-                      onClick={() => setSelectedStudent(s)}
+                      onClick={() => handleViewReport(s._id)}
                       className="px-3 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-primary hover:text-white text-slate-600 dark:text-slate-300 text-[10px] font-bold rounded-lg transition-all"
                     >
-                      View Full Report
+                      View Report
                     </button>
                   </td>
                 </tr>
               ))}
               {reports.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="p-12 text-center text-slate-500">No students found.</td>
+                  <td colSpan="5" className="p-12 text-center text-slate-500">No students found for {MS_YEARS.find(y => y.id === selectedYear)?.label}.</td>
                 </tr>
               )}
             </tbody>
@@ -470,79 +519,185 @@ function StudentReportsSection({ reports, pagination, search, setSearch, onSearc
         </div>
       </div>
 
-      {/* Student Details Modal */}
+      {/* Detailed Report Modal */}
       <AnimatePresence>
-        {selectedStudent && (
+        {selectedStudentId && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-slate-800 w-full max-w-2xl max-h-[80vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+              className="bg-white dark:bg-slate-800 w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col"
             >
-              <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">{selectedStudent.name}</h3>
-                  <p className="text-sm text-slate-500">{selectedStudent.email}</p>
+              {loadingReport && !detailedReport ? (
+                <div className="flex flex-col items-center justify-center py-24 gap-4">
+                  <Activity className="w-12 h-12 text-primary animate-spin" />
+                  <p className="text-slate-500 font-medium">Generating detailed report...</p>
                 </div>
-                <button 
-                  onClick={() => setSelectedStudent(null)}
-                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
-                >
-                  <ChevronDown className="w-6 h-6 text-slate-400" />
-                </button>
-              </div>
-
-              <div className="p-6 overflow-y-auto space-y-8">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-2xl">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Time</p>
-                    <p className="text-lg font-bold text-slate-900 dark:text-white">
-                      {Math.floor(selectedStudent.totalTimeSeconds / 60)}m {selectedStudent.totalTimeSeconds % 60}s
-                    </p>
-                  </div>
-                  <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-2xl">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Accuracy</p>
-                    <p className="text-lg font-bold text-emerald-500">{selectedStudent.accuracy}%</p>
-                  </div>
-                  <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-2xl">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Topics</p>
-                    <p className="text-lg font-bold text-primary">{selectedStudent.topicAttempts}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest border-b border-slate-100 dark:border-slate-700 pb-2">
-                    Academic Year History
-                  </h4>
-                  {selectedStudent.yearWiseStats.map(y => (
-                    <div key={y._id} className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{y._id}</span>
-                        <span className="text-xs font-medium text-slate-500">{y.count} Topics Attempted</span>
+              ) : detailedReport ? (
+                <>
+                  <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-700/50">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
+                        <UserIcon className="w-6 h-6" />
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                          <div className="h-full bg-primary" style={{ width: `${Math.min(100, (y.avgScore / 10) * 100)}%` }} />
-                        </div>
-                        <span className="text-xs font-bold text-slate-900 dark:text-white">Avg Score: {y.avgScore.toFixed(1)}</span>
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">{detailedReport.user.name}</h3>
+                        <p className="text-sm text-slate-500">MS{detailedReport.user.academicDetails?.year || selectedYear} • {detailedReport.user.email}</p>
                       </div>
                     </div>
-                  ))}
-                  {selectedStudent.yearWiseStats.length === 0 && (
-                    <p className="text-center text-slate-400 py-8 italic">No year-wise activity recorded yet.</p>
-                  )}
-                </div>
-              </div>
+                    <button 
+                      onClick={() => { setSelectedStudentId(null); setDetailedReport(null); }}
+                      className="p-2 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-full transition-colors"
+                    >
+                      <X className="w-6 h-6 text-slate-400" />
+                    </button>
+                  </div>
 
-              <div className="p-4 bg-slate-50 dark:bg-slate-700/50 border-t border-slate-100 dark:border-slate-700 text-center">
-                <button 
-                  onClick={() => setSelectedStudent(null)}
-                  className="px-8 py-2 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20"
-                >
-                  Close Report
-                </button>
-              </div>
+                  <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Attempts</p>
+                        <p className="text-2xl font-bold text-slate-900 dark:text-white">{detailedReport.summary.total}</p>
+                      </div>
+                      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Accuracy</p>
+                        <p className="text-2xl font-bold text-emerald-500">{detailedReport.summary.accuracy}%</p>
+                      </div>
+                      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Correct Answers</p>
+                        <p className="text-2xl font-bold text-primary">{detailedReport.summary.correct}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      {/* Topic Performance */}
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-primary" />
+                          Top Topics Performance
+                        </h4>
+                        <div className="space-y-3">
+                          {detailedReport.topicPerformance.map(tp => {
+                            const acc = ((tp.correct / tp.total) * 100).toFixed(0);
+                            return (
+                              <div key={tp._id} className="space-y-1">
+                                <div className="flex justify-between text-xs font-semibold">
+                                  <span className="text-slate-700 dark:text-slate-300 truncate max-w-[200px]">{tp.name}</span>
+                                  <span className="text-slate-500">{acc}% ({tp.total})</span>
+                                </div>
+                                <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                  <div className="h-full bg-primary" style={{ width: `${acc}%` }} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Recent Activity Chart Mock (using bars) */}
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                          <Activity className="w-4 h-4 text-emerald-500" />
+                          Last 7 Days Activity
+                        </h4>
+                        <div className="flex items-end justify-between h-32 gap-2 pt-4">
+                          {detailedReport.activityHistory.map(day => (
+                            <div key={day._id} className="flex-1 flex flex-col items-center gap-2">
+                              <div 
+                                className="w-full bg-emerald-500/20 hover:bg-emerald-500/40 transition-colors rounded-t-lg relative group"
+                                style={{ height: `${Math.max(10, (day.count / 20) * 100)}%` }}
+                              >
+                                <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                  {day.count}
+                                </span>
+                              </div>
+                              <span className="text-[8px] font-bold text-slate-400 rotate-45 mt-2">
+                                {day._id.split('-').slice(1).join('/')}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* MCQ History Table */}
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest">
+                        Complete MCQ Attempt History
+                      </h4>
+                      <div className="border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 dark:bg-slate-900/50">
+                            <tr>
+                              <th className="p-3 font-bold text-slate-500">Question</th>
+                              <th className="p-3 font-bold text-slate-500">Selected</th>
+                              <th className="p-3 font-bold text-slate-500">Result</th>
+                              <th className="p-3 font-bold text-slate-500">Date</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {detailedReport.mcqHistory.map(hist => (
+                              <tr key={hist._id} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="p-3 max-w-xs truncate text-slate-700 dark:text-slate-300">{hist.mcq?.question}</td>
+                                <td className="p-3 font-medium">
+                                  Option {String.fromCharCode(65 + hist.selectedIndex)}
+                                </td>
+                                <td className="p-3">
+                                  <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                                    hist.correct ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                                  }`}>
+                                    {hist.correct ? 'CORRECT' : 'INCORRECT'}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-slate-500">
+                                  {new Date(hist.createdAt).toLocaleDateString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      
+                      {/* Inner Pagination */}
+                      <div className="flex items-center justify-between px-2">
+                        <p className="text-[10px] text-slate-500">
+                          Showing {detailedReport.mcqHistory.length} of {detailedReport.pagination.total} MCQs
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <button 
+                            disabled={reportPage <= 1}
+                            onClick={() => fetchDetailedReport(selectedStudentId, reportPage - 1)}
+                            className="p-1 rounded bg-slate-100 dark:bg-slate-800 disabled:opacity-30"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <span className="text-[10px] font-bold px-2">{reportPage} / {detailedReport.pagination.totalPages}</span>
+                          <button 
+                            disabled={reportPage >= detailedReport.pagination.totalPages}
+                            onClick={() => fetchDetailedReport(selectedStudentId, reportPage + 1)}
+                            className="p-1 rounded bg-slate-100 dark:bg-slate-800 disabled:opacity-30"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 dark:bg-slate-700/50 border-t border-slate-100 dark:border-slate-700 text-center">
+                    <button 
+                      onClick={() => { setSelectedStudentId(null); setDetailedReport(null); }}
+                      className="px-8 py-2 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20"
+                    >
+                      Close Detailed Report
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-center py-24 text-slate-500">Failed to load report.</div>
+              )}
             </motion.div>
           </div>
         )}

@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Download, Users, Wallet, AlertTriangle, BookOpen, HelpCircle, BadgeCheck, Clock, Pencil, Receipt, PlusCircle, FileEdit, GraduationCap, Wrench } from 'lucide-react';
 import api from '../../api/client';
-import AnalyticsDashboard from './AnalyticsDashboard';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -125,8 +124,6 @@ export default function AdminDashboard() {
           Export Report
         </button>
       </div>
-
-      <AnalyticsDashboard />
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

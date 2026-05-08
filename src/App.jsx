@@ -58,6 +58,7 @@ import AdminPackages from './pages/admin/Packages';
 import AdminPromoCodes from './pages/admin/PromoCodes';
 import GeminiUsage from './pages/admin/GeminiUsage';
 import AdminResources from './pages/admin/Resources';
+import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
 import ContactQueries from './pages/admin/ContactQueries';
 import ResourceLayout from './pages/admin/resources/ResourceLayout';
 import ProgramsList from './pages/admin/resources/ProgramsList';
@@ -210,6 +211,7 @@ function App() {
             <Route path="packages" element={<AdminPackages />} />
             <Route path="promo-codes" element={<AdminPromoCodes />} />
             <Route path="gemini-usage" element={<GeminiUsage />} />
+            <Route path="analytics" element={<AnalyticsDashboard />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

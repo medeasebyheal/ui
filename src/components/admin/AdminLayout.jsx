@@ -23,6 +23,7 @@ import {
 
 const navItems = (isSuperAdmin) => [
   { to: '/admin', end: true, label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/admin/analytics', end: false, label: 'Analytics', icon: BarChart3 },
  
   ...(isSuperAdmin
     ? [
