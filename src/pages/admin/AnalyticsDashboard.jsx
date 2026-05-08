@@ -13,14 +13,38 @@ export default function AnalyticsDashboard() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
   const [advancedData, setAdvancedData] = useState(null);
+  const [phase1Data, setPhase1Data] = useState(null);
   const [mcqStats, setMcqStats] = useState([]);
+  const [mcqPagination, setMcqPagination] = useState({ page: 1, totalPages: 1 });
+  const [mcqSearch, setMcqSearch] = useState('');
   const [studentReports, setStudentReports] = useState([]);
   const [studentPagination, setStudentPagination] = useState({ page: 1, totalPages: 1 });
   const [studentSearch, setStudentSearch] = useState('');
+  const [debouncedStudentSearch, setDebouncedStudentSearch] = useState('');
   const [studentYear, setStudentYear] = useState(1); // Default to MS1
   const [error, setError] = useState(null);
 
-  const [dateFilter, setDateFilter] = useState('monthly'); 
+  const [debouncedMcqSearch, setDebouncedMcqSearch] = useState('');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (mcqSearch.length === 0 || mcqSearch.length >= 3) {
+        setDebouncedMcqSearch(mcqSearch);
+      }
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [mcqSearch]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (studentSearch.length === 0 || studentSearch.length >= 3) {
+        setDebouncedStudentSearch(studentSearch);
+      }
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [studentSearch]);
+
+  const [dateFilter, setDateFilter] = useState('daily'); 
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
 
@@ -40,12 +64,29 @@ export default function AnalyticsDashboard() {
       }
 
       url += `startDate=${start.toISOString()}&endDate=${now.toISOString()}`;
-      const res = await api.get(url);
-      setData(res.data);
       
-      // Also fetch advanced stats for trends
-      const advRes = await api.get(`/admin/analytics/advanced?startDate=${start.toISOString()}&endDate=${now.toISOString()}`);
+      const days = dateFilter === 'daily' ? 1 : dateFilter === 'weekly' ? 7 : 30;
+      const [res, advRes, overviewRes, activeRes, atRiskRes, heatmapRes, failedRes, revRes] = await Promise.all([
+        api.get(url),
+        api.get(`/admin/analytics/advanced?startDate=${start.toISOString()}&endDate=${now.toISOString()}`),
+        api.get('/admin/analytics/overview-kpis'),
+        api.get(`/admin/analytics/active-trend?days=${days}`),
+        api.get('/admin/analytics/at-risk?days=7'),
+        api.get(`/admin/analytics/mcq-heatmap?startDate=${start.toISOString()}&endDate=${now.toISOString()}`),
+        api.get('/admin/analytics/most-failed'),
+        api.get('/admin/analytics/revenue')
+      ]);
+
+      setData(res.data);
       setAdvancedData(advRes.data);
+      setPhase1Data({
+        overview: overviewRes.data,
+        activeTrend: activeRes.data,
+        atRisk: atRiskRes.data,
+        heatmap: heatmapRes.data,
+        failed: failedRes.data,
+        revenue: revRes.data
+      });
       
       setError(null);
     } catch (err) {
@@ -55,16 +96,18 @@ export default function AnalyticsDashboard() {
     }
   };
 
-  const fetchMcqStats = async () => {
+
+  const fetchMcqStats = async (page = 1) => {
     try {
-      const res = await api.get('/admin/analytics/mcq-options');
-      setMcqStats(res.data);
+      const res = await api.get(`/admin/analytics/mcq-options?page=${page}&search=${debouncedMcqSearch}`);
+      setMcqStats(res.data.stats);
+      setMcqPagination(res.data.pagination);
     } catch (_) {}
   };
 
   const fetchStudentReports = async (page = 1, year = studentYear) => {
     try {
-      const res = await api.get(`/admin/analytics/students?page=${page}&search=${studentSearch}&year=${year}`);
+      const res = await api.get(`/admin/analytics/students?page=${page}&search=${debouncedStudentSearch}&year=${year}`);
       setStudentReports(res.data.reports);
       setStudentPagination(res.data.pagination);
     } catch (_) {}
@@ -77,13 +120,19 @@ export default function AnalyticsDashboard() {
   }, [dateFilter, customStart, customEnd]);
 
   useEffect(() => {
-    if (activeTab === 'mcq') fetchMcqStats();
+    if (activeTab === 'mcq') fetchMcqStats(1);
+  }, [activeTab, debouncedMcqSearch]);
+
+  useEffect(() => {
     if (activeTab === 'students') fetchStudentReports(1, studentYear);
-  }, [activeTab, studentYear]);
+  }, [activeTab, studentYear, debouncedStudentSearch]);
+
+  const handleMcqSearch = (e) => {
+    e.preventDefault();
+  };
 
   const handleStudentSearch = (e) => {
     e.preventDefault();
-    fetchStudentReports(1);
   };
 
   const TABS = [
@@ -176,7 +225,14 @@ export default function AnalyticsDashboard() {
               <TrendsSection data={advancedData} />
             )}
             {activeTab === 'mcq' && (
-              <McqStatsSection stats={mcqStats} />
+              <McqStatsSection 
+                stats={mcqStats} 
+                pagination={mcqPagination}
+                search={mcqSearch}
+                setSearch={setMcqSearch}
+                onSearch={handleMcqSearch}
+                onPageChange={(p) => fetchMcqStats(p)}
+              />
             )}
             {activeTab === 'students' && (
               <StudentReportsSection 
@@ -315,50 +371,101 @@ function TrendsSection({ data }) {
   );
 }
 
-function McqStatsSection({ stats }) {
+function McqStatsSection({ stats = [], pagination, search, setSearch, onSearch, onPageChange }) {
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-slate-100 dark:border-slate-700">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <Activity className="w-5 h-5 text-rose-500" />
-          MCQ Selection Analytics
-        </h3>
-        <p className="text-sm text-slate-500 mt-1">Showing distribution of student choices for the most attempted questions.</p>
+    <div className="space-y-4">
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+        <form onSubmit={onSearch} className="flex items-center gap-2 w-full max-w-md bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+          <Search className="w-5 h-5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search MCQs by question text..."
+            className="bg-transparent border-none outline-none w-full text-sm text-slate-900 dark:text-white"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search && (
+            <button type="button" onClick={(e) => { setSearch(''); setTimeout(() => onSearch(e), 0); }} className="text-slate-400 hover:text-slate-600">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </form>
       </div>
-      <div className="divide-y divide-slate-100 dark:divide-slate-700">
-        {stats.map((mcq, idx) => (
-          <div key={mcq._id} className="p-6 space-y-4">
-            <div className="flex items-start gap-4">
-              <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-500 shrink-0">
-                {idx + 1}
-              </span>
-              <p className="text-slate-900 dark:text-white font-medium">{mcq.question}</p>
+
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Activity className="w-5 h-5 text-rose-500" />
+            MCQ Selection Analytics
+          </h3>
+          <p className="text-sm text-slate-500 mt-1">Showing distribution of student choices for the searched questions.</p>
+        </div>
+        <div className="divide-y divide-slate-100 dark:divide-slate-700">
+          {stats?.map((mcq, idx) => (
+            <div key={mcq._id} className="p-6 space-y-4">
+              <div className="flex items-start gap-4">
+                <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-500 shrink-0">
+                  {((pagination?.page || 1) - 1) * (pagination?.limit || 20) + idx + 1}
+                </span>
+                <p className="text-slate-900 dark:text-white font-medium">{mcq.question}</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pl-10">
+                {mcq.mcqOptions?.map((optText, optIndex) => {
+                  const optData = mcq.options?.find(o => o.index === optIndex) || { count: 0 };
+                  const percent = mcq.total > 0 ? ((optData.count / mcq.total) * 100).toFixed(0) : 0;
+                  const isCorrect = optIndex === mcq.correctIndex;
+                  return (
+                    <div key={optIndex} className={`p-3 rounded-xl border ${isCorrect ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-100 bg-slate-50/50'}`}>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                          Option {String.fromCharCode(65 + optIndex)} {isCorrect && '✓'}
+                        </span>
+                        <span className="text-xs font-bold">{percent}%</span>
+                      </div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400 mb-2 truncate" title={optText}>
+                        {optText}
+                      </div>
+                      <div className="h-1.5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full ${isCorrect ? 'bg-emerald-500' : 'bg-slate-400'}`}
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pl-10">
-              {mcq.options.sort((a,b) => a.index - b.index).map(opt => {
-                const percent = ((opt.count / mcq.total) * 100).toFixed(0);
-                const isCorrect = opt.index === mcq.correctIndex;
-                return (
-                  <div key={opt.index} className={`p-3 rounded-xl border ${isCorrect ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-100 bg-slate-50/50'}`}>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                        Option {String.fromCharCode(65 + opt.index)} {isCorrect && '✓'}
-                      </span>
-                      <span className="text-xs font-bold">{percent}%</span>
-                    </div>
-                    <div className="h-1.5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full ${isCorrect ? 'bg-emerald-500' : 'bg-slate-400'}`}
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+          ))}
+          {(!stats || stats.length === 0) && <p className="p-12 text-center text-slate-500">No MCQs found matching your search.</p>}
+        </div>
+
+        {pagination && pagination.totalPages > 1 && (
+          <div className="p-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+            <p className="text-sm text-slate-500">
+              Showing <span className="font-medium text-slate-900 dark:text-white">{stats.length}</span> of <span className="font-medium text-slate-900 dark:text-white">{pagination.total}</span>
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={pagination.page === 1}
+                onClick={() => onPageChange(pagination.page - 1)}
+                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                Page {pagination.page} of {pagination.totalPages}
+              </span>
+              <button
+                disabled={pagination.page === pagination.totalPages}
+                onClick={() => onPageChange(pagination.page + 1)}
+                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
-        ))}
-        {stats.length === 0 && <p className="p-12 text-center text-slate-500">No MCQ analytics data available.</p>}
+        )}
       </div>
     </div>
   );
