@@ -1,5 +1,6 @@
 import { useQuery, useQueries, useInfiniteQuery } from '@tanstack/react-query';
 import { fetchYears, fetchYearsWithModules, fetchModulesByYear, fetchModule, fetchModuleSubjects, fetchModuleOspes, fetchProff, fetchSubject, fetchSubjectTopics, fetchSubjectOneShotLectures, fetchTopic, fetchTopicResources } from '../api/content';
+import api from '../api/client';
 
 /**
  * Fetch all years.
