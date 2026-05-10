@@ -6,12 +6,12 @@ export const fetchAdminDashboard = async () => {
 };
 
 export const fetchAdminUsers = async (params = {}) => {
-  const { data } = await api.get('/admin/users', { params });
+  const { data } = await api.get('/users', { params });
   return data;
 };
 
 export const fetchAdminPayments = async (params = {}) => {
-  const { data } = await api.get('/admin/payments', { params });
+  const { data } = await api.get('/payments', { params });
   return data;
 };
 
