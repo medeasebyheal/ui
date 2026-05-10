@@ -50,8 +50,9 @@ export const fetchSubjectOneShotLectures = async (subjectId) => {
 };
 
 // ── Topics ───────────────────────────────────────────────────────────────
-export const fetchTopic = async (topicId) => {
-  const { data } = await api.get(`/content/topics/${topicId}`);
+export const fetchTopic = async (topicId, useFreeTrial = false) => {
+  const url = `/content/topics/${topicId}?includeMcqs=true${useFreeTrial ? '&useFreeTrial=true' : ''}`;
+  const { data } = await api.get(url);
   return data;
 };
 

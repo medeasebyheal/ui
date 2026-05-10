@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronRight, HelpCircle, PlayCircle, Play, Share2, CheckCircle, FileText, Link as LinkIcon, Download, Loader2, FileQuestion, Eye, Film } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -56,6 +56,8 @@ export default function TopicDetailPage() {
     }
   };
 
+  const hasTrackedVisit = useRef(null);
+
   useEffect(() => {
     if (topicData && !topicLoading) {
       if (topicData.usedFreeTrial) refreshUser();
@@ -71,11 +73,14 @@ export default function TopicDetailPage() {
           iconColor: 'text-primary',
         });
 
-        // Track visit on backend for KPI analytics
-        api.post('/analytics/track-visit', {
-          contentType: 'topic',
-          contentId: topicData.topic._id
-        }).catch(err => console.error('Failed to track topic visit', err));
+        // Track visit on backend for KPI analytics - only once per topicId
+        if (hasTrackedVisit.current !== topicData.topic._id) {
+          hasTrackedVisit.current = topicData.topic._id;
+          api.post('/analytics/track-visit', {
+            contentType: 'topic',
+            contentId: topicData.topic._id
+          }).catch(() => { /* silent fail */ });
+        }
       }
     }
   }, [topicData, topicLoading, moduleId, subjectId, refreshUser]);
