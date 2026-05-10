@@ -1,32 +1,35 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronRight, HelpCircle, PlayCircle, Play, Share2, CheckCircle, FileText, Link as LinkIcon, Download, Loader2, FileQuestion, Eye, Film } from 'lucide-react';
-import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useTopicDetail, useTopicResources } from '../../hooks/useContent';
+import { useBookmarks } from '../../hooks/useBookmarks';
 import { recordRecentView } from '../../utils/recentViews';
 import { useProtectedContent } from '../../hooks/useProtectedContent';
 import ControlledYouTubePlayer from '../../components/student/ControlledYouTubePlayer';
 import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '../../utils/youtube';
+import api from '../../api/client';
 
 const LECTURE_PREVIEW_FALLBACK = 'https://static.vecteezy.com/system/resources/previews/022/215/234/non_2x/doctor-gives-a-training-lecture-about-anatomy-for-students-doctor-presenting-human-brain-infographics-online-medical-seminar-lecture-healthcare-meeting-concept-illustration-vector.jpg';
 
 export default function TopicDetailPage() {
   const { moduleId, subjectId, topicId } = useParams();
   const { user, refreshUser } = useAuth();
-  const [topic, setTopic] = useState(null);
-  const [mcqs, setMcqs] = useState([]);
-  const [mcqSets, setMcqSets] = useState([]);
-  const [hasAccess, setHasAccess] = useState(false);
-  const [canUseFreeTrialForThisTopic, setCanUseFreeTrialForThisTopic] = useState(false);
   const [useFreeTrial, setUseFreeTrial] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
 
-  const [loading, setLoading] = useState(true);
-  const [resources, setResources] = useState([]);
-  const [bookmarkedMcqs, setBookmarkedMcqs] = useState([]); // array of bookmark objects { _id, mcq }
+  const { data: topicData, isLoading: topicLoading } = useTopicDetail(topicId, useFreeTrial);
+  const { data: resources = [], isLoading: resourcesLoading } = useTopicResources(topicId);
+  const { data: bookmarkedMcqs = [], isLoading: bookmarksLoading } = useBookmarks(topicId);
+
   const [downloadingPdf, setDownloadingPdf] = useState(null);
-  // video player is handled by ControlledYouTubePlayer
+
+  const topic = topicData?.topic;
+  const mcqs = topicData?.mcqs || [];
+  const mcqSets = topicData?.mcqSets || [];
+  const hasAccess = topicData?.hasAccess || false;
+  const canUseFreeTrialForThisTopic = !!topicData?.canUseFreeTrialForThisTopic;
 
   const handleResourceClick = async (e, res) => {
     if (res.type !== 'pdf') return;
@@ -54,68 +57,41 @@ export default function TopicDetailPage() {
   };
 
   useEffect(() => {
-    let cancelled = false;
-    const url = `/content/topics/${topicId}?includeMcqs=true${useFreeTrial ? '&useFreeTrial=true' : ''}`;
-    api.get(url)
-      .then(({ data }) => {
-        if (cancelled) return;
-        setTopic(data.topic);
-        setMcqs(data.mcqs || []);
-        setMcqSets(data.mcqSets || []);
-        setHasAccess(data.hasAccess);
-        setCanUseFreeTrialForThisTopic(!!data.canUseFreeTrialForThisTopic);
-        if (data.usedFreeTrial) refreshUser();
-        if (data.topic) {
-          recordRecentView({
-            type: 'topic',
-            id: data.topic._id,
-            name: data.topic.name,
-            url: `/student/modules/${moduleId}/subjects/${subjectId}/topics/${data.topic._id}`,
-            meta: data.topic.subject?.name || 'Topic',
-            icon: 'psychology',
-            iconBg: 'bg-teal-50 dark:bg-teal-900/30',
-            iconColor: 'text-primary',
-          });
+    if (topicData && !topicLoading) {
+      if (topicData.usedFreeTrial) refreshUser();
+      if (topicData.topic) {
+        recordRecentView({
+          type: 'topic',
+          id: topicData.topic._id,
+          name: topicData.topic.name,
+          url: `/student/modules/${moduleId}/subjects/${subjectId}/topics/${topicData.topic._id}`,
+          meta: topicData.topic.subject?.name || 'Topic',
+          icon: 'psychology',
+          iconBg: 'bg-teal-50 dark:bg-teal-900/30',
+          iconColor: 'text-primary',
+        });
 
-          // Track visit on backend for KPI analytics
-          api.post('/analytics/track-visit', {
-            contentType: 'topic',
-            contentId: data.topic._id
-          }).catch(err => console.error('Failed to track topic visit', err));
-        }
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setHasAccess(false);
-        setCanUseFreeTrialForThisTopic(false);
-      })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [topicId, useFreeTrial, refreshUser]);
-
-  useEffect(() => {
-    if (!topicId) return;
-    api.get(`/content/topics/${topicId}/resources`)
-      .then(({ data }) => setResources(data || []))
-      .catch(() => setResources([]));
-    // fetch bookmarked mcqs for this topic (controller returns populated mcq)
-    api.get('/bookmarks', { params: { topic: topicId } })
-      .then(({ data }) => {
-        setBookmarkedMcqs(data || []);
-      })
-      .catch(() => setBookmarkedMcqs([]));
-  }, [topicId]);
-
-  // ControlledYouTubePlayer will load the YouTube IFrame API when needed
-
-  // Video player creation managed by ControlledYouTubePlayer component
+        // Track visit on backend for KPI analytics
+        api.post('/analytics/track-visit', {
+          contentType: 'topic',
+          contentId: topicData.topic._id
+        }).catch(err => console.error('Failed to track topic visit', err));
+      }
+    }
+  }, [topicData, topicLoading, moduleId, subjectId, refreshUser]);
 
   useProtectedContent();
 
   const handleUseFreeTrial = () => {
     setUseFreeTrial(true);
-    setLoading(true);
   };
+
+  const loading = topicLoading;
+
+  // ControlledYouTubePlayer will load the YouTube IFrame API when needed
+
+  // Video player creation managed by ControlledYouTubePlayer component
+
 
   if (loading) {
     return (
@@ -267,8 +243,8 @@ export default function TopicDetailPage() {
                           setVideoPlaying(false);
                         }}
                         className={`w-full text-left px-5 py-4 flex items-center gap-4 transition-colors ${selectedVideoIndex === idx
-                            ? 'bg-primary/5 border-l-4 border-primary'
-                            : 'hover:bg-slate-50 border-l-4 border-transparent'
+                          ? 'bg-primary/5 border-l-4 border-primary'
+                          : 'hover:bg-slate-50 border-l-4 border-transparent'
                           }`}
                       >
                         <div className={`p-2 rounded-lg flex-shrink-0 ${selectedVideoIndex === idx ? 'bg-primary/20 text-primary' : 'bg-slate-100 text-slate-400'}`}>

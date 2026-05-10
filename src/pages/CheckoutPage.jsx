@@ -2,8 +2,8 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Package, User, CreditCard, Tag, CheckCircle, Download, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/client';
 import { toast } from 'react-hot-toast';
+import { usePackages, useValidatePromo, useApplyPackage, useSubmitPayment } from '../hooks/usePackages';
 
 const PLAN_KEYS = ['half-year', 'full-year', 'master-proff', 'single-module'];
 
@@ -20,9 +20,13 @@ export default function CheckoutPage() {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
 
-  const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const shouldFetch = !!user && !!planKey && PLAN_KEYS.includes(planKey);
+  const { data: packages = [], isLoading: loading } = usePackages(shouldFetch);
+  
+  const validatePromoMutation = useValidatePromo();
+  const applyPackageMutation = useApplyPackage();
+  const submitPaymentMutation = useSubmitPayment();
+
   const [success, setSuccess] = useState(null);
 
   const [year, setYear] = useState(1);
@@ -36,7 +40,6 @@ export default function CheckoutPage() {
   });
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(null);
-  const [promoLoading, setPromoLoading] = useState(false);
   const [receipt, setReceipt] = useState(null);
   const [receiptPreview, setReceiptPreview] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -123,7 +126,6 @@ export default function CheckoutPage() {
       navigate('/packages');
       return;
     }
-    api.get('/packages').then(({ data }) => setPackages(data)).catch(() => setPackages([])).finally(() => setLoading(false));
   }, [user, planKey, navigate]);
 
   useEffect(() => {
@@ -192,35 +194,35 @@ export default function CheckoutPage() {
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) return;
-    setPromoLoading(true);
-    try {
-      const { data } = await api.post('/promo-codes/validate', {
-        code: promoCode.trim(),
-        originalAmount: basePrice,
-      });
-      // Convert server UTC timestamps into PKT display datetime strings
-      const toPKTDate = (iso) => {
-        if (!iso) return null;
-        return new Date(iso).toLocaleString('en-US', {
-          timeZone: 'Asia/Karachi',
-          dateStyle: 'medium',
-          timeStyle: 'short'
-        });
-      };
-      const enriched = {
-        ...data,
-        pktValidFrom: toPKTDate(data.validFrom),
-        pktValidTo: toPKTDate(data.validTo),
-      };
-      setPromoApplied(enriched);
-      toast.success(`Promo applied! You save ₨${data.discount || 0}`);
-    } catch (err) {
-      setPromoApplied(null);
-      const msg = err.response?.data?.message || 'Invalid promo code';
-      toast.error(msg);
-    } finally {
-      setPromoLoading(false);
-    }
+    
+    validatePromoMutation.mutate({
+      code: promoCode.trim(),
+      originalAmount: basePrice,
+    }, {
+      onSuccess: (data) => {
+        // Convert server UTC timestamps into PKT display datetime strings
+        const toPKTDate = (iso) => {
+          if (!iso) return null;
+          return new Date(iso).toLocaleString('en-US', {
+            timeZone: 'Asia/Karachi',
+            dateStyle: 'medium',
+            timeStyle: 'short'
+          });
+        };
+        const enriched = {
+          ...data,
+          pktValidFrom: toPKTDate(data.validFrom),
+          pktValidTo: toPKTDate(data.validTo),
+        };
+        setPromoApplied(enriched);
+        toast.success(`Promo applied! You save ₨${data.discount || 0}`);
+      },
+      onError: (err) => {
+        setPromoApplied(null);
+        const msg = err.response?.data?.message || 'Invalid promo code';
+        toast.error(msg);
+      }
+    });
   };
 
   const handleRemovePromo = () => {
@@ -272,51 +274,62 @@ export default function CheckoutPage() {
     } catch (err) {
       // if anything goes wrong reading user packages, allow server to enforce rules
     }
-    setSubmitting(true);
-    try {
-      await api.post('/package-apply', {
-        packageId: pkg._id,
-        academicDetails: { ...academic, year, part },
-      });
-    } catch (_) { }
-    try {
-      const form = new FormData();
-      form.append('packageId', pkg._id);
-      form.append('amount', String(finalPrice));
-      if (promoApplied?.code) form.append('promoCode', promoApplied.code);
-      form.append('receipt', receipt);
-      form.append('institution', academic.institution?.trim() ?? '');
-      form.append('college', academic.college?.trim() ?? '');
-      form.append('rollNumber', academic.rollNumber?.trim() ?? '');
-      form.append('batch', academic.batch?.trim() ?? '');
-      form.append('year', String(year));
-      form.append('part', String(part));
-      const { data } = await api.post('/payments', form);
-      setSuccess({
-        payment: data,
-        plan: pkg?.name,
-        summary: {
-          basePrice,
-          discount: promoDiscount,
-          finalPrice,
-        },
-      });
-      toast.success('Payment uploaded — awaiting verification');
-      setReceipt(null);
-      await refreshUser();
-    } catch (err) {
-      const status = err.response?.status;
-      const serverMsg = err.response?.data?.message;
-      const baseMsg = serverMsg || 'Payment upload failed';
-      if (!status || status >= 500) {
-        toast.error(`${baseMsg}. Please try again in a few minutes. If the issue persists contact support.`);
-      } else {
-        toast.error(`${baseMsg}. Please try again. If the issue persists contact support.`);
+
+    // 1. Apply for package
+    applyPackageMutation.mutate({
+      packageId: pkg._id,
+      academicDetails: { ...academic, year, part },
+    }, {
+      onSuccess: async () => {
+        // 2. Submit payment
+        const form = new FormData();
+        form.append('packageId', pkg._id);
+        form.append('amount', String(finalPrice));
+        if (promoApplied?.code) form.append('promoCode', promoApplied.code);
+        form.append('receipt', receipt);
+        form.append('institution', academic.institution?.trim() ?? '');
+        form.append('college', academic.college?.trim() ?? '');
+        form.append('rollNumber', academic.rollNumber?.trim() ?? '');
+        form.append('batch', academic.batch?.trim() ?? '');
+        form.append('year', String(year));
+        form.append('part', String(part));
+
+        submitPaymentMutation.mutate(form, {
+          onSuccess: async (data) => {
+            setSuccess({
+              payment: data,
+              plan: pkg?.name,
+              summary: {
+                basePrice,
+                discount: promoDiscount,
+                finalPrice,
+              },
+            });
+            toast.success('Payment uploaded — awaiting verification');
+            setReceipt(null);
+            await refreshUser();
+          },
+          onError: (err) => {
+            const status = err.response?.status;
+            const serverMsg = err.response?.data?.message;
+            const baseMsg = serverMsg || 'Payment upload failed';
+            if (!status || status >= 500) {
+              toast.error(`${baseMsg}. Please try again in a few minutes. If the issue persists contact support.`);
+            } else {
+              toast.error(`${baseMsg}. Please try again. If the issue persists contact support.`);
+            }
+          }
+        });
+      },
+      onError: (err) => {
+        toast.error(err.response?.data?.message || 'Failed to apply for package');
       }
-    } finally {
-      setSubmitting(false);
-    }
+    });
   };
+
+  const submitting = applyPackageMutation.isPending || submitPaymentMutation.isPending;
+  const promoLoading = validatePromoMutation.isPending;
+
 
   if (!user || !planKey) return null;
   if (loading) return <p className="text-center py-12">Loading...</p>;

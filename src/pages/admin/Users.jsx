@@ -1,7 +1,15 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { UserPlus, Search, Eye, Pencil, Trash2, Ban, Unlock, UserX } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import api from '../../api/client';
+import { 
+  useAdminUsers, 
+  useVerifyUser, 
+  useUpdateUser, 
+  useDeleteUser, 
+  useBlockUser, 
+  useUnblockUser, 
+  useRevokeAccess 
+} from '../../hooks/useAdmin';
 import Modal from '../../components/admin/Modal';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
 
@@ -24,56 +32,51 @@ function getInitials(name, email) {
 }
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
-  const [verifiedFilter, setVerifiedFilter] = useState('');
   const [subscriptionFilter, setSubscriptionFilter] = useState('');
   const [viewUser, setViewUser] = useState(null);
   const [editUser, setEditUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [actionConfirm, setActionConfirm] = useState(null);
-  const [saving, setSaving] = useState(false);
   const [verifyError, setVerifyError] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', contact: '' });
 
-  const fetchUsers = useCallback(() => {
-    setLoading(true);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const userParams = useMemo(() => {
     const params = { page, limit: LIMIT };
     if (search) params.search = search;
     if (roleFilter) params.role = roleFilter;
-    if (verifiedFilter !== '') params.verified = verifiedFilter;
     if (subscriptionFilter === 'paid') params.subscribed = 'paid';
     else if (subscriptionFilter === 'free') params.subscribed = 'free';
     else if (subscriptionFilter === 'unsubscribed') params.subscribed = 'false';
-    api
-      .get('/users', { params })
-      .then(({ data }) => {
-        setUsers(data.users || []);
-        setTotal(data.total ?? 0);
-      })
-      .catch(() => setUsers([]))
-      .finally(() => setLoading(false));
-  }, [page, search, roleFilter, verifiedFilter, subscriptionFilter]);
+    return params;
+  }, [page, search, roleFilter, subscriptionFilter]);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  const { data: userData, isLoading: loading } = useAdminUsers(userParams);
+  const users = userData?.users || [];
+  const total = userData?.total || 0;
 
-  useEffect(() => {
-    const t = setTimeout(() => setSearch(searchInput), 400);
-    return () => clearTimeout(t);
-  }, [searchInput]);
+  const verifyMutation = useVerifyUser();
+  const updateMutation = useUpdateUser();
+  const deleteMutation = useDeleteUser();
+  const blockMutation = useBlockUser();
+  const unblockMutation = useUnblockUser();
+  const revokeMutation = useRevokeAccess();
 
   const handleVerify = async (id) => {
     setVerifyError(null);
     try {
-      await api.patch(`/users/${id}/verify`);
-      setUsers((prev) => prev.map((u) => (u._id === id ? { ...u, isVerified: true } : u)));
+      await verifyMutation.mutateAsync(id);
       if (viewUser?._id === id) setViewUser((u) => (u ? { ...u, isVerified: true } : null));
     } catch (err) {
       const message = err.response?.data?.message || 'Verification failed. User must be subscribed to a package first.';
@@ -84,24 +87,22 @@ export default function AdminUsers() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!editUser?._id) return;
-    setSaving(true);
     try {
-      const { data } = await api.put(`/users/${editUser._id}`, {
-        name: editForm.name.trim() || editUser.name,
-        contact: editForm.contact.trim() || undefined,
+      await updateMutation.mutateAsync({
+        id: editUser._id,
+        data: {
+          name: editForm.name.trim() || editUser.name,
+          contact: editForm.contact.trim() || undefined,
+        }
       });
-      setUsers((prev) => prev.map((u) => (u._id === data._id ? data : u)));
       setEditUser(null);
     } catch (_) {}
-    setSaving(false);
   };
 
   const handleDelete = async () => {
     if (!deleteConfirm) return;
     try {
-      await api.delete(`/users/${deleteConfirm._id}`);
-      setUsers((prev) => prev.filter((u) => u._id !== deleteConfirm._id));
-      setTotal((t) => Math.max(0, t - 1));
+      await deleteMutation.mutateAsync(deleteConfirm._id);
       setDeleteConfirm(null);
       toast.success('User deleted');
     } catch (_) {
@@ -111,9 +112,7 @@ export default function AdminUsers() {
 
   const handleBlock = async (id) => {
     try {
-      const { data } = await api.patch(`/users/${id}/block`);
-      setUsers((prev) => prev.map((u) => (u._id === data._id ? data : u)));
-      if (viewUser?._id === data._id) setViewUser(data);
+      await blockMutation.mutateAsync(id);
       toast.success('User blocked');
     } catch (_) {
       toast.error('Failed to block user');
@@ -123,9 +122,7 @@ export default function AdminUsers() {
 
   const handleUnblock = async (id) => {
     try {
-      const { data } = await api.patch(`/users/${id}/unblock`);
-      setUsers((prev) => prev.map((u) => (u._id === data._id ? data : u)));
-      if (viewUser?._id === data._id) setViewUser(data);
+      await unblockMutation.mutateAsync(id);
       toast.success('User unblocked');
     } catch (_) {
       toast.error('Failed to unblock user');
@@ -135,11 +132,7 @@ export default function AdminUsers() {
 
   const handleRevoke = async (id) => {
     try {
-      const { data } = await api.patch(`/users/${id}/revoke`);
-      // API returns updated user in data.user
-      const updatedUser = data.user || data;
-      setUsers((prev) => prev.map((u) => (u._id === updatedUser._id ? updatedUser : u)));
-      if (viewUser?._id === updatedUser._id) setViewUser(updatedUser);
+      await revokeMutation.mutateAsync(id);
       toast.success('User access revoked');
     } catch (_) {
       toast.error('Failed to revoke access');

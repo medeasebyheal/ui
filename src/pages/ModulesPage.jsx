@@ -1,33 +1,16 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Lock, LockOpen, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/client';
+import { useYears, useModulesByYears } from '../hooks/useContent';
 
 export default function ModulesPage() {
   const { user } = useAuth();
-  const [years, setYears] = useState([]);
-  const [modulesByYear, setModulesByYear] = useState({});
-  const [loading, setLoading] = useState(true);
+  const { data: years = [], isLoading: yearsLoading } = useYears();
+  const { modulesByYear, isLoading: modulesLoading } = useModulesByYears(years);
+  const loading = yearsLoading || modulesLoading;
   const [searchQuery, setSearchQuery] = useState('');
   const [yearFilter, setYearFilter] = useState('');
-
-  useEffect(() => {
-    api.get('/content/years').then(({ data }) => setYears(data)).catch(() => setYears([])).finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    if (!years.length) return;
-    Promise.all(years.map((y) => api.get(`/content/years/${y._id}/modules`).then((r) => ({ yearId: y._id, yearName: y.name, modules: r.data }))))
-      .then((results) => {
-        const next = {};
-        results.forEach(({ yearId, yearName, modules }) => {
-          next[yearId] = modules.map((m) => ({ ...m, yearId, yearName }));
-        });
-        setModulesByYear(next);
-      })
-      .catch(() => {});
-  }, [years]);
 
   const allModules = useMemo(() => {
     return Object.values(modulesByYear).flat();

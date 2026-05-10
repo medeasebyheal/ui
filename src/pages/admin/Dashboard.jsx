@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Download, Users, Wallet, AlertTriangle, BookOpen, HelpCircle, BadgeCheck, Clock, Pencil, Receipt, PlusCircle, FileEdit, GraduationCap, Wrench } from 'lucide-react';
 import api from '../../api/client';
+import { useAdminDashboard } from '../../hooks/useAdmin';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === 'superadmin';
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  
+  const { data, isLoading: loading } = useAdminDashboard(isSuperAdmin);
+
   const [removeFifthLoading, setRemoveFifthLoading] = useState(false);
   const [removeFifthResult, setRemoveFifthResult] = useState(null);
   const [activateTrialLoading, setActivateTrialLoading] = useState(false);
@@ -17,14 +19,6 @@ export default function AdminDashboard() {
   const [cleanResult, setCleanResult] = useState(null);
   const [migrateTextLoading, setMigrateTextLoading] = useState(false);
   const [migrateTextResult, setMigrateTextResult] = useState(null);
-
-  useEffect(() => {
-    api
-      .get('/admin/dashboard')
-      .then(({ data: res }) => setData(res))
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
-  }, []);
 
   const handleRemoveFifthOption = () => {
     if (removeFifthLoading) return;

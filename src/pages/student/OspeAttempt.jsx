@@ -5,6 +5,7 @@ import confetti from 'canvas-confetti';
 import api from '../../api/client';
 import { recordRecentView } from '../../utils/recentViews';
 import { useProtectedContent } from '../../hooks/useProtectedContent';
+import { useOspeDetail } from '../../hooks/useContent';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
 import {
   Check,
@@ -54,8 +55,9 @@ export default function StudentOspeAttempt() {
   const easegptRef = useRef(null);
   const { ospeId } = useParams();
   const navigate = useNavigate();
-  const [ospe, setOspe] = useState(null);
-  const [loading, setLoading] = useState(true);
+
+  const { data: ospe, isLoading: loading } = useOspeDetail(ospeId);
+
   const [currentStationIndex, setCurrentStationIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [markedForReview, setMarkedForReview] = useState(new Set());
@@ -79,27 +81,20 @@ export default function StudentOspeAttempt() {
   useProtectedContent();
 
   useEffect(() => {
-    api
-      .get(`/ospes/${ospeId}`)
-      .then(({ data }) => {
-        setOspe(data);
-        setTimerSeconds(5 * 60);
-        if (data) {
-          recordRecentView({
-            type: 'ospe',
-            id: data._id,
-            name: data.name,
-            url: `/student/ospes/${data._id}`,
-            meta: 'Practice Exam',
-            icon: 'receipt_long',
-            iconBg: 'bg-blue-50 dark:bg-blue-900/30',
-            iconColor: 'text-blue-600',
-          });
-        }
-      })
-      .catch(() => setOspe(null))
-      .finally(() => setLoading(false));
-  }, [ospeId]);
+    if (ospe && !loading) {
+      recordRecentView({
+        type: 'ospe',
+        id: ospe._id,
+        name: ospe.name,
+        url: `/student/ospes/${ospe._id}`,
+        meta: 'Practice Exam',
+        icon: 'receipt_long',
+        iconBg: 'bg-blue-50 dark:bg-blue-900/30',
+        iconColor: 'text-blue-600',
+      });
+      setTimerSeconds(5 * 60);
+    }
+  }, [ospe, loading]);
 
   useEffect(() => {
     if (!ospe || submitted) return;

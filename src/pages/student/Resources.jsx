@@ -22,9 +22,10 @@ import {
   Info,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../api/client';
+import { useYearsWithModules, useModuleSubjects, useModuleOspes } from '../../hooks/useContent';
 import { getRecentViews } from '../../utils/recentViews';
 import EmptyPackageCTA from '../../components/EmptyPackageCTA';
+import api from '../../api/client';
 
 const getUniversityType = (collegeName) => {
   const name = (collegeName || '').toUpperCase();
@@ -72,13 +73,100 @@ function timeAgo(ms) {
   return 'Earlier';
 }
 
+function ModuleSubjectsList({ moduleId, hasAccess }) {
+  const { data: subjects = [], isLoading: loading } = useModuleSubjects(moduleId);
+  const { data: ospes = [], isLoading: ospesLoading } = useModuleOspes(moduleId);
+
+  if (loading || ospesLoading) {
+    return <p className="text-slate-500 dark:text-slate-400 text-sm py-8 text-center">Loading subjects and topics…</p>;
+  }
+
+  return (
+    <div className="space-y-10">
+      {subjects.length === 0 ? (
+        <p className="text-slate-500 dark:text-slate-400 text-sm py-8 text-center">No subjects in this module yet.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {subjects.map((sub) => {
+            const subjectUrl = `/student/modules/${moduleId}/subjects/${sub._id}`;
+            const img = sub.imageUrl || PLACEHOLDER_IMAGES.subject;
+            return (
+              <Link
+                key={sub._id}
+                to={subjectUrl}
+                className="group relative bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-md transition-all"
+              >
+                <div className="h-40 w-full relative bg-slate-100 dark:bg-slate-800">
+                  <img
+                    src={img}
+                    alt={sub.name}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => {
+                      e.target.src = PLACEHOLDER_IMAGES.subject;
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                    <h5 className="text-white font-semibold text-lg line-clamp-1">{sub.name}</h5>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{sub.description || ''}</div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* OSPE block */}
+      {ospes.length > 0 && (
+        <div className="pt-8 mt-8 border-t border-slate-100 dark:border-slate-800">
+          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">OSPE Practice</p>
+          {!hasAccess ? (
+            <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center gap-3">
+              <LockIcon className="w-5 h-5 text-amber-500 flex-shrink-0" />
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">OSPE practice is locked in free trial.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {ospes.map((ospe) => (
+                <Link
+                  key={ospe._id}
+                  to={`/student/ospes/${ospe._id}`}
+                  className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/40 hover:border-[#0D9488] transition-all"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h6 className="font-semibold text-slate-900 dark:text-white truncate">{ospe.name}</h6>
+                    <p className="text-xs text-slate-500 truncate">{ospe.description || 'Practice exam'}</p>
+                  </div>
+                  <span className="text-xs font-bold text-[#0D9488] shrink-0">Start</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function StudentResources() {
   const { user } = useAuth();
-  const [years, setYears] = useState([]);
-  const [modulesByYear, setModulesByYear] = useState({});
-  const [subjectsByModule, setSubjectsByModule] = useState({});
-  const [ospesByModule, setOspesByModule] = useState({});
-  const [loadingSubjects, setLoadingSubjects] = useState({});
+  const refreshUser = useAuth().refreshUser;
+  const { data: yearsData = [] } = useYearsWithModules();
+  const years = yearsData;
+  const modulesByYear = useMemo(() => {
+    const next = {};
+    yearsData.forEach((y) => {
+      next[y._id] = Array.isArray(y.modules) ? y.modules : [];
+    });
+    return next;
+  }, [yearsData]);
   const [recentViews, setRecentViews] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [studyTipIndex, setStudyTipIndex] = useState(() => Math.floor(Math.random() * MBBS_STUDY_TIPS.length));
@@ -156,15 +244,6 @@ export default function StudentResources() {
 
   const hasModuleAccess = (moduleId) => enrolledModuleIds.has(String(moduleId));
 
-  const hasSingleModulePackage = useMemo(() => {
-    if (!user?.packages?.length) return false;
-    return user.packages.some((up) => {
-      if (!up || up.status !== 'active') return false;
-      const type = up.package?.type || '';
-      return type.includes('single_module');
-    });
-  }, [user?.packages]);
-
   useEffect(() => {
     const t = setInterval(() => {
       setStudyTipIndex((i) => (i + 1) % MBBS_STUDY_TIPS.length);
@@ -172,31 +251,6 @@ export default function StudentResources() {
     return () => clearInterval(t);
   }, []);
 
-  useEffect(() => {
-    // Fetch years with their modules in one request to avoid N+1 requests
-    (async () => {
-      const t0 = performance.now();
-      try {
-        const { data } = await api.get('/content/years-with-modules');
-        const t1 = performance.now();
-        if (!Array.isArray(data)) {
-          setYears([]);
-          setModulesByYear({});
-          return;
-        }
-        setYears(data);
-        const next = {};
-        data.forEach((y) => {
-          next[y._id] = Array.isArray(y.modules) ? y.modules : [];
-        });
-        setModulesByYear(next);
-      } catch (err) {
-        console.warn('years-with-modules fetch failed', err);
-        setYears([]);
-        setModulesByYear({});
-      }
-    })();
-  }, []);
 
   useEffect(() => {
     setRecentViews(getRecentViews());
@@ -205,29 +259,8 @@ export default function StudentResources() {
     return () => window.removeEventListener('storage', handler);
   }, []);
 
-  const loadSubjects = async (moduleId) => {
-    const id = String(moduleId);
-    if (subjectsByModule[id]) return;
-    setLoadingSubjects((p) => ({ ...p, [id]: true }));
-    try {
-      const [subRes, ospeRes] = await Promise.all([
-        api.get(`/content/modules/${id}/subjects`),
-        api.get(`/ospes/modules/${id}`).catch(() => ({ data: [] })),
-      ]);
-      const subs = Array.isArray(subRes.data) ? subRes.data : (subRes.data?.data ?? []);
-      setSubjectsByModule((p) => ({ ...p, [id]: subs }));
-      setOspesByModule((p) => ({ ...p, [id]: ospeRes.data ?? [] }));
-    } catch (err) {
-      setSubjectsByModule((p) => ({ ...p, [id]: [] }));
-      setOspesByModule((p) => ({ ...p, [id]: [] }));
-    } finally {
-      setLoadingSubjects((p) => ({ ...p, [id]: false }));
-    }
-  };
-
   const toggleModule = (modId) => {
     setExpandedModules((prev) => ({ ...prev, [modId]: !prev[modId] }));
-    loadSubjects(modId);
   };
 
   const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'Student';
@@ -404,9 +437,6 @@ export default function StudentResources() {
                   visibleModules.map((mod, modIdx) => {
                     const modId = String(mod._id);
                     const isExpanded = expandedModules[modId];
-                    const subjects = subjectsByModule[modId] || [];
-                    const loading = loadingSubjects[modId];
-                    const ospes = ospesByModule[modId] || [];
                     const moduleImage = mod.imageUrl || PLACEHOLDER_IMAGES.module;
                     const isFreeTrialAccessible = freeTrialModuleIds.has(modId);
                     const locked = (!hasModuleAccess(mod._id) && !isFreeTrialAccessible) || !user?.packages?.length;
@@ -489,80 +519,7 @@ export default function StudentResources() {
                           </button>
 
                           {isExpanded && !locked && (
-                            <div className="space-y-10">
-                              {loading && (
-                                <p className="text-slate-500 dark:text-slate-400 text-sm py-8 text-center">Loading subjects and topics…</p>
-                              )}
-                              {!loading && subjects.length === 0 && (
-                                <p className="text-slate-500 dark:text-slate-400 text-sm py-8 text-center">No subjects in this module yet.</p>
-                              )}
-                              {!loading && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                  {subjects.map((sub, subIdx) => {
-                                    const subjectUrl = `/student/modules/${mod._id}/subjects/${sub._id}`;
-                                    const img = sub.imageUrl || PLACEHOLDER_IMAGES.subject;
-                                    return (
-                                      <Link
-                                        key={sub._id}
-                                        to={subjectUrl}
-                                        className="group relative bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-md transition-all"
-                                      >
-                                        <div className="h-40 w-full relative bg-slate-100 dark:bg-slate-800">
-                                          <img
-                                            src={img}
-                                            alt={sub.name}
-                                            className="w-full h-full object-cover"
-                                            loading="lazy"
-                                            decoding="async"
-                                            onError={(e) => {
-                                              e.target.src = PLACEHOLDER_IMAGES.subject;
-                                            }}
-                                          />
-                                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-                                            <h5 className="text-white font-semibold text-lg line-clamp-1">{sub.name}</h5>
-                                          </div>
-                                        </div>
-                                        <div className="p-4">
-                                          <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{sub.description || ''}</div>
-                                        </div>
-                                      </Link>
-                                    );
-                                  })}
-                                </div>
-                              )}
-
-                              {/* OSPE block: once per module */}
-                              {!loading && ospes.length > 0 && (
-                                <div className="pt-8 mt-8 border-t border-slate-100 dark:border-slate-800">
-                                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">OSPE Practice</p>
-                                  {!hasModuleAccess(mod._id) ? (
-                                    <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center gap-3">
-                                      <LockIcon className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">OSPE practice is locked in free trial.</p>
-                                    </div>
-                                  ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                      {ospes.map((ospe) => (
-                                        <Link
-                                          key={ospe._id}
-                                          to={`/student/ospes/${ospe._id}`}
-                                          className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/40 hover:border-[#0D9488] transition-all"
-                                        >
-                                          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
-                                            <FileText className="w-5 h-5" />
-                                          </div>
-                                          <div className="min-w-0 flex-1">
-                                            <h6 className="font-semibold text-slate-900 dark:text-white truncate">{ospe.name}</h6>
-                                            <p className="text-xs text-slate-500 truncate">{ospe.description || 'Practice exam'}</p>
-                                          </div>
-                                          <span className="text-xs font-bold text-[#0D9488] shrink-0">Start</span>
-                                        </Link>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
+                            <ModuleSubjectsList moduleId={modId} hasAccess={hasModuleAccess(modId)} />
                           )}
                         </div>
                       </div>

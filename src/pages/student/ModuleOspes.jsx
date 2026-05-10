@@ -1,20 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { FileText } from 'lucide-react';
-import api from '../../api/client';
+import { useModuleOspes } from '../../hooks/useContent';
 
 export default function StudentModuleOspes() {
   const { moduleId } = useParams();
-  const [ospes, setOspes] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    api
-      .get(`/ospes/modules/${moduleId}`)
-      .then(({ data }) => setOspes(data || []))
-      .catch(() => setOspes([]))
-      .finally(() => setLoading(false));
-  }, [moduleId]);
+  const { data: ospes = [], isLoading: loading } = useModuleOspes(moduleId);
 
   if (loading) {
     return (

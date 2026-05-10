@@ -2,45 +2,20 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ChevronDown, LayoutDashboard, LogOut, Lock, LockOpen } from 'lucide-react';
-import api from '../api/client';
+import { useYears, useModulesByYears } from '../hooks/useContent';
 
 function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [modulesDropdownOpen, setModulesDropdownOpen] = useState(false);
   const [mobileModulesOpen, setMobileModulesOpen] = useState(false);
-  const [years, setYears] = useState([]);
-  const [modulesByYear, setModulesByYear] = useState({});
+  const { data: years = [] } = useYears();
+  const { modulesByYear } = useModulesByYears(years);
   const profileRef = useRef(null);
   const modulesRef = useRef(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    const isHome = location?.pathname === '/';
-    api
-      .get('/content/years', { skipLoader: isHome })
-      .then(({ data }) =>
-        setYears(Array.isArray(data) ? data : Array.isArray(data?.years) ? data.years : [])
-      )
-      .catch(() => setYears([]));
-  }, []);
-
-  useEffect(() => {
-    if (!Array.isArray(years) || !years.length) return;
-    Promise.all(
-      years.map((y) =>
-        api.get(`/content/years/${y._id}/modules`, { skipLoader: location.pathname === '/' }).then((r) => ({ yearId: y._id, yearName: y.name, modules: r.data }))
-      )
-    ).then((results) => {
-      const next = {};
-      results.forEach(({ yearId, yearName, modules }) => {
-        next[yearId] = (modules || []).map((m) => ({ ...m, yearId, yearName }));
-      });
-      setModulesByYear(next);
-    });
-  }, [years]);
 
   const allModules = useMemo(() => Object.values(modulesByYear).flat(), [modulesByYear]);
 

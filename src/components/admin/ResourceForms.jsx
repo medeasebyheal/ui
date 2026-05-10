@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/client';
+import { 
+  useSaveYear, 
+  useSaveModule, 
+  useSaveSubject, 
+  useSaveTopic 
+} from '../../hooks/useAdmin';
 import Modal from './Modal';
 
 export function ProgramForm({ program, onSave, onClose }) {
@@ -38,7 +44,7 @@ export function YearForm({ year, onSave, onClose, programId: programIdProp }) {
     () => year?.program?._id ?? year?.program ?? programIdProp ?? ''
   );
   const [programs, setPrograms] = useState([]);
-  const [saving, setSaving] = useState(false);
+  const saveMutation = useSaveYear();
 
   useEffect(() => {
     api.get('/admin/programs').then(({ data }) => setPrograms(data || [])).catch(() => setPrograms([]));
@@ -50,15 +56,13 @@ export function YearForm({ year, onSave, onClose, programId: programIdProp }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
     try {
       const payload = { name, program: programId || null };
-      if (year?._id) await api.put(`/admin/years/${year._id}`, payload);
-      else await api.post('/admin/years', payload);
+      if (year?._id) payload._id = year._id;
+      await saveMutation.mutateAsync(payload);
       onSave?.();
       onClose?.();
     } catch (_) { }
-    setSaving(false);
   };
   return (
     <Modal open onClose={onClose} title={year ? 'Edit Year' : 'Add Year'}>
@@ -85,7 +89,9 @@ export function YearForm({ year, onSave, onClose, programId: programIdProp }) {
         </div>
         <div className="flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
-          <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">Save</button>
+          <button type="submit" disabled={saveMutation.isPending} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">
+            {saveMutation.isPending ? 'Saving...' : 'Save'}
+          </button>
         </div>
       </form>
     </Modal>
@@ -97,7 +103,7 @@ export function ModuleForm({ yearId, module, onSave, onClose }) {
   const [imageUrl, setImageUrl] = useState(module?.imageUrl ?? '');
   const [universityType, setUniversityType] = useState(module?.universityType ?? 'Other');
   const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const saveMutation = useSaveModule(yearId);
 
   const handleFileChange = async (e) => {
     const file = e.target?.files?.[0];
@@ -118,15 +124,13 @@ export function ModuleForm({ yearId, module, onSave, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
     try {
       const payload = { name, imageUrl: imageUrl.trim() || undefined, universityType };
-      if (module?._id) await api.put(`/admin/modules/${module._id}`, payload);
-      else await api.post(`/admin/years/${yearId}/modules`, payload);
+      if (module?._id) payload._id = module._id;
+      await saveMutation.mutateAsync(payload);
       onSave?.();
       onClose?.();
     } catch (_) { }
-    setSaving(false);
   };
   return (
     <Modal open onClose={onClose} title={module ? 'Edit Module' : 'Add Module'}>
@@ -164,7 +168,9 @@ export function ModuleForm({ yearId, module, onSave, onClose }) {
         </div>
         <div className="flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
-          <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">Save</button>
+          <button type="submit" disabled={saveMutation.isPending} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">
+            {saveMutation.isPending ? 'Saving...' : 'Save'}
+          </button>
         </div>
       </form>
     </Modal>
@@ -180,8 +186,8 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
   const [initialLectureTitle, setInitialLectureTitle] = useState('');
   const [initialLectureUrl, setInitialLectureUrl] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [videoUrls, setVideoUrls] = useState(subject?.videoUrls ?? ['']);
+  const saveMutation = useSaveSubject(moduleId);
 
   useEffect(() => {
     if (!subject?._id) return;
@@ -216,7 +222,6 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
     try {
       const trimmedImage = (imageUrl || '').trim();
       const titleTrim = (oneShotTitle || '').trim();
@@ -226,30 +231,17 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
         imageUrl: trimmedImage || null,
         videoUrls: videoUrls.map(u => u.trim()).filter(Boolean),
       };
-      let subjectId = subject?._id;
-      if (subjectId) {
-        if (titleTrim || urlTrim) {
-          payload.oneShotTitle = titleTrim || initialLectureTitle || '';
-          payload.youtubeUrl = urlTrim || initialLectureUrl || '';
-        }
-        await api.put(`/admin/subjects/${subjectId}`, payload);
-      } else {
-        const postPayload = {
-          name: payload.name,
-          imageUrl: trimmedImage || undefined,
-        };
-        const oneShotTitleTrim = (oneShotTitle || '').trim();
-        const oneShotYoutubeTrim = (oneShotYoutubeUrl || '').trim();
-        if (oneShotTitleTrim && oneShotYoutubeTrim) {
-          postPayload.oneShotTitle = oneShotTitleTrim;
-          postPayload.youtubeUrl = oneShotYoutubeTrim;
-        }
-        await api.post(`/admin/modules/${moduleId}/subjects`, postPayload);
+      if (subject?._id) payload._id = subject._id;
+      
+      if (titleTrim || urlTrim) {
+        payload.oneShotTitle = titleTrim || initialLectureTitle || '';
+        payload.youtubeUrl = urlTrim || initialLectureUrl || '';
       }
+
+      await saveMutation.mutateAsync(payload);
       onSave?.();
       onClose?.();
     } catch (_) { }
-    setSaving(false);
   };
   return (
     <Modal open onClose={onClose} title={subject ? 'Edit Subject' : 'Add Subject'}>
@@ -314,7 +306,9 @@ export function SubjectForm({ moduleId, subject, onSave, onClose }) {
         </div>
         <div className="flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
-          <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">Save</button>
+          <button type="submit" disabled={saveMutation.isPending} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">
+            {saveMutation.isPending ? 'Saving...' : 'Save'}
+          </button>
         </div>
       </form>
     </Modal>
@@ -328,7 +322,7 @@ export function TopicForm({ subjectId, topic, onSave, onClose }) {
   const [videoUrls, setVideoUrls] = useState(topic?.videoUrls ?? ['']);
   const [content, setContent] = useState(topic?.content ?? '');
   const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const saveMutation = useSaveTopic(subjectId);
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
@@ -346,7 +340,6 @@ export function TopicForm({ subjectId, topic, onSave, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
     try {
       const trimmedImage = (imageUrl || '').trim();
       const validVideos = videoUrls.map(u => u.trim()).filter(Boolean);
@@ -357,15 +350,11 @@ export function TopicForm({ subjectId, topic, onSave, onClose }) {
         videoUrls: validVideos,
         content: (content || '').trim(),
       };
-      if (topic?._id) {
-        await api.put(`/admin/topics/${topic._id}`, payload);
-      } else {
-        await api.post(`/admin/subjects/${subjectId}/topics`, payload);
-      }
+      if (topic?._id) payload._id = topic._id;
+      await saveMutation.mutateAsync(payload);
       onSave?.();
       onClose?.();
     } catch (_) { }
-    setSaving(false);
   };
   return (
     <Modal open onClose={onClose} title={topic ? 'Edit Topic' : 'Add Topic'}>
@@ -437,7 +426,9 @@ export function TopicForm({ subjectId, topic, onSave, onClose }) {
         </div>
         <div className="flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
-          <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">Save</button>
+          <button type="submit" disabled={saveMutation.isPending} className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50">
+            {saveMutation.isPending ? 'Saving...' : 'Save'}
+          </button>
         </div>
       </form>
     </Modal>

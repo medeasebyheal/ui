@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../api/client';
+import { useAdminDashboard } from '../../hooks/useAdmin';
 import {
   LayoutDashboard,
   Users,
@@ -70,23 +70,13 @@ export default function AdminLayout() {
   const [resourcesExpanded, setResourcesExpanded] = useState(false);
   const [proffExpanded, setProffExpanded] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
+  const { data: dashboardData } = useAdminDashboard(isSuperAdmin);
+  const pendingPaymentsCount = typeof dashboardData?.pendingPayments === 'number' ? dashboardData.pendingPayments : 0;
   const profileRef = useRef(null);
   const headerProfileRef = useRef(null);
   const location = useLocation();
   const isOnResources = location.pathname.startsWith('/admin/resources');
   const isOnProff = location.pathname.startsWith('/admin/proff');
-
-  useEffect(() => {
-    if (!isSuperAdmin) {
-      setPendingPaymentsCount(0);
-      return;
-    }
-    api.get('/admin/dashboard').then(({ data }) => {
-      const n = data?.pendingPayments ?? 0;
-      setPendingPaymentsCount(typeof n === 'number' ? n : 0);
-    }).catch(() => setPendingPaymentsCount(0));
-  }, [location.pathname, isSuperAdmin]);
 
   useEffect(() => {
     if (isOnResources) setResourcesExpanded(true);

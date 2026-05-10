@@ -1,27 +1,30 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useTopicDetail } from '../../hooks/useContent';
+import { useBookmarks } from '../../hooks/useBookmarks';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
 import EaseGPTChat from '../../components/student/EaseGPTChat';
 import { useProtectedContent } from '../../hooks/useProtectedContent';
 import { Check, ChevronDown, ChevronRight, ChevronLeft, Info, Timer, TrendingUp, ClipboardCheck, CheckCircle, XCircle, Lightbulb, ArrowLeft, RefreshCw, ArrowRight, Send, Flag, Sparkles } from 'lucide-react';
+import api from '../../api/client';
+import toast from 'react-hot-toast';
 
 export default function TopicQuizPage() {
   const { moduleId, subjectId, topicId } = useParams();
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
-  const [topic, setTopic] = useState(null);
-  const [mcqs, setMcqs] = useState([]);
-  const [hasAccess, setHasAccess] = useState(false);
-  const [canUseFreeTrialForThisTopic, setCanUseFreeTrialForThisTopic] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [useFreeTrial, setUseFreeTrial] = useState(false);
+
+  const { data: topicData, isLoading: topicLoading } = useTopicDetail(topicId, useFreeTrial);
+  const { data: bookmarks = [], isLoading: bookmarksLoading } = useBookmarks(topicId);
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [explanationOpen, setExplanationOpen] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
@@ -37,39 +40,39 @@ export default function TopicQuizPage() {
 
   useProtectedContent();
 
+  const topic = topicData?.topic;
+  const hasAccess = topicData?.hasAccess || false;
+  const canUseFreeTrialForThisTopic = !!topicData?.canUseFreeTrialForThisTopic;
+
+  const mcqs = useMemo(() => {
+    const allMcqs = topicData?.mcqs || [];
+    const targetSet = searchParams.get('set');
+    if (targetSet) {
+      return allMcqs.filter(m => (m.mcqSet?.trim() || 'Default') === targetSet);
+    }
+    return allMcqs;
+  }, [topicData?.mcqs, searchParams]);
+
   useEffect(() => {
     const interval = setInterval(() => setElapsedSeconds(Math.floor((Date.now() - quizStartTime) / 1000)), 1000);
     return () => clearInterval(interval);
   }, [quizStartTime]);
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (topicData && !topicLoading) {
+      if (topicData.usedFreeTrial) refreshUser();
+    }
+  }, [topicData, topicLoading, refreshUser]);
 
   useEffect(() => {
-    let cancelled = false;
-    const url = `/content/topics/${topicId}?includeMcqs=true${useFreeTrial ? '&useFreeTrial=true' : ''}`;
-    api.get(url)
-      .then(({ data }) => {
-        if (cancelled) return;
-        setTopic(data.topic);
-        const allMcqs = data.mcqs || [];
-        const targetSet = searchParams.get('set');
-        if (targetSet) {
-          setMcqs(allMcqs.filter(m => (m.mcqSet?.trim() || 'Default') === targetSet));
-        } else {
-          setMcqs(allMcqs);
-        }
-        setHasAccess(data.hasAccess);
-        setCanUseFreeTrialForThisTopic(!!data.canUseFreeTrialForThisTopic);
-        if (data.usedFreeTrial) refreshUser();
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setHasAccess(false);
-        setCanUseFreeTrialForThisTopic(false);
-      })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [topicId, useFreeTrial, refreshUser, searchParams]);
+    if (bookmarks) {
+      const map = {};
+      bookmarks.forEach((b) => {
+        if (b.mcq) map[b.mcq._id || b.mcq] = b._id;
+      });
+      setBookmarksMap(map);
+    }
+  }, [bookmarks]);
 
   // If link contains ?scrollTo=mcqId, navigate to that question once mcqs loaded
   useEffect(() => {
@@ -89,25 +92,7 @@ export default function TopicQuizPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mcqs]);
 
-  // fetch bookmarks for this topic for the current user
-  useEffect(() => {
-    if (!topicId) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await api.get('/bookmarks', { params: { topic: topicId } });
-        if (cancelled) return;
-        const map = {};
-        (data || []).forEach((b) => {
-          if (b.mcq) map[b.mcq._id || b.mcq] = b._id;
-        });
-        setBookmarksMap(map);
-      } catch (_) {
-        setBookmarksMap({});
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [topicId]);
+  const loading = topicLoading;
 
   const triggerConfetti = useCallback(() => {
     const end = Date.now() + 500;
@@ -125,7 +110,6 @@ export default function TopicQuizPage() {
 
   const handleUseFreeTrial = () => {
     setUseFreeTrial(true);
-    setLoading(true);
   };
 
   const handleSelectOption = async (index) => {

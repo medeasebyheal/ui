@@ -6,6 +6,7 @@ import Layout from './components/Layout';
 import AuthLayout from './components/AuthLayout';
 import ScrollToTop from './components/ScrollToTop';
 import { StudentRoute, AdminRoute } from './components/ProtectedRoute';
+import { usePing } from './hooks/usePing';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import Maintenance from './pages/Maintenance';
@@ -77,6 +78,9 @@ import SubjectsList from './pages/admin/resources/SubjectsList';
 import TopicsList from './pages/admin/resources/TopicsList';
 
 function App() {
+  // Warm the serverless backend + MongoDB connection on app load
+  usePing();
+
   useEffect(() => {
     AOS.init({
       duration: 800,

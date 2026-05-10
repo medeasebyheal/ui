@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search,
@@ -13,22 +13,13 @@ import {
   LockKeyhole,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/client';
+import { useProff } from '../hooks/useContent';
 
 export default function ProffPage() {
   const { user } = useAuth();
-  const [proffStructures, setProffStructures] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: proffStructures = [], isLoading: loading } = useProff();
   const [universityFilter, setUniversityFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-
-  useEffect(() => {
-    api
-      .get('/content/proff')
-      .then(({ data }) => setProffStructures(data))
-      .catch(() => setProffStructures([]))
-      .finally(() => setLoading(false));
-  }, []);
 
   const hasProffAccess = useMemo(() => {
     return user?.packages?.some((up) => up.package?.type === 'master_proff') ?? false;

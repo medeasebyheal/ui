@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   BarChart3, TrendingUp, Users, BrainCircuit, Activity,
   CalendarDays, Award, BookOpen, Clock, Search, 
@@ -6,30 +6,32 @@ import {
   ChevronDown, User as UserIcon, X, GraduationCap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import api from '../../api/client';
+import { 
+  useAdminAnalyticsOverview, 
+  useAdminMcqStats, 
+  useAdminStudentReports,
+  useAdminStudentDetailReport 
+} from '../../hooks/useAdmin';
 
 export default function AnalyticsDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState(null);
-  const [advancedData, setAdvancedData] = useState(null);
-  const [phase1Data, setPhase1Data] = useState(null);
-  const [mcqStats, setMcqStats] = useState([]);
-  const [mcqPagination, setMcqPagination] = useState({ page: 1, totalPages: 1 });
+  const [mcqPage, setMcqPage] = useState(1);
   const [mcqSearch, setMcqSearch] = useState('');
-  const [studentReports, setStudentReports] = useState([]);
-  const [studentPagination, setStudentPagination] = useState({ page: 1, totalPages: 1 });
+  const [studentPage, setStudentPage] = useState(1);
   const [studentSearch, setStudentSearch] = useState('');
   const [debouncedStudentSearch, setDebouncedStudentSearch] = useState('');
   const [studentYear, setStudentYear] = useState(1); // Default to MS1
-  const [error, setError] = useState(null);
-
   const [debouncedMcqSearch, setDebouncedMcqSearch] = useState('');
+
+  const [dateFilter, setDateFilter] = useState('daily'); 
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
 
   useEffect(() => {
     const handler = setTimeout(() => {
       if (mcqSearch.length === 0 || mcqSearch.length >= 3) {
         setDebouncedMcqSearch(mcqSearch);
+        setMcqPage(1);
       }
     }, 500);
     return () => clearTimeout(handler);
@@ -39,93 +41,47 @@ export default function AnalyticsDashboard() {
     const handler = setTimeout(() => {
       if (studentSearch.length === 0 || studentSearch.length >= 3) {
         setDebouncedStudentSearch(studentSearch);
+        setStudentPage(1);
       }
     }, 500);
     return () => clearTimeout(handler);
   }, [studentSearch]);
 
-  const [dateFilter, setDateFilter] = useState('daily'); 
-  const [customStart, setCustomStart] = useState('');
-  const [customEnd, setCustomEnd] = useState('');
-
-  const fetchBaseData = async () => {
-    setLoading(true);
-    try {
-      let url = '/admin/analytics/kpi?';
-      const now = new Date();
-      let start = new Date();
-
-      if (dateFilter === 'daily') start.setDate(now.getDate() - 1);
-      else if (dateFilter === 'weekly') start.setDate(now.getDate() - 7);
-      else if (dateFilter === 'monthly') start.setMonth(now.getMonth() - 1);
-      else if (dateFilter === 'custom' && customStart && customEnd) {
-        start = new Date(customStart);
-        now.setTime(new Date(customEnd).getTime());
-      }
-
-      url += `startDate=${start.toISOString()}&endDate=${now.toISOString()}`;
-      
-      const days = dateFilter === 'daily' ? 1 : dateFilter === 'weekly' ? 7 : 30;
-      const [res, advRes, overviewRes, activeRes, atRiskRes, heatmapRes, failedRes, revRes] = await Promise.all([
-        api.get(url),
-        api.get(`/admin/analytics/advanced?startDate=${start.toISOString()}&endDate=${now.toISOString()}`),
-        api.get('/admin/analytics/overview-kpis'),
-        api.get(`/admin/analytics/active-trend?days=${days}`),
-        api.get('/admin/analytics/at-risk?days=7'),
-        api.get(`/admin/analytics/mcq-heatmap?startDate=${start.toISOString()}&endDate=${now.toISOString()}`),
-        api.get('/admin/analytics/most-failed'),
-        api.get('/admin/analytics/revenue')
-      ]);
-
-      setData(res.data);
-      setAdvancedData(advRes.data);
-      setPhase1Data({
-        overview: overviewRes.data,
-        activeTrend: activeRes.data,
-        atRisk: atRiskRes.data,
-        heatmap: heatmapRes.data,
-        failed: failedRes.data,
-        revenue: revRes.data
-      });
-      
-      setError(null);
-    } catch (err) {
-      setError('Failed to fetch analytics data');
-    } finally {
-      setLoading(false);
+  const dateParams = useMemo(() => {
+    const now = new Date();
+    let start = new Date();
+    if (dateFilter === 'daily') start.setDate(now.getDate() - 1);
+    else if (dateFilter === 'weekly') start.setDate(now.getDate() - 7);
+    else if (dateFilter === 'monthly') start.setMonth(now.getMonth() - 1);
+    else if (dateFilter === 'custom' && customStart && customEnd) {
+      start = new Date(customStart);
+      now.setTime(new Date(customEnd).getTime());
     }
-  };
-
-
-  const fetchMcqStats = async (page = 1) => {
-    try {
-      const res = await api.get(`/admin/analytics/mcq-options?page=${page}&search=${debouncedMcqSearch}`);
-      setMcqStats(res.data.stats);
-      setMcqPagination(res.data.pagination);
-    } catch (_) {}
-  };
-
-  const fetchStudentReports = async (page = 1, year = studentYear) => {
-    try {
-      const res = await api.get(`/admin/analytics/students?page=${page}&search=${debouncedStudentSearch}&year=${year}`);
-      setStudentReports(res.data.reports);
-      setStudentPagination(res.data.pagination);
-    } catch (_) {}
-  };
-
-  useEffect(() => {
-    if (dateFilter !== 'custom' || (customStart && customEnd)) {
-      fetchBaseData();
-    }
+    return { startDate: start.toISOString(), endDate: now.toISOString() };
   }, [dateFilter, customStart, customEnd]);
 
-  useEffect(() => {
-    if (activeTab === 'mcq') fetchMcqStats(1);
-  }, [activeTab, debouncedMcqSearch]);
+  const activeDays = dateFilter === 'daily' ? 1 : dateFilter === 'weekly' ? 7 : 30;
 
-  useEffect(() => {
-    if (activeTab === 'students') fetchStudentReports(1, studentYear);
-  }, [activeTab, studentYear, debouncedStudentSearch]);
+  const { 
+    kpis: data, 
+    advanced: advancedData, 
+    isLoading: overviewLoading,
+    isError: overviewError 
+  } = useAdminAnalyticsOverview(dateParams, activeDays, activeTab === 'overview' || activeTab === 'trends');
+
+  const { data: mcqData, isLoading: mcqLoading } = useAdminMcqStats({
+    page: mcqPage,
+    search: debouncedMcqSearch
+  }, activeTab === 'mcq');
+
+  const { data: studentData, isLoading: studentLoading } = useAdminStudentReports({
+    page: studentPage,
+    search: debouncedStudentSearch,
+    year: studentYear
+  }, activeTab === 'students');
+
+  const loading = overviewLoading || mcqLoading || studentLoading;
+  const error = overviewError ? 'Failed to fetch analytics data' : null;
 
   const handleMcqSearch = (e) => {
     e.preventDefault();
@@ -201,7 +157,7 @@ export default function AnalyticsDashboard() {
         </div>
       </div>
 
-      {loading && activeTab === 'overview' ? (
+      {loading && (activeTab === 'overview' || activeTab === 'trends') ? (
         <div className="flex justify-center py-12">
           <p className="animate-pulse text-slate-500 font-medium">Loading analytics...</p>
         </div>
@@ -226,24 +182,26 @@ export default function AnalyticsDashboard() {
             )}
             {activeTab === 'mcq' && (
               <McqStatsSection 
-                stats={mcqStats} 
-                pagination={mcqPagination}
+                stats={mcqData?.stats || []} 
+                pagination={mcqData?.pagination}
                 search={mcqSearch}
                 setSearch={setMcqSearch}
                 onSearch={handleMcqSearch}
-                onPageChange={(p) => fetchMcqStats(p)}
+                onPageChange={setMcqPage}
+                isLoading={mcqLoading}
               />
             )}
             {activeTab === 'students' && (
               <StudentReportsSection 
-                reports={studentReports} 
-                pagination={studentPagination}
+                reports={studentData?.reports || []} 
+                pagination={studentData?.pagination}
                 search={studentSearch}
                 setSearch={setStudentSearch}
                 onSearch={handleStudentSearch}
-                onPageChange={(p) => fetchStudentReports(p, studentYear)}
+                onPageChange={setStudentPage}
                 selectedYear={studentYear}
                 onYearChange={setStudentYear}
+                isLoading={studentLoading}
               />
             )}
           </motion.div>
@@ -371,7 +329,7 @@ function TrendsSection({ data }) {
   );
 }
 
-function McqStatsSection({ stats = [], pagination, search, setSearch, onSearch, onPageChange }) {
+function McqStatsSection({ stats = [], pagination, search, setSearch, onSearch, onPageChange, isLoading }) {
   return (
     <div className="space-y-4">
       <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
@@ -392,7 +350,12 @@ function McqStatsSection({ stats = [], pagination, search, setSearch, onSearch, 
         </form>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden min-h-[300px] relative">
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-[2px] z-10 flex items-center justify-center">
+            <Activity className="w-8 h-8 text-primary animate-spin" />
+          </div>
+        )}
         <div className="p-6 border-b border-slate-100 dark:border-slate-700">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Activity className="w-5 h-5 text-rose-500" />
@@ -401,43 +364,47 @@ function McqStatsSection({ stats = [], pagination, search, setSearch, onSearch, 
           <p className="text-sm text-slate-500 mt-1">Showing distribution of student choices for the searched questions.</p>
         </div>
         <div className="divide-y divide-slate-100 dark:divide-slate-700">
-          {stats?.map((mcq, idx) => (
-            <div key={mcq._id} className="p-6 space-y-4">
-              <div className="flex items-start gap-4">
-                <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-500 shrink-0">
-                  {((pagination?.page || 1) - 1) * (pagination?.limit || 20) + idx + 1}
-                </span>
-                <p className="text-slate-900 dark:text-white font-medium">{mcq.question}</p>
+          {stats?.map((mcq, idx) => {
+            const limit = pagination?.limit || 20;
+            const page = pagination?.page || 1;
+            return (
+              <div key={mcq._id} className="p-6 space-y-4">
+                <div className="flex items-start gap-4">
+                  <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-500 shrink-0">
+                    {(page - 1) * limit + idx + 1}
+                  </span>
+                  <p className="text-slate-900 dark:text-white font-medium">{mcq.question}</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pl-10">
+                  {mcq.mcqOptions?.map((optText, optIndex) => {
+                    const optData = mcq.options?.find(o => o.index === optIndex) || { count: 0 };
+                    const percent = mcq.total > 0 ? ((optData.count / mcq.total) * 100).toFixed(0) : 0;
+                    const isCorrect = optIndex === mcq.correctIndex;
+                    return (
+                      <div key={optIndex} className={`p-3 rounded-xl border ${isCorrect ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-100 bg-slate-50/50'}`}>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                            Option {String.fromCharCode(65 + optIndex)} {isCorrect && '✓'}
+                          </span>
+                          <span className="text-xs font-bold">{percent}%</span>
+                        </div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400 mb-2 truncate" title={optText}>
+                          {optText}
+                        </div>
+                        <div className="h-1.5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full ${isCorrect ? 'bg-emerald-500' : 'bg-slate-400'}`}
+                            style={{ width: `${percent}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pl-10">
-                {mcq.mcqOptions?.map((optText, optIndex) => {
-                  const optData = mcq.options?.find(o => o.index === optIndex) || { count: 0 };
-                  const percent = mcq.total > 0 ? ((optData.count / mcq.total) * 100).toFixed(0) : 0;
-                  const isCorrect = optIndex === mcq.correctIndex;
-                  return (
-                    <div key={optIndex} className={`p-3 rounded-xl border ${isCorrect ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-100 bg-slate-50/50'}`}>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                          Option {String.fromCharCode(65 + optIndex)} {isCorrect && '✓'}
-                        </span>
-                        <span className="text-xs font-bold">{percent}%</span>
-                      </div>
-                      <div className="text-xs text-slate-600 dark:text-slate-400 mb-2 truncate" title={optText}>
-                        {optText}
-                      </div>
-                      <div className="h-1.5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${isCorrect ? 'bg-emerald-500' : 'bg-slate-400'}`}
-                          style={{ width: `${percent}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-          {(!stats || stats.length === 0) && <p className="p-12 text-center text-slate-500">No MCQs found matching your search.</p>}
+            );
+          })}
+          {(!stats || stats.length === 0) && !isLoading && <p className="p-12 text-center text-slate-500">No MCQs found matching your search.</p>}
         </div>
 
         {pagination && pagination.totalPages > 1 && (
@@ -471,10 +438,8 @@ function McqStatsSection({ stats = [], pagination, search, setSearch, onSearch, 
   );
 }
 
-function StudentReportsSection({ reports, pagination, search, setSearch, onSearch, onPageChange, selectedYear, onYearChange }) {
+function StudentReportsSection({ reports, pagination, search, setSearch, onSearch, onPageChange, selectedYear, onYearChange, isLoading }) {
   const [selectedStudentId, setSelectedStudentId] = useState(null);
-  const [detailedReport, setDetailedReport] = useState(null);
-  const [loadingReport, setLoadingReport] = useState(false);
   const [reportPage, setReportPage] = useState(1);
 
   const MS_YEARS = [
@@ -485,21 +450,15 @@ function StudentReportsSection({ reports, pagination, search, setSearch, onSearc
     { id: 5, label: 'MS5' },
   ];
 
-  const fetchDetailedReport = async (studentId, page = 1) => {
-    setLoadingReport(true);
-    try {
-      const res = await api.get(`/admin/analytics/students/${studentId}?page=${page}`);
-      setDetailedReport(res.data);
-      setReportPage(page);
-    } catch (_) {
-    } finally {
-      setLoadingReport(false);
-    }
-  };
+  const { data: detailedReport, isLoading: loadingReport } = useAdminStudentDetailReport(
+    selectedStudentId, 
+    { page: reportPage },
+    !!selectedStudentId
+  );
 
   const handleViewReport = (studentId) => {
     setSelectedStudentId(studentId);
-    fetchDetailedReport(studentId, 1);
+    setReportPage(1);
   };
 
   return (
@@ -535,7 +494,12 @@ function StudentReportsSection({ reports, pagination, search, setSearch, onSearc
         </form>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden relative min-h-[300px]">
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-[2px] z-10 flex items-center justify-center">
+            <Activity className="w-8 h-8 text-primary animate-spin" />
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -593,7 +557,7 @@ function StudentReportsSection({ reports, pagination, search, setSearch, onSearc
                   </td>
                 </tr>
               ))}
-              {reports.length === 0 && (
+              {reports.length === 0 && !isLoading && (
                 <tr>
                   <td colSpan="5" className="p-12 text-center text-slate-500">No students found for {MS_YEARS.find(y => y.id === selectedYear)?.label}.</td>
                 </tr>
@@ -603,27 +567,29 @@ function StudentReportsSection({ reports, pagination, search, setSearch, onSearc
         </div>
         
         {/* Pagination */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-700/50 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
-          <p className="text-xs text-slate-500 font-medium">
-            Page {pagination.page} of {pagination.totalPages}
-          </p>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => onPageChange(pagination.page - 1)}
-              disabled={pagination.page <= 1}
-              className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-white dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={() => onPageChange(pagination.page + 1)}
-              disabled={pagination.page >= pagination.totalPages}
-              className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-white dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+        {pagination && pagination.totalPages > 1 && (
+          <div className="p-4 bg-slate-50 dark:bg-slate-700/50 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <p className="text-xs text-slate-500 font-medium">
+              Page {pagination.page} of {pagination.totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => onPageChange(pagination.page - 1)}
+                disabled={pagination.page <= 1}
+                className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-white dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={() => onPageChange(pagination.page + 1)}
+                disabled={pagination.page >= pagination.totalPages}
+                className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-white dark:hover:bg-slate-600 disabled:opacity-50 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Detailed Report Modal */}

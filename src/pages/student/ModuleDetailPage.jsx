@@ -2,8 +2,9 @@ import { useEffect, useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ChevronRight, BookOpen, Search, Lock, LockOpen, ArrowRight, FlaskConical, Palette, Droplet, Activity, Dna } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../api/client';
+import { useModuleDetail } from '../../hooks/useContent';
 import { recordRecentView } from '../../utils/recentViews';
+import api from '../../api/client';
 
 const SUBJECT_PLACEHOLDER_IMAGES = [
   'https://images.unsplash.com/photo-1559757175-5700dde675bc?w=400&h=200&fit=crop',
@@ -23,53 +24,29 @@ const OSPE_ICONS = [
 export default function ModuleDetailPage() {
   const { moduleId } = useParams();
   const { user } = useAuth();
-  const [module, setModule] = useState(null);
-  const [subjects, setSubjects] = useState([]);
-  const [ospes, setOspes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { module, subjects = [], ospes = [], isLoading: loading, error } = useModuleDetail(moduleId);
   const [subjectSearch, setSubjectSearch] = useState('');
 
   useEffect(() => {
-    let cancelled = false;
-    Promise.all([
-      api.get(`/content/modules/${moduleId}`).then((r) => r.data),
-      api.get(`/content/modules/${moduleId}/subjects`).then((r) => r.data),
-      api.get(`/ospes/modules/${moduleId}`).then((r) => r.data).catch(() => []),
-    ])
-      .then(([mod, subs, osps]) => {
-        if (cancelled) return;
-        setModule(mod);
-        setSubjects(subs || []);
-        setOspes(osps || []);
-        if (mod) {
-          recordRecentView({
-            type: 'module',
-            id: mod._id,
-            name: mod.name,
-            url: `/student/modules/${mod._id}`,
-            meta: mod.year?.name || 'Module',
-            icon: 'school',
-            iconBg: 'bg-primary/10',
-            iconColor: 'text-primary',
-          });
-
-          // Track visit on backend for KPI analytics
-          api.post('/analytics/track-visit', {
-            contentType: 'module',
-            contentId: mod._id
-          }).catch(err => console.error('Failed to track module visit', err));
-        }
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(err.response?.status === 404 ? 'Module not found' : 'Failed to load');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+    if (module && !loading) {
+      recordRecentView({
+        type: 'module',
+        id: module._id,
+        name: module.name,
+        url: `/student/modules/${module._id}`,
+        meta: module.year?.name || 'Module',
+        icon: 'school',
+        iconBg: 'bg-primary/10',
+        iconColor: 'text-primary',
       });
-    return () => { cancelled = true; };
-  }, [moduleId]);
+
+      // Track visit on backend for KPI analytics
+      api.post('/analytics/track-visit', {
+        contentType: 'module',
+        contentId: module._id
+      }).catch(err => console.error('Failed to track module visit', err));
+    }
+  }, [module, loading]);
 
   const hasModuleAccess = useMemo(() => {
     const ids = new Set();

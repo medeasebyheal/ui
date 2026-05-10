@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Wallet, Clock, Search, Download, Receipt, MoreVertical, ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react';
-import api from '../../api/client';
+import { useAdminPayments, useVerifyPayment } from '../../hooks/useAdmin';
 import Modal from '../../components/admin/Modal';
 
 const PER_PAGE = 10;
@@ -28,8 +28,10 @@ function packageSubtitle(pkg) {
 export default function AdminPayments() {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === 'superadmin';
-  const [payments, setPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  
+  const { data: payments = [], isLoading: loading } = useAdminPayments({}, isSuperAdmin);
+  const verifyMutation = useVerifyPayment();
+
   const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
@@ -37,28 +39,13 @@ export default function AdminPayments() {
   const [approveModal, setApproveModal] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
 
-  const fetchPayments = () => {
-    setLoading(true);
-    return api
-      .get('/payments')
-      .then(({ data }) => setPayments(Array.isArray(data) ? data : []))
-      .catch(() => setPayments([]))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    if (isSuperAdmin) fetchPayments();
-    else setLoading(false);
-  }, [isSuperAdmin]);
-
   useEffect(() => {
     setPage(1);
   }, [searchInput, statusFilter]);
 
   const handleVerify = async (id, status, rejectionReason) => {
     try {
-      await api.patch(`/payments/${id}/verify`, { status, rejectionReason: rejectionReason || '' });
-      await fetchPayments();
+      await verifyMutation.mutateAsync({ id, status, rejectionReason: rejectionReason || '' });
       setMenuOpen(null);
     } catch (_) {}
   };

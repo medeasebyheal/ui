@@ -21,10 +21,11 @@ import {
 } from 'lucide-react';
 import ControlledYouTubePlayer from '../../components/student/ControlledYouTubePlayer';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../api/client';
+import { useSubjectDetail, useInfiniteTopics } from '../../hooks/useContent';
 import { useProtectedContent } from '../../hooks/useProtectedContent';
 import { recordRecentView } from '../../utils/recentViews';
 import { getYouTubeThumbnail } from '../../utils/youtube';
+import api from '../../api/client';
 
 const TOPIC_PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=200&fit=crop';
 
@@ -45,109 +46,90 @@ function getTopicIcon(index) {
 export default function SubjectDetailPage() {
   const { moduleId, subjectId } = useParams();
   const { user } = useAuth();
-  const [subject, setSubject] = useState(null);
-  const [topics, setTopics] = useState([]);
-  const [oneShotLectures, setOneShotLectures] = useState([]);
-  const [moduleSubjects, setModuleSubjects] = useState([]);
-  const [moduleName, setModuleName] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  const {
+    subject,
+    lectures: apiLectures = [],
+    moduleSubjects = [],
+    module,
+    isLoading: initialLoading,
+    error,
+  } = useSubjectDetail(moduleId, subjectId);
+
+  const {
+    data: infiniteData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage: loadingMore,
+  } = useInfiniteTopics(subjectId);
+
   const [selectedLecture, setSelectedLecture] = useState(null);
   const [oneShotVideoPlaying, setOneShotVideoPlaying] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [totalTopics, setTotalTopics] = useState(0);
 
   useProtectedContent();
 
+  const topics = useMemo(() => {
+    if (!infiniteData) return [];
+    return infiniteData.pages.flatMap((page) => (Array.isArray(page) ? page : (Array.isArray(page?.topics) ? page.topics : [])));
+  }, [infiniteData]);
+
+  const totalPages = infiniteData?.pages[0]?.totalPages || 1;
+  const currentPage = infiniteData?.pages.length || 1;
+  const totalTopics = infiniteData?.pages[0]?.total || topics.length;
+
+  const oneShotLectures = useMemo(() => {
+    const list = [...apiLectures];
+    const allSubjectVideoUrls = [subject?.videoUrl, ...(subject?.videoUrls || [])].filter(Boolean);
+    if (allSubjectVideoUrls.length) {
+      allSubjectVideoUrls.forEach((url, i) => {
+        if (!list.some(l => l.youtubeUrl === url)) {
+          list.push({
+            _id: `ext-${i}-${subject._id}`,
+            title: `Explanatory Video ${i + 1}`,
+            youtubeUrl: url
+          });
+        }
+      });
+    }
+    return list;
+  }, [apiLectures, subject]);
+
   useEffect(() => {
-    let cancelled = false;
-    Promise.all([
-      api.get(`/content/subjects/${subjectId}`).then((r) => r.data),
-      api.get(`/content/subjects/${subjectId}/topics`).then((r) => r.data),
-      api.get(`/content/subjects/${subjectId}/one-shot-lectures`).then((r) => r.data || []).catch(() => []),
-      api.get(`/content/modules/${moduleId}/subjects`).then((r) => r.data),
-      api.get(`/content/modules/${moduleId}`).then((r) => r.data).catch(() => ({ name: 'Module' })),
-    ])
-      .then(([sub, tops, lectures, subs, mod]) => {
-        if (cancelled) return;
-        setSubject(sub);
-        // API may return paginated { topics, page, limit } or an array
-        const fetchedTopics = Array.isArray(tops) ? tops : (Array.isArray(tops?.topics) ? tops.topics : []);
-        setTopics(fetchedTopics);
-        if (tops?.totalPages) setTotalPages(tops.totalPages);
-        if (tops?.total !== undefined) setTotalTopics(tops.total);
-        else setTotalTopics(fetchedTopics.length);
-        setPage(1);
-        const list = Array.isArray(lectures) ? [...lectures] : [];
-        const allSubjectVideoUrls = [sub?.videoUrl, ...(sub?.videoUrls || [])].filter(Boolean);
-        if (allSubjectVideoUrls.length) {
-          allSubjectVideoUrls.forEach((url, i) => {
-            // Check if this URL is already in the oneShotLectures to avoid duplicates
-            if (!list.some(l => l.youtubeUrl === url)) {
-              list.push({
-                _id: `ext-${i}-${sub._id}`,
-                title: `Explanatory Video ${i + 1}`,
-                youtubeUrl: url
-              });
-            }
-          });
-        }
-        setOneShotLectures(list);
-        setSelectedLecture(list[0] || null);
-        setOneShotVideoPlaying(false);
-        setModuleSubjects(subs || []);
-        setModuleName(mod?.name || subject?.module?.name || 'Module');
-        if (sub) {
-          recordRecentView({
-            type: 'subject',
-            id: sub._id,
-            name: sub.name,
-            url: `/student/modules/${moduleId}/subjects/${sub._id}`,
-            meta: 'Subject',
-            icon: 'view_in_ar',
-            iconBg: 'bg-purple-50 dark:bg-purple-900/30',
-            iconColor: 'text-purple-600',
-          });
+    if (oneShotLectures.length > 0 && !selectedLecture) {
+      setSelectedLecture(oneShotLectures[0]);
+    }
+  }, [oneShotLectures]);
 
-          // Track visit on backend for KPI analytics
-          api.post('/analytics/track-visit', {
-            contentType: 'subject',
-            contentId: sub._id
-          }).catch(err => console.error('Failed to track subject visit', err));
-        }
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(err.response?.status === 404 ? 'Subject not found' : 'Failed to load');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+  useEffect(() => {
+    if (subject && !initialLoading) {
+      recordRecentView({
+        type: 'subject',
+        id: subject._id,
+        name: subject.name,
+        url: `/student/modules/${moduleId}/subjects/${subject._id}`,
+        meta: 'Subject',
+        icon: 'view_in_ar',
+        iconBg: 'bg-purple-50 dark:bg-purple-900/30',
+        iconColor: 'text-purple-600',
       });
-    return () => { cancelled = true; };
-  }, [subjectId, moduleId]);
 
-  const loadMoreTopics = async () => {
-    if (loadingMore || page >= totalPages) return;
-    setLoadingMore(true);
-    try {
-      const nextPage = page + 1;
-      const res = await api.get(`/content/subjects/${subjectId}/topics?page=${nextPage}`);
-      const newTopics = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.topics) ? res.data.topics : []);
-      setTopics(prev => {
-        const existingIds = new Set(prev.map(t => t._id));
-        const filteredNew = newTopics.filter(t => !existingIds.has(t._id));
-        return [...prev, ...filteredNew];
-      });
-      setPage(nextPage);
-      if (res.data?.totalPages) setTotalPages(res.data.totalPages);
-    } catch (err) {
-      console.error('Failed to load more topics', err);
-    } finally {
-      setLoadingMore(false);
+      // Track visit on backend for KPI analytics
+      api.post('/analytics/track-visit', {
+        contentType: 'subject',
+        contentId: subject._id
+      }).catch(err => console.error('Failed to track subject visit', err));
+    }
+  }, [subject, initialLoading, moduleId]);
+
+  const loadMoreTopics = () => {
+    if (hasNextPage) {
+      fetchNextPage();
     }
   };
+
+  const moduleName = module?.name || subject?.module?.name || 'Module';
+  const loading = initialLoading;
 
   const hasModuleAccess = useMemo(() => {
     const ids = new Set();
@@ -367,7 +349,7 @@ export default function SubjectDetailPage() {
         </div>
 
         {/* Load More Button */}
-        {page < totalPages && (
+        {hasNextPage && (
           <div className="flex justify-center mt-10">
             <button
               onClick={loadMoreTopics}
