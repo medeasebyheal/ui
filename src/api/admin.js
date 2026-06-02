@@ -164,6 +164,11 @@ export const fetchAdminModuleOspes = async (moduleId) => {
   return data;
 };
 
+export const copyAdminModuleOspes = async (moduleId, sourceModuleId, ospeIds) => {
+  const { data } = await api.post(`/admin/modules/${moduleId}/ospes/copy`, { sourceModuleId, ospeIds });
+  return data;
+};
+
 export const fetchAdminTopicMcqs = async (topicId) => {
   const { data } = await api.get(`/admin/topics/${topicId}/mcqs`);
   return data;

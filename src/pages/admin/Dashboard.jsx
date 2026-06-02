@@ -8,7 +8,7 @@ import { useAdminDashboard } from '../../hooks/useAdmin';
 export default function AdminDashboard() {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === 'superadmin';
-  
+
   const { data, isLoading: loading } = useAdminDashboard(isSuperAdmin);
 
   const [removeFifthLoading, setRemoveFifthLoading] = useState(false);
@@ -392,7 +392,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* MCQ Maintenance */}
-      {/* <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
           <Wrench className="w-5 h-5 text-slate-500 dark:text-slate-400" />
           MCQ Maintenance
@@ -414,7 +414,7 @@ export default function AdminDashboard() {
               {removeFifthResult.error || (removeFifthResult.updated === 0 ? removeFifthResult.message : `${removeFifthResult.message} (correctIndex fixed for ${removeFifthResult.correctedIndex ?? 0})`)}
             </span>
           )} */}
-      {/* <button
+          <button
             type="button"
             onClick={handleCleanMcqs}
             disabled={cleanLoading}
@@ -428,7 +428,7 @@ export default function AdminDashboard() {
             </span>
           )}
         </div>
-      </div> */}
+      </div>
 
       {/* CTA Banner */}
       <div className="bg-gradient-to-r from-teal-500 to-primary p-8 rounded-3xl text-white flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">

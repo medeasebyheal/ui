@@ -4,6 +4,7 @@ import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import Modal from '../../../components/admin/Modal';
 import ConfirmDialog from '../../../components/admin/ConfirmDialog';
+import { toast } from 'react-hot-toast';
 import { Plus, Pencil, Trash2, ClipboardList, Image, FileText } from 'lucide-react';
 
 function getOspeSummary(ospe) {
@@ -25,6 +26,11 @@ export default function ModuleOspesList() {
   const [ospes, setOspes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [copyModalOpen, setCopyModalOpen] = useState(false);
+  const [allModules, setAllModules] = useState([]);
+  const [targetModuleId, setTargetModuleId] = useState('');
+  const [selectedOspeIds, setSelectedOspeIds] = useState([]);
+  const [copying, setCopying] = useState(false);
 
   const loadYear = () => api.get('/admin/years').then(({ data }) => setYear(data.find((x) => x._id === yearId) || null)).catch(() => setYear(null));
   const loadModule = () => api.get(`/admin/years/${yearId}/modules`).then(({ data }) => setModule_(data.find((x) => x._id === moduleId) || null)).catch(() => setModule_(null));
@@ -41,6 +47,33 @@ export default function ModuleOspesList() {
       loadOspes();
       setDeleteConfirm(null);
     } catch (_) {}
+  };
+
+  const loadAllModules = async () => {
+    try {
+      const { data } = await api.get('/admin/modules');
+      setAllModules(data);
+    } catch (_) {}
+  };
+
+  const handleCopy = async () => {
+    if (!targetModuleId) return;
+    if (selectedOspeIds.length === 0) return;
+    setCopying(true);
+    try {
+      await api.post(`/admin/modules/${targetModuleId}/ospes/copy`, { 
+        sourceModuleId: moduleId,
+        ospeIds: selectedOspeIds
+      });
+      setCopyModalOpen(false);
+      setTargetModuleId('');
+      toast.success('OSPEs copied successfully!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to copy OSPEs');
+    } finally {
+      setCopying(false);
+    }
   };
 
   if (loading) {
@@ -70,12 +103,25 @@ export default function ModuleOspesList() {
           <h1 className="text-2xl font-heading font-bold text-gray-900">OSPEs</h1>
           <p className="text-sm text-gray-500 mt-1">Picture-based MCQs and viva (written) OSPEs for {module_.name}.</p>
         </div>
-        <Link
-          to={`${basePath}/new`}
-          className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl font-medium shadow-sm hover:shadow transition-colors"
-        >
-          <Plus className="w-5 h-5" /> Add OSPE
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              loadAllModules();
+              setSelectedOspeIds(ospes.map(o => o._id));
+              setCopyModalOpen(true);
+            }}
+            className="inline-flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2.5 rounded-xl font-medium shadow-sm hover:bg-gray-50 transition-colors"
+          >
+            <ClipboardList className="w-5 h-5" /> Copy OSPEs to...
+          </button>
+          <Link
+            to={`${basePath}/new`}
+            className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl font-medium shadow-sm hover:shadow transition-colors"
+          >
+            <Plus className="w-5 h-5" /> Add OSPE
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -168,6 +214,87 @@ export default function ModuleOspesList() {
         onConfirm={() => deleteConfirm && handleDelete(deleteConfirm._id)}
         danger
       />
+
+      {copyModalOpen && (
+        <Modal open onClose={() => setCopyModalOpen(false)} title="Copy OSPEs to Another Module">
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Select a destination module to copy the chosen OSPEs from the current module ({module_.name}).
+            </p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Destination Module</label>
+              <select
+                value={targetModuleId}
+                onChange={(e) => setTargetModuleId(e.target.value)}
+                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary px-3 py-2 border bg-white"
+              >
+                <option value="">-- Select a module --</option>
+                {allModules.map((m) => (
+                  <option key={m._id} value={m._id} disabled={m._id === moduleId}>
+                    {m.name} {m.year?.name ? `(${m.year.name})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {ospes.length > 0 && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">Select OSPEs to copy</label>
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      if (selectedOspeIds.length === ospes.length) setSelectedOspeIds([]);
+                      else setSelectedOspeIds(ospes.map(o => o._id));
+                    }}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    {selectedOspeIds.length === ospes.length ? 'Deselect All' : 'Select All'}
+                  </button>
+                </div>
+                <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                  {ospes.map(ospe => (
+                    <label key={ospe._id} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedOspeIds.includes(ospe._id)} 
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedOspeIds([...selectedOspeIds, ospe._id]);
+                          else setSelectedOspeIds(selectedOspeIds.filter(id => id !== ospe._id));
+                        }}
+                        className="rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm text-gray-700">{ospe.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {ospes.length === 0 && (
+              <p className="text-sm text-gray-500 mt-2 italic">No OSPEs available to copy from this module.</p>
+            )}
+
+            <div className="flex gap-2 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setCopyModalOpen(false)}
+                className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCopy}
+                disabled={!targetModuleId || copying || selectedOspeIds.length === 0}
+                className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50"
+              >
+                {copying ? 'Copying...' : 'Copy OSPEs'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }

@@ -13,6 +13,7 @@ import {
   fetchAdminStudentReports,
   fetchAdminStudentDetailReport,
   fetchAdminPayments,
+  fetchAdminUsers,
   verifyPayment,
   verifyUser,
   updateUser,
