@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import api from '../../../api/client';
 import ResourceBreadcrumb from '../../../components/admin/ResourceBreadcrumb';
 import { useParseLoadingMessage } from '../../../hooks/useParseLoadingMessage';
-import { Upload, AlertCircle, FileText, Loader2 } from 'lucide-react';
+import { Upload, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import BulkMcqImportResult from '../../../components/admin/BulkMcqImportResult';
 
 const basePath = (y, m, s, t) => `/admin/resources/years/${y}/modules/${m}/subjects/${s}/topics/${t}`;
 
@@ -24,18 +25,15 @@ Explanation: The proximal convoluted tubule reabsorbs about 80–90% of filtered
 
 export default function BulkMcqPage() {
   const { yearId, moduleId, subjectId, topicId } = useParams();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [meta, setMeta] = useState({ year: null, module: null, subject: null, topic: null });
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
   const [mcqSet, setMcqSet] = useState(searchParams.get('mcqSet') || '');
   const [type, setType] = useState('guess_until_correct');
-  const [preview, setPreview] = useState(null);
-  const [parseLoading, setParseLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState(null);
-  const parseLoadingMessage = useParseLoadingMessage(parseLoading);
+  const importLoadingMessage = useParseLoadingMessage(importLoading);
 
   useEffect(() => {
     if (!yearId || !moduleId || !subjectId || !topicId) return;
@@ -58,37 +56,25 @@ export default function BulkMcqPage() {
     load();
   }, [yearId, moduleId, subjectId, topicId]);
 
-  const handleParse = async () => {
-    if (!text.trim()) return;
-    setParseLoading(true);
-    setImportResult(null);
-    try {
-      const { data } = await api.post(`/admin/topics/${topicId}/mcqs/parse`, { text: text.trim() });
-      setPreview(data);
-    } catch (e) {
-      const status = e.response?.status;
-      const msg = e.response?.data?.message || 'Parse failed';
-      if (status === 429 && e.response?.data?.resetAt) {
-        const when = new Date(e.response.data.resetAt).toLocaleString();
-        toast.error(`Gemini API exhausted. Try again after ${when}.`);
-      }
-      setPreview({ mcqs: [], errors: [{ message: msg }] });
-    }
-    setParseLoading(false);
-  };
-
   const handleImport = async () => {
-    if (!preview?.mcqs?.length) return;
+    if (!text.trim()) return;
     setImportLoading(true);
     setImportResult(null);
     try {
-      // send parsed MCQs from preview to backend to avoid re-parsing
-      const { data } = await api.post(`/admin/topics/${topicId}/mcqs/bulk`, { mcqs: preview.mcqs, type, mcqSet: mcqSet.trim() });
-      setImportResult({ success: true, created: data.created, errors: data.errors, partialBlockIndices: data.partialBlockIndices || [], source: data.source, usage: data.usage });
-      if (data.created > 0) {
-        setText('');
-        setPreview(null);
-      }
+      const { data } = await api.post(`/admin/topics/${topicId}/mcqs/bulk`, {
+        text: text.trim(),
+        type,
+        mcqSet: mcqSet.trim(),
+      });
+      setImportResult({
+        success: true,
+        created: data.created,
+        errors: data.errors,
+        partialBlockIndices: data.partialBlockIndices || [],
+        source: data.source,
+        usage: data.usage,
+      });
+      if (data.created > 0) setText('');
     } catch (e) {
       const status = e.response?.status;
       const msg = e.response?.data?.message || 'Import failed';
@@ -103,8 +89,6 @@ export default function BulkMcqPage() {
       setImportLoading(false);
     }
   };
-
-  const canSave = text.trim() && preview?.mcqs?.length > 0 && (!preview.errors || preview.errors.length === 0);
 
   if (loading || !meta.topic) {
     return (
@@ -124,215 +108,75 @@ export default function BulkMcqPage() {
     { label: 'Bulk import MCQs', path: null },
   ];
 
-  const hasParsedMcqs = preview?.mcqs?.length > 0;
-  const hasErrors = preview?.errors?.length > 0;
-
   return (
     <>
       <ResourceBreadcrumb items={breadcrumbItems} />
       <h1 className="text-2xl font-heading font-bold text-gray-900 mb-2">Bulk import MCQs</h1>
       <p className="text-sm text-gray-500 mb-6">
-        Paste your medical MCQs below. Use the format: question, 4 options (mark one with &quot;(correct)&quot;), then &quot;Explanation:&quot; and text. Separate each MCQ with a blank line or number (1. 2. 3.).
+        Paste MCQs in any format — numbering, labels, and markers are optional. AI will extract questions, options, correct answers, and explanations automatically.
       </p>
 
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Left: paste and parse */}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Set Name (Optional)</label>
-            <input
-              type="text"
-              value={mcqSet}
-              onChange={(e) => setMcqSet(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-              placeholder="e.g. Anatomy Practice Set 1"
-            />
-            <p className="text-xs text-gray-500 mt-1">If left blank, these MCQs will be placed in the "Default" set.</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type for all MCQs</label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            >
-              <option value="text">Text MCQ</option>
-              <option value="guess_until_correct">Guess until correct</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Paste your medical MCQs</label>
-            <textarea
-              value={text}
-              onChange={(e) => {
-                const v = e.target.value;
-                setText(v);
-                if (!v.trim()) setPreview(null);
-              }}
-              rows={14}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary focus:border-primary"
-              placeholder={FORMAT_EXAMPLE}
-            />
-          </div>
-          {parseLoading && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 border border-primary/20 text-primary">
-              <Loader2 className="w-5 h-5 flex-shrink-0 animate-spin" />
-              <span className="font-medium">{parseLoadingMessage}</span>
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={handleParse}
-              disabled={parseLoading || !text.trim() || preview !== null}
-              title={preview ? 'Clear the text and paste again to parse a new batch' : undefined}
-              className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl font-medium disabled:opacity-50"
-            >
-              <FileText className="w-5 h-5" />
-              {parseLoading ? 'Parsing...' : 'Parse & preview'}
-            </button>
-            <button
-              type="button"
-              onClick={handleImport}
-              disabled={importLoading || !canSave}
-              title={preview?.errors?.length > 0 ? 'Fix parse errors before saving' : undefined}
-              className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-xl font-medium disabled:opacity-50"
-            >
-              <Upload className="w-5 h-5" />
-              {importLoading ? 'Importing...' : 'Save MCQs'}
-            </button>
-          </div>
-          {preview?.errors?.length > 0 && (
-            <p className="text-sm text-amber-700 flex items-center gap-1">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              {hasParsedMcqs
-                ? 'Fix parse errors above before saving. Save is allowed only when there are no errors.'
-                : 'No valid MCQs parsed. Check the pasted format and try again.'}
-            </p>
-          )}
-          {importResult && (
-            <div
-              className={`p-3 rounded-lg text-sm ${
-                importResult.success
-                  ? 'bg-green-50 text-green-800 border border-green-200'
-                  : 'bg-red-50 text-red-800 border border-red-200'
-              }`}
-            >
-              {importResult.success ? (
-                <>
-                  <span className="font-medium">Imported {importResult.created} MCQ(s).</span>
-                  {importResult.source && (
-                    <span className="ml-2 text-xs px-2 py-0.5 rounded bg-green-100 text-green-800 font-medium">
-                      {importResult.source === 'gemini' ? 'Gemini' : 'Custom parser'}
-                    </span>
-                  )}
-                  {importResult.source === 'gemini' && importResult.usage && (
-                    <span className="ml-2 text-xs text-gray-600" title="Token usage">
-                      ({[importResult.usage.promptTokenCount != null && `In: ${importResult.usage.promptTokenCount}`, importResult.usage.outputTokenCount != null && `Out: ${importResult.usage.outputTokenCount}`, importResult.usage.totalTokenCount != null && `Total: ${importResult.usage.totalTokenCount}`].filter(Boolean).join(' · ')})
-                    </span>
-                  )}
-                  {importResult.errors?.length > 0 && (
-                    <span className="block mt-1"> {importResult.errors.length} block(s) had errors.</span>
-                  )}
-                  {importResult.partialBlockIndices?.length > 0 && (
-                    <span className="block mt-1 text-amber-700">
-                      Block(s) {importResult.partialBlockIndices.join(', ')} were parsed without options – please edit those MCQs to add choices.
-                    </span>
-                  )}
-                </>
-              ) : (
-                <span>{importResult.message}</span>
-              )}
-            </div>
-          )}
+      <div className="max-w-3xl space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Set Name (Optional)</label>
+          <input
+            type="text"
+            value={mcqSet}
+            onChange={(e) => setMcqSet(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+            placeholder="e.g. Anatomy Practice Set 1"
+          />
+          <p className="text-xs text-gray-500 mt-1">If left blank, these MCQs will be placed in the &quot;Default&quot; set.</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Type for all MCQs</label>
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          >
+            <option value="text">Text MCQ</option>
+            <option value="guess_until_correct">Guess until correct</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Paste your medical MCQs</label>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={16}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+            placeholder={FORMAT_EXAMPLE}
+          />
         </div>
 
-        {/* Right: format help + preview */}
-        <div className="space-y-6">
-          <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
-            <h3 className="font-semibold text-gray-900 mb-2">Format guide</h3>
-            <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
-              <li>One MCQ per block; separate blocks with a blank line or number (1. 2. 3.)</li>
-              <li>First line = question (optional: &quot;1. &quot; or &quot;Q. &quot; prefix)</li>
-              <li>Next 4 lines = options; mark the correct one with <strong>(correct)</strong> or <strong>(c)</strong></li>
-              <li>Then add <strong>Explanation:</strong> and your explanation text</li>
-            </ul>
-          </div>
-
-          {preview && (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="p-3 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
-                <h3 className="font-semibold text-gray-900">Preview</h3>
-                {hasParsedMcqs && (
-                  <span className="text-sm text-green-600 flex items-center gap-2 flex-wrap">
-                    {preview.mcqs.length} MCQ(s) parsed
-                    {preview.source && (
-                      <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
-                        {preview.source === 'gemini' ? 'Gemini' : 'Custom parser'}
-                      </span>
-                    )}
-                    {preview.source === 'gemini' && preview.usage && (
-                      <span className="text-xs text-gray-500" title="Token usage">
-                        {[preview.usage.promptTokenCount != null && `In: ${preview.usage.promptTokenCount}`, preview.usage.outputTokenCount != null && `Out: ${preview.usage.outputTokenCount}`, preview.usage.totalTokenCount != null && `Total: ${preview.usage.totalTokenCount}`].filter(Boolean).join(' · ')}
-                      </span>
-                    )}
-                  </span>
-                )}
-              </div>
-              {hasErrors && (
-                <div className="p-3 bg-amber-50 border-b border-amber-100 space-y-1">
-                  {preview.errors.map((err, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm text-amber-800">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                      <span>Block {err.blockIndex}: {err.message}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {hasParsedMcqs && (
-                <ul className="divide-y divide-gray-100 max-h-[28rem] overflow-y-auto">
-                  {preview.mcqs.map((mcq, i) => {
-                    const isPartial = (preview.partialBlockIndices || []).includes(i + 1);
-                    const options = mcq.options || [];
-                    const correctIndex = mcq.correctIndex ?? 0;
-                    return (
-                      <li key={i} className="p-4 hover:bg-gray-50/50 flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 text-sm font-medium text-primary">
-                          {i + 1}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-gray-900">{mcq.question}</p>
-                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <span className="inline-block text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">{type}</span>
-                            {isPartial && (
-                              <span className="inline-block text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">No options – add after save</span>
-                            )}
-                          </div>
-                          {!isPartial && options.length > 0 && (
-                            <ul className="mt-2 space-y-1 text-sm text-gray-700">
-                              {options.map((opt, oi) => (
-                                <li key={oi} className={oi === correctIndex ? 'font-medium text-primary' : ''}>
-                                  {String.fromCharCode(65 + oi)}) {opt}
-                                  {oi === correctIndex && ' ✓'}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                          {mcq.explanation && (
-                            <p className="text-sm text-gray-500 mt-2 pt-2 border-t border-gray-100">{mcq.explanation}</p>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-              {!hasParsedMcqs && !hasErrors && (
-                <div className="p-6 text-center text-gray-500 text-sm">No MCQs parsed. Check format and try again.</div>
-              )}
-            </div>
-          )}
+        <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
+          <h3 className="font-semibold text-gray-900 mb-2">Format tips (all optional)</h3>
+          <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+            <li>Separate MCQs with blank lines, numbers (1. 2. 3.), or horizontal rules</li>
+            <li>Options can use A), A., or plain lines; mark correct with (correct), (c), checkmarks, or &quot;Correct Answer: B&quot;</li>
+            <li>Add explanations with &quot;Explanation:&quot; or leave blank — AI will infer when missing</li>
+          </ul>
         </div>
+
+        {importLoading && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 border border-primary/20 text-primary">
+            <Loader2 className="w-5 h-5 flex-shrink-0 animate-spin" />
+            <span className="font-medium">{importLoadingMessage}</span>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={handleImport}
+          disabled={importLoading || !text.trim()}
+          className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-xl font-medium disabled:opacity-50"
+        >
+          <Upload className="w-5 h-5" />
+          {importLoading ? 'Importing...' : 'Import MCQs'}
+        </button>
+
+        <BulkMcqImportResult result={importResult} />
       </div>
 
       <div className="mt-6">
