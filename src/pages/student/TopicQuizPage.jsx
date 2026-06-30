@@ -711,7 +711,7 @@ export default function TopicQuizPage() {
                                 <Info className="w-5 h-5 text-success-green flex-shrink-0 mt-0.5" />
                                 <p className="text-slate-600">{result.explanation || 'No explanation available.'}</p>
                               </div>
-                              {result && !result.correct && (
+                              
                                 <button
                                   type="button"
                                   onClick={() => easegptRef.current?.openAndSendFirstMessage?.()}
@@ -720,7 +720,7 @@ export default function TopicQuizPage() {
                                   <Sparkles className="w-5 h-5 flex-shrink-0" />
                                   Still having confusion? Ask EaseGPT Now
                                 </button>
-                              )}
+                           
                             </div>
                           </motion.div>
                         )}
@@ -766,7 +766,7 @@ export default function TopicQuizPage() {
         </div>
         <EaseGPTChat
           ref={easegptRef}
-          enabled={result != null && !result.correct}
+          enabled={result != null && result.correct}
           mcqId={mcq?._id}
           context={{
             question: mcq?.question,
