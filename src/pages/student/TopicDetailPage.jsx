@@ -368,18 +368,14 @@ export default function TopicDetailPage() {
   <div className="relative w-full max-w-md lg:max-w-none">
 
     {/* Nebula */}
-    <div className="absolute -inset-12 -z-10 overflow-hidden">
-      <div className="absolute top-0 left-0 w-72 h-72 rounded-full bg-cyan-500/40 blur-[120px]" />
-      <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full bg-fuchsia-500/40 blur-[140px]" />
-      <div className="absolute top-1/2 left-1/2 w-64 h-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/30 blur-[120px]" />
-    </div>
+   
 
     {/* Image Card */}
     <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
       <img
         src={heroImageUrl}
         alt={topic.name}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-contain"
         onError={(e) => {
           e.target.src = LECTURE_PREVIEW_FALLBACK;
         }}

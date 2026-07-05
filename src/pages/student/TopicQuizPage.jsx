@@ -765,7 +765,7 @@ export default function TopicQuizPage() {
           </section>
         </div>
         <EaseGPTChat
-          ref={easegptRef}
+        ref={easegptRef}
           enabled={result != null && result.correct}
           mcqId={mcq?._id}
           context={{
