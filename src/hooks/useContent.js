@@ -1,5 +1,5 @@
 import { useQuery, useQueries, useInfiniteQuery } from '@tanstack/react-query';
-import { fetchYears, fetchYearsWithModules, fetchModulesByYear, fetchModule, fetchModuleSubjects, fetchModuleOspes, fetchProff, fetchSubject, fetchSubjectTopics, fetchSubjectOneShotLectures, fetchTopic, fetchTopicResources } from '../api/content';
+import { fetchYears, fetchYearsWithModules, fetchModulesByYear, fetchModule, fetchModuleSubjects, fetchModuleOspes, fetchProff, fetchSubject, fetchSubjectTopics, fetchSubjectOneShotLectures, fetchSubjectResources, fetchTopic, fetchTopicResources } from '../api/content';
 import api from '../api/client';
 
 /**
@@ -215,5 +215,16 @@ export const useTopicResources = (topicId) => {
     queryKey: ['topic-resources', topicId],
     queryFn: () => fetchTopicResources(topicId),
     enabled: !!topicId,
+  });
+};
+
+/**
+ * Fetch subject resources.
+ */
+export const useSubjectResources = (subjectId) => {
+  return useQuery({
+    queryKey: ['subject-resources', subjectId],
+    queryFn: () => fetchSubjectResources(subjectId),
+    enabled: !!subjectId,
   });
 };

@@ -18,10 +18,13 @@ import {
   Link2,
   Link2Icon,
   ExternalLink,
+  FileText,
+  Download,
+  Loader2,
 } from 'lucide-react';
 import ControlledYouTubePlayer from '../../components/student/ControlledYouTubePlayer';
 import { useAuth } from '../../context/AuthContext';
-import { useSubjectDetail, useInfiniteTopics } from '../../hooks/useContent';
+import { useSubjectDetail, useInfiniteTopics, useSubjectResources } from '../../hooks/useContent';
 import { useProtectedContent } from '../../hooks/useProtectedContent';
 import { recordRecentView } from '../../utils/recentViews';
 import { getYouTubeThumbnail } from '../../utils/youtube';
@@ -66,6 +69,34 @@ export default function SubjectDetailPage() {
 
   const [selectedLecture, setSelectedLecture] = useState(null);
   const [oneShotVideoPlaying, setOneShotVideoPlaying] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(null);
+
+  const { data: resources = [] } = useSubjectResources(subjectId);
+
+  const handleResourceClick = async (e, res) => {
+    if (res.type !== 'pdf') return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (downloadingPdf === res._id) return;
+    setDownloadingPdf(res._id);
+    try {
+      const response = await fetch(res.url, { mode: 'cors' });
+      if (!response.ok) throw new Error('Download failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(res.title || 'resource').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-') || 'download'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (_) {
+      window.open(res.url, '_blank', 'noopener,noreferrer');
+    } finally {
+      setDownloadingPdf(null);
+    }
+  };
 
   useProtectedContent();
 
@@ -359,6 +390,55 @@ export default function SubjectDetailPage() {
               {loadingMore ? 'Loading More Topics...' : 'Load More Topics'}
             </button>
           </div>
+        )}
+
+        {/* Subject Resources */}
+        {hasModuleAccess && resources.length > 0 && (
+          <section className="mt-16">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-2 bg-teal-100 dark:bg-teal-900/30 text-primary rounded-lg">
+                <FileText className="w-5 h-5" />
+              </div>
+              <h2 className="text-2xl font-bold font-heading">Subject Resources</h2>
+            </div>
+            <div className="bg-white dark:bg-slate-850 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {resources.map((res) => (
+                  <li key={res._id}>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        if (res.type === 'pdf') handleResourceClick(e, res);
+                        else if (res.url) window.open(res.url, '_blank', 'noopener,noreferrer');
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          if (res.type === 'pdf') handleResourceClick(e, res);
+                          else if (res.url) window.open(res.url, '_blank', 'noopener,noreferrer');
+                        }
+                      }}
+                      className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 hover:bg-teal-50/50 dark:hover:bg-teal-950/30 transition-colors border border-slate-100 dark:border-slate-800 cursor-pointer group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0 text-primary animate-pulse-subtle">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-900 dark:text-white truncate flex-1">{res.title}</span>
+                      {res.type === 'pdf' ? (
+                        downloadingPdf === res._id ? (
+                          <Loader2 className="w-5 h-5 animate-spin text-primary flex-shrink-0" />
+                        ) : (
+                          <Download className="w-5 h-5 text-slate-400 group-hover:text-primary transition-colors flex-shrink-0" />
+                        )
+                      ) : (
+                        <ExternalLink className="w-5 h-5 text-slate-400 group-hover:text-primary transition-colors flex-shrink-0" />
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
         )}
 
         {/* One Shot Lectures */}

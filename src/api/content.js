@@ -61,6 +61,11 @@ export const fetchTopicResources = async (topicId) => {
   return data;
 };
 
+export const fetchSubjectResources = async (subjectId) => {
+  const { data } = await api.get(`/content/subjects/${subjectId}/resources`);
+  return data;
+};
+
 // ── Proff ────────────────────────────────────────────────────────────────
 export const fetchProff = async () => {
   const { data } = await api.get('/content/proff');

@@ -203,7 +203,7 @@ export default function TopicDetailPage() {
       });
       if (hasTrackedVisit.current !== topicData.topic._id) {
         hasTrackedVisit.current = topicData.topic._id;
-        api.post('/analytics/track-visit', { contentType: 'topic', contentId: topicData.topic._id }).catch(() => {});
+        api.post('/analytics/track-visit', { contentType: 'topic', contentId: topicData.topic._id }).catch(() => { });
       }
     }
   }, [topicData, topicLoading, moduleId, subjectId, refreshUser]);
@@ -364,42 +364,114 @@ export default function TopicDetailPage() {
               </p>
             </div>
 
-           <div className="relative flex justify-center lg:justify-end">
-  <div className="relative w-full max-w-md lg:max-w-none">
+            <div className="relative flex justify-center lg:justify-end">
+              <div className="relative w-full max-w-md lg:max-w-none">
 
-    {/* Nebula */}
-   
+                {/* Nebula */}
 
-    {/* Image Card */}
-    <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
-      <img
-        src={heroImageUrl}
-        alt={topic.name}
-        className="w-full h-full object-contain"
-        onError={(e) => {
-          e.target.src = LECTURE_PREVIEW_FALLBACK;
-        }}
-      />
 
-      {/* Nebula color tint over image */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/20 via-transparent to-fuchsia-500/20 mix-blend-screen" />
-    </div>
+                {/* Image Card */}
+                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                  <img
+                    src={heroImageUrl}
+                    alt={topic.name}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      e.target.src = LECTURE_PREVIEW_FALLBACK;
+                    }}
+                  />
 
-    {/* Avatar */}
-    <div className="absolute -bottom-4 -left-2 sm:left-4 w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-white shadow-xl ring-2 ring-teal-100">
-      <img
-        src={topic?.imageUrl || heroImageUrl}
-        alt=""
-        className="w-full h-full object-cover"
-        onError={(e) => {
-          e.target.src = TOPIC_PLACEHOLDER_IMAGE;
-        }}
-      />
-    </div>
-  </div>
-</div>
+                  {/* Nebula color tint over image */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/20 via-transparent to-fuchsia-500/20 mix-blend-screen" />
+                </div>
+
+                {/* Avatar */}
+                <div className="absolute -bottom-4 -left-2 sm:left-4 w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-white shadow-xl ring-2 ring-teal-100">
+                  <img
+                    src={topic?.imageUrl || heroImageUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.src = TOPIC_PLACEHOLDER_IMAGE;
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </section>
+        <div className=" gap-6 mb-3">
+          {(resources.length > 0 || bookmarkedMcqs.length > 0) && (
+            <div className="space-y-6">
+              {resources.length > 0 && (
+                <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-primary" />
+                    Resources
+                  </h3>
+                  <ul className="space-y-2">
+                    {resources.map((res) => (
+                      <li key={res._id}>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            if (res.type === 'pdf') handleResourceClick(e, res);
+                            else if (res.url) window.open(res.url, '_blank', 'noopener,noreferrer');
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              if (res.type === 'pdf') handleResourceClick(e, res);
+                              else if (res.url) window.open(res.url, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-teal-50/50 transition-colors cursor-pointer"
+                        >
+                          <FileText className="w-5 h-5 text-primary flex-shrink-0" />
+                          <span className="text-sm font-medium text-slate-900 truncate flex-1">{res.title}</span>
+                          {res.type === 'pdf' && (
+                            downloadingPdf === res._id
+                              ? <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                              : <Download className="w-4 h-4 text-slate-400" />
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {bookmarkedMcqs.length > 0 && (
+                <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                    <Bookmark className="w-5 h-5 text-primary" />
+                    Bookmarked MCQs
+                  </h3>
+                  <ul className="space-y-2">
+                    {bookmarkedMcqs.map((b) => {
+                      const mcq = b.mcq || {};
+                      const qIndex = mcqs.findIndex((m) => String(m._id) === String(mcq._id));
+                      return (
+                        <li key={b._id || mcq._id}>
+                          <Link
+                            to={`${quizPageUrl}?scrollTo=${encodeURIComponent(mcq._id)}`}
+                            className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-teal-50/50 transition-colors"
+                          >
+                            <FileQuestion className="w-5 h-5 text-primary flex-shrink-0" />
+                            <span className="text-sm font-medium text-slate-900 truncate flex-1">
+                              {qIndex >= 0 ? `${qIndex + 1}. ` : ''}{mcq.question || 'Bookmarked question'}
+                            </span>
+                            <Eye className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Stats bar */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
@@ -591,78 +663,6 @@ export default function TopicDetailPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {(resources.length > 0 || bookmarkedMcqs.length > 0) && (
-                <div className="space-y-6">
-                  {resources.length > 0 && (
-                    <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
-                      <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-primary" />
-                        Resources
-                      </h3>
-                      <ul className="space-y-2">
-                        {resources.map((res) => (
-                          <li key={res._id}>
-                            <div
-                              role="button"
-                              tabIndex={0}
-                              onClick={(e) => {
-                                if (res.type === 'pdf') handleResourceClick(e, res);
-                                else if (res.url) window.open(res.url, '_blank', 'noopener,noreferrer');
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  if (res.type === 'pdf') handleResourceClick(e, res);
-                                  else if (res.url) window.open(res.url, '_blank', 'noopener,noreferrer');
-                                }
-                              }}
-                              className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-teal-50/50 transition-colors cursor-pointer"
-                            >
-                              <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-                              <span className="text-sm font-medium text-slate-900 truncate flex-1">{res.title}</span>
-                              {res.type === 'pdf' && (
-                                downloadingPdf === res._id
-                                  ? <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                                  : <Download className="w-4 h-4 text-slate-400" />
-                              )}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {bookmarkedMcqs.length > 0 && (
-                    <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
-                      <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                        <Bookmark className="w-5 h-5 text-primary" />
-                        Bookmarked MCQs
-                      </h3>
-                      <ul className="space-y-2">
-                        {bookmarkedMcqs.map((b) => {
-                          const mcq = b.mcq || {};
-                          const qIndex = mcqs.findIndex((m) => String(m._id) === String(mcq._id));
-                          return (
-                            <li key={b._id || mcq._id}>
-                              <Link
-                                to={`${quizPageUrl}?scrollTo=${encodeURIComponent(mcq._id)}`}
-                                className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-teal-50/50 transition-colors"
-                              >
-                                <FileQuestion className="w-5 h-5 text-primary flex-shrink-0" />
-                                <span className="text-sm font-medium text-slate-900 truncate flex-1">
-                                  {qIndex >= 0 ? `${qIndex + 1}. ` : ''}{mcq.question || 'Bookmarked question'}
-                                </span>
-                                <Eye className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
 
             <div className="flex justify-end">
               <button
